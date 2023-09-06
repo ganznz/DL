@@ -29,6 +29,9 @@ local Template = {
             Action = GenreConfig.new('Action'),
             Casual = GenreConfig.new('Casual'),
             Strategy = GenreConfig.new('Strategy')
+        },
+        Topics = {
+            
         }
     }
 }
