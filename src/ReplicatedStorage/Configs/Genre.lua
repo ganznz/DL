@@ -1,17 +1,26 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local TopicConfig = require(ReplicatedStorage.Configs:WaitForChild("Topic"))
+
+local genreTypes = {
+    "Action", "Casual", "Strategy", "Rythm", "Simulation", "Adventure", "Platformer", "Shooter", "Sports", "Fighting", "Roleplay",
+    "Racing", "Arcade", "Roguelite", "Puzzle", "Tower Defense",
+}
+
 local Genre = {}
 Genre.__index = Genre
 
-function Genre.new(name)
-    local newgenre = {}
-    setmetatable(newgenre, Genre)
+function Genre.new(name: string)
+    if not table.find(genreTypes, name) then return nil end
 
-    newgenre.Name = name
-    newgenre.compatibleWith = {}
-    newgenre.incompatibleWith = {}
+    local newGenre = {}
+    setmetatable(newGenre, Genre)
 
-    return newgenre
+    newGenre.Name = name
+    newGenre.compatibleWith = {}
+    newGenre.incompatibleWith = {}
+
+    return newGenre
 end
 
 -- CLASS METHODS
@@ -22,16 +31,19 @@ end
 
 
 -- INSTANCE METHODS
-function Genre:AddCompatibleTopic(topicName: string)
-    if not table.find(self.compatibleWith, topicName) and not table.find(self.incompatibleWith, topicName) then
-        table.insert(self.compatibleWith, topicName)
+function Genre:AddCompatibleTopic(topicObject)
+    if not table.find(self.compatibleWith, topicObject) and not table.find(self.incompatibleWith, topicObject) then
+        table.insert(self.compatibleWith, topicObject)
+        topicObject:AddCompatibleGenre(self)
     end
 end
 
-function Genre:AddIncompatibleTopic(topicName: string)
-    if not table.find(self.incompatibleWith, topicName) and not table.find(self.compatibleWith, topicName) then
-        table.insert(self.incompatibleWith, topicName)
+function Genre:AddIncompatibleTopic(topicObject)
+    if not table.find(self.incompatibleWith, topicObject) and not table.find(self.compatibleWith, topicObject) then
+        table.insert(self.incompatibleWith, topicObject)
+        topicObject:AddIncompatibleGenre(self)
     end
 end
+
 
 return Genre
