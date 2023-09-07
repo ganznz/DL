@@ -1,7 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TopicConfig = require(ReplicatedStorage.Configs:WaitForChild("Topic"))
-
 local genreTypes = {
     "Action", "Casual", "Strategy", "Rythm", "Simulation", "Adventure", "Platformer", "Shooter", "Sports", "Fighting", "Roleplay",
     "Racing", "Arcade", "Roguelite", "Puzzle", "Tower Defense",
