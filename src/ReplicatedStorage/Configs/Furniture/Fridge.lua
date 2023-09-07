@@ -2,6 +2,7 @@ local Fridge = {}
 
 type FridgeConfig = {
     Capacity: number;
+    Price: number;
     ImageUrl: string -- model render image (ADD TO CONFIG BELOW)
 }
 
