@@ -15,7 +15,10 @@ local furnitureStoreInteriorTeleport = furnitureStoreInterior:FindFirstChild("Te
 
 zone.playerEntered:Connect(function(plr: Player)
     Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingScreen")
-    Remotes.GUI.FreezePlayer:FireClient(plr)
+end)
+
+zone.playerExited:Connect(function(plr: Player)
+    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "")
 end)
 
 Remotes.Player.TeleportPlr.OnServerEvent:Connect(function(plr, destination)
