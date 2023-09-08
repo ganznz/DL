@@ -12,25 +12,17 @@ local PlayerControls = require(localPlayer.PlayerScripts.PlayerModule):GetContro
 
 local LoadingBgSplashScreenGui = Roact.Component:extend("LoadingBgSplashScreenGui")
 
-local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential)
-local openGuiTweenTopEnabled
-local openGuiTweenBottomEnabled
-local openGuiTweenTopDisabled
-local openGuiTweenBottomDisabled
+local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential)
+local openGuiTweenEnabled
+local openGuiTweenDisabled
 
 local loadingScreenInstance = nil
-local loadingScreenTopInstance = nil
-local loadingScreenBottomInstance = nil
 
-local loadingScreenTopPositionDisabled = UDim2.fromScale(0, -1)
-local loadingScreenBottomPositionDisabled = UDim2.fromScale(0, 1)
-local loadingScreenTopPositionEnabled = UDim2.fromScale(0, 0)
-local loadingScreenBottomPositionEnabled = UDim2.fromScale(0, 0)
+local loadingScreenPositionDisabled = UDim2.fromScale(0.5, -1)
+local loadingScreenPositionEnabled = UDim2.fromScale(0.5, 0)
 
 function LoadingBgSplashScreenGui:init()
     self.loadingScreenRef = Roact.createRef()
-    self.loadingScreenTopRef = Roact.createRef()
-    self.loadingScreenBottomRef = Roact.createRef()
 end
 
 function LoadingBgSplashScreenGui:render()
@@ -41,66 +33,37 @@ function LoadingBgSplashScreenGui:render()
         loadingScreenSplash = Roact.createElement("Frame", {
             [Roact.Ref] = self.loadingScreenRef,
             AnchorPoint = Vector2.new(0.5, 0),
-            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-            BackgroundTransparency = 1,
+            BackgroundColor3 = Color3.fromRGB(56, 56, 56),
             BorderColor3 = Color3.fromRGB(0, 0, 0),
             BorderSizePixel = 0,
-            Position = UDim2.fromScale(0.5, 0),
+            Position = UDim2.fromScale(0.5, -1),
             Size = UDim2.fromScale(1, 1),
-            Visible = false
-        }, {
-            loadingScreenSplashTop = Roact.createElement("ImageLabel", {
-                [Roact.Ref] = self.loadingScreenTopRef,
-                Image = "rbxassetid://14714008315",
-                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                BackgroundTransparency = 1,
-                BorderColor3 = Color3.fromRGB(0, 0, 0),
-                BorderSizePixel = 0,
-                Size = UDim2.fromScale(1, 1),
-                Position = loadingScreenTopPositionDisabled
-            }),
-    
-            loadingScreenSplashBottom = Roact.createElement("ImageLabel", {
-                [Roact.Ref] = self.loadingScreenBottomRef,
-                Image = "rbxassetid://14714012201",
-                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                BackgroundTransparency = 1,
-                BorderColor3 = Color3.fromRGB(0, 0, 0),
-                BorderSizePixel = 0,
-                Size = UDim2.fromScale(1, 1),
-                Position = loadingScreenBottomPositionDisabled
-            }),
-        }),
+            Visible = false,
+        })
     })
 end
 
 function LoadingBgSplashScreenGui:didMount()
     loadingScreenInstance = self.loadingScreenRef:getValue()
-    loadingScreenTopInstance = self.loadingScreenTopRef:getValue()
-    loadingScreenBottomInstance = self.loadingScreenBottomRef:getValue()
 
-    openGuiTweenTopEnabled = TweenService:Create(loadingScreenTopInstance, tweenInfo, { Position = loadingScreenTopPositionEnabled})
-    openGuiTweenBottomEnabled = TweenService:Create(loadingScreenBottomInstance, tweenInfo, { Position = loadingScreenBottomPositionEnabled})
-    openGuiTweenTopDisabled = TweenService:Create(loadingScreenTopInstance, tweenInfo, { Position = loadingScreenTopPositionDisabled})
-    openGuiTweenBottomDisabled = TweenService:Create(loadingScreenBottomInstance, tweenInfo, { Position = loadingScreenBottomPositionDisabled})
+    openGuiTweenEnabled = TweenService:Create(loadingScreenInstance, tweenInfo, { Position = loadingScreenPositionEnabled})
+    openGuiTweenDisabled = TweenService:Create(loadingScreenInstance, tweenInfo, { Position = loadingScreenPositionDisabled})
 end
 
 function LoadingBgSplashScreenGui:didUpdate(prevProps, _prevState)
     if prevProps.visibleWindow ~= "loadingScreen" and self.props.visibleWindow == "loadingScreen" then
         print("show furniture store gui")
         loadingScreenInstance.Visible = true
-        openGuiTweenTopEnabled:Play()
-        openGuiTweenBottomEnabled:Play()
+        openGuiTweenEnabled:Play()
         PlayerControls:Disable()
-        openGuiTweenBottomEnabled.Completed:Connect(function()
+        openGuiTweenEnabled.Completed:Connect(function()
             Remotes.Player.TeleportPlr:FireServer("furnitureStore")
         end)
 
     elseif prevProps.visibleWindow == "loadingScreen" and self.props.visibleWindow ~= "loadingScreen" then
         print("hide furniture store gui")
-        openGuiTweenTopDisabled:Play()
-        openGuiTweenBottomDisabled:Play()
-        openGuiTweenTopDisabled.Completed:Connect(function()
+        openGuiTweenDisabled:Play()
+        openGuiTweenDisabled.Completed:Connect(function()
             loadingScreenInstance.Visible = false
             PlayerControls:Enable()
         end)
