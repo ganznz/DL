@@ -6,6 +6,7 @@ local Roact = require(ReplicatedStorage.Libs:WaitForChild("Roact"))
 
 -- gui components
 local LoadingBgSplashScreenGui = require(StarterGui.GuiConstructors.LoadingBgSplash:WaitForChild("LoadingBgSplashScreenGui"))
+local PlrInfoScreenGui = require(StarterGui.GuiConstructors.PlrInfo:WaitForChild("PlrInfoContainer"))
 
 local Remotes = ReplicatedStorage.Remotes
 local PlayerGui = Players.LocalPlayer.PlayerGui
@@ -23,12 +24,14 @@ function AllGui:render()
         ResetOnSpawn = false;
     }, {
         -- all gui goes here
-        Roact.createElement(LoadingBgSplashScreenGui, {
+        LoadingBgSplash = Roact.createElement(LoadingBgSplashScreenGui, {
             visibleWindow = self.state.visibleWindow,
             setVisibleWindow = function(window)
                 self:setState({ visibleWindow = window })
             end
         }),
+
+        PlrInfo = Roact.createElement(PlrInfoScreenGui)
     })
 end
 
