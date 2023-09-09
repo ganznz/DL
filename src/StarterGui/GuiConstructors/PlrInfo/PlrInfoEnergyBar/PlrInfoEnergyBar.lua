@@ -7,7 +7,19 @@ local Remotes = ReplicatedStorage.Remotes
 
 local PlrInfoEnergyBar = Roact.Component:extend("PlrInfoEnergyBar")
 
+local ENERGY_PROG_TEXT_TEMPLATE = "CURRENT/MAX"
+
+local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential)
+local barProgInstance = nil
+local barTextInstance = nil
+
 function PlrInfoEnergyBar:init()
+    self.barProgRef = Roact.createRef()
+    self.barTextRef = Roact.createRef()
+
+    self:setState({
+        maxEnergy = self.props.maxEnergy
+    })
 end
 
 function PlrInfoEnergyBar:render()
@@ -22,26 +34,30 @@ function PlrInfoEnergyBar:render()
         uICorner = Roact.createElement("UICorner"),
     
         plrEnergyBarProg = Roact.createElement("Frame", {
+            [Roact.Ref] = self.barProgRef,
+
             BackgroundColor3 = Color3.fromRGB(64, 223, 255),
             BorderColor3 = Color3.fromRGB(0, 0, 0),
             BorderSizePixel = 0,
-            Size = UDim2.fromScale(0.7, 1),
+            Size = UDim2.fromScale(self.props.currentEnergy / self.state.maxEnergy, 1),
             ZIndex = 2,
         }, {
             uICorner1 = Roact.createElement("UICorner"),
         }),
     
         plrEnergyBarProgText = Roact.createElement("TextLabel", {
+            [Roact.Ref] = self.barTextRef,
+
             FontFace = Font.new(
                 "rbxasset://fonts/families/SourceSansPro.json",
                 Enum.FontWeight.Bold,
                 Enum.FontStyle.Normal
             ),
-            Text = "75/100",
+            Text = ENERGY_PROG_TEXT_TEMPLATE:gsub("CURRENT", self.props.currentEnergy):gsub("MAX", self.state.maxEnergy),
             TextColor3 = Color3.fromRGB(255, 255, 255),
             TextScaled = true,
             TextSize = 14,
-            TextStrokeColor3 = Color3.fromRGB(57, 113, 51),
+            TextStrokeColor3 = Color3.fromRGB(63, 106, 192),
             TextStrokeTransparency = 0,
             TextWrapped = true,
             TextXAlignment = Enum.TextXAlignment.Right,
@@ -58,6 +74,14 @@ function PlrInfoEnergyBar:render()
 end
 
 function PlrInfoEnergyBar:didMount()
+    barProgInstance = self.barProgRef:getValue()
+    barTextInstance = self.barTextRef:getValue()
+
+    Remotes.Character.AdjustPlrEnergy.OnClientEvent:Connect(function(currEnergy)
+        local barProgTween = TweenService:Create(barProgInstance, tweenInfo, { Size = UDim2.fromScale(currEnergy / self.state.maxEnergy, 1) })
+        barTextInstance.Text = ENERGY_PROG_TEXT_TEMPLATE:gsub("CURRENT", currEnergy):gsub("MAX", self.state.maxEnergy)
+        barProgTween:Play()
+    end)
 end
 
 return PlrInfoEnergyBar

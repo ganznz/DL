@@ -14,6 +14,9 @@ local Remotes = ReplicatedStorage.Remotes
 local PlrInfoContainer = Roact.Component:extend("PlrInfoContainer")
 
 function PlrInfoContainer:init()
+    self:setState({
+        plrData = Remotes.Data.GetAllData:InvokeServer()
+    })
 end
 
 function PlrInfoContainer:render()
@@ -36,9 +39,15 @@ function PlrInfoContainer:render()
 
         LevelBar = Roact.createElement(LevelBar),
 
-        EnergyBar = Roact.createElement(EnergyBar),
+        EnergyBar = Roact.createElement(EnergyBar, {
+            currentEnergy = self.state.plrData.CharacterNeeds.Energy,
+            maxEnergy = self.state.plrData.CharacterNeeds.MaxEnergy
+        }),
 
-        HungerBar = Roact.createElement(HungerBar),
+        HungerBar = Roact.createElement(HungerBar, {
+            currentHunger = self.state.plrData.CharacterNeeds.Hunger,
+            maxHunger = self.state.plrData.CharacterNeeds.MaxHunger
+        }),
     })
 end
 
