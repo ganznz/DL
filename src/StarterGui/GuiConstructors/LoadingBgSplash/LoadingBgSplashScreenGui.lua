@@ -8,8 +8,6 @@ local Remotes = ReplicatedStorage.Remotes
 local localPlayer = Players.LocalPlayer
 local PlayerControls = require(localPlayer.PlayerScripts.PlayerModule):GetControls()
 
-
-
 local LoadingBgSplashScreenGui = Roact.Component:extend("LoadingBgSplashScreenGui")
 
 local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential)
