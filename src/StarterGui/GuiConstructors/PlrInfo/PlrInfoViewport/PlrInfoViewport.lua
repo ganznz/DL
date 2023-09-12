@@ -1,8 +1,17 @@
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Roact = require(ReplicatedStorage.Libs:WaitForChild("Roact"))
 
 local Remotes = ReplicatedStorage.Remotes
+local localPlr = Players.LocalPlayer
+local char = localPlr.Character or localPlr.CharacterAdded:Wait()
+local upperTorso = char:WaitForChild("UpperTorso")
+
+local viewportCam = Instance.new("Camera", upperTorso)
+viewportCam.Name = "ViewportCam"
+local viewportCamAttachment = Instance.new("Attachment", upperTorso)
+viewportCamAttachment.CFrame = CFrame.new(upperTorso.CFrame.Position, upperTorso.Position)
 
 local PlrInfoViewport = Roact.Component:extend("PlrInfoViewport")
 
@@ -27,6 +36,9 @@ function PlrInfoViewport:render()
 end
 
 function PlrInfoViewport:didMount()
+    localPlr.CharacterAdded:Connect(function(char: Model)
+        
+    end)
 end
 
 return PlrInfoViewport

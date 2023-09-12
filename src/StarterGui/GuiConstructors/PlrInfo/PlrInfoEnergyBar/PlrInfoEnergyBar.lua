@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Roact = require(ReplicatedStorage.Libs:WaitForChild("Roact"))
+local RoactSpring = require(ReplicatedStorage:WaitForChild("Packages"):WaitForChild("roact-spring"))
 
 local Remotes = ReplicatedStorage.Remotes
 
