@@ -14,11 +14,11 @@ local furnitureStoreInteriorTeleport = furnitureStoreInterior:FindFirstChild("Te
 
 
 zone.playerEntered:Connect(function(plr: Player)
-    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingScreen")
+    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", true)
 end)
 
 zone.playerExited:Connect(function(plr: Player)
-    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "")
+    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", false)
 end)
 
 Remotes.Player.TeleportPlr.OnServerEvent:Connect(function(plr, destination)
