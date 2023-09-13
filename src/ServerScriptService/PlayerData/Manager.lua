@@ -14,15 +14,15 @@ function Manager.AdjustPlrHunger(plr: Player, adjustBy: number)
 
     -- DO CHECK FOR Always Satisfied GAMEPASS!!
 
-    if profile.Data.CharacterNeeds.Hunger + adjustBy < 0 then
-        profile.Data.CharacterNeeds.Hunger = 0
-    elseif profile.Data.CharacterNeeds.Hunger + adjustBy > profile.Data.CharacterNeeds.MaxHunger then
-        profile.Data.CharacterNeeds.Hunger = profile.Data.CharacterNeeds.MaxHunger
+    if profile.Data.Character.Needs.Hunger + adjustBy < 0 then
+        profile.Data.Character.Needs.Hunger = 0
+    elseif profile.Data.Character.Needs.Hunger + adjustBy > profile.Data.Character.Needs.MaxHunger then
+        profile.Data.Character.Needs.Hunger = profile.Data.Character.Needs.MaxHunger
     else
-        profile.Data.CharacterNeeds.Hunger += adjustBy
+        profile.Data.Character.Needs.Hunger += adjustBy
     end
 
-    Remotes.Character.AdjustPlrHunger:FireClient(plr, profile.Data.CharacterNeeds.Hunger)
+    Remotes.Character.AdjustPlrHunger:FireClient(plr, profile.Data)
 end
 
 function Manager.AdjustPlrEnergy(plr: Player, adjustBy: number)
@@ -31,15 +31,15 @@ function Manager.AdjustPlrEnergy(plr: Player, adjustBy: number)
 
     -- DO CHECK FOR Always Satisfied GAMEPASS!!
 
-    if profile.Data.CharacterNeeds.Energy + adjustBy < 0 then
-        profile.Data.CharacterNeeds.Energy = 0
-    elseif profile.Data.CharacterNeeds.Energy + adjustBy > profile.Data.CharacterNeeds.MaxEnergy then
-        profile.Data.CharacterNeeds.Energy = profile.Data.CharacterNeeds.MaxEnergy
+    if profile.Data.Character.Needs.Energy + adjustBy < 0 then
+        profile.Data.Character.Needs.Energy = 0
+    elseif profile.Data.Character.Needs.Energy + adjustBy > profile.Data.Character.Needs.MaxEnergy then
+        profile.Data.Character.Needs.Energy = profile.Data.Character.Needs.MaxEnergy
     else
-        profile.Data.CharacterNeeds.Energy += adjustBy
+        profile.Data.Character.Needs.Energy += adjustBy
     end
 
-    Remotes.Character.AdjustPlrEnergy:FireClient(plr, profile.Data.CharacterNeeds.Energy)
+    Remotes.Character.AdjustPlrEnergy:FireClient(plr, profile.Data)
 
     return "Adjusted the players energy by " .. if adjustBy < 0 then "minus " else "" .. tostring(math.abs(adjustBy)) .. "."
 end
