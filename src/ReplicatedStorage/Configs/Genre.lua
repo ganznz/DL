@@ -1,6 +1,4 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local genreTypes = {
+local export genreTypes = {
     "Action", "Casual", "Strategy", "Rythm", "Simulation", "Adventure", "Platformer", "Shooter", "Sports", "Fighting", "Roleplay",
     "Racing", "Arcade", "Roguelite", "Puzzle", "Tower Defense",
 }

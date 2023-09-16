@@ -26,5 +26,4 @@ Remotes.Player.TeleportPlr.OnServerEvent:Connect(function(plr, destination)
         local char = plr.Character
         char:MoveTo(furnitureStoreInteriorTeleport.Position)
     end
-    
 end)

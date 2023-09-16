@@ -1,4 +1,4 @@
-local topicTypes = {
+local export topicTypes = {
     "Modern", "Medieval", "SciFi", "Space", "Dance", "Classical", "War", "Romance",
     "Fantasy", "Mystery", "Horror", "Superheroes", "Cyberpunk", "Post Apocalyptic", "Zombies",
     "Crime", "Fairy Tale", "Wildlife", "Farming", "Underwater", "Disaster",
