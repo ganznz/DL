@@ -11,20 +11,21 @@ local PlayerGui = localPlr.PlayerGui
 local LoadingBgSplashScreenGui = PlayerGui:WaitForChild("LoadingBgSplash")
 local LoadingBgSplash = LoadingBgSplashScreenGui.LoadingBgSplash
 
-local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential)
+local TWEEN_TIME = 0.5
+local tweenInfo = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Exponential)
 local loadingScreenPositionDisabled = UDim2.fromScale(0.5, -1)
 local loadingScreenPositionEnabled = UDim2.fromScale(0.5, 0)
 
 local showLoadingBgTween = TweenService:Create(LoadingBgSplash, tweenInfo, { Position = loadingScreenPositionEnabled})
 local hideLoadingBgTween = TweenService:Create(LoadingBgSplash, tweenInfo, { Position = loadingScreenPositionDisabled})
 
-Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGui)
+Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGui, areaFolder)
     if guiName == "loadingBgSplash" then
         if showGui then
             showLoadingBgTween:Play()
             PlayerControls:Disable()
-            showLoadingBgTween.Completed:Connect(function()
-                Remotes.Player.TeleportPlr:FireServer("furnitureStore")
+            task.delay(TWEEN_TIME, function()
+                Remotes.Player.TeleportPlr:FireServer(areaFolder)
             end)
         else
             hideLoadingBgTween:Play()
