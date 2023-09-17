@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GenreConfig = require(ReplicatedStorage.Configs:WaitForChild("Genre"))
 local TopicConfig = require(ReplicatedStorage.Configs:WaitForChild("Topic"))
+local CashierConfig = require(ReplicatedStorage.Configs.Jobs:WaitForChild("Cashier"))
 
 -- Template is what empty profiles default to
 local Template = {
@@ -48,6 +49,13 @@ local Template = {
             Medieval = TopicConfig.new("Medieval"),
             SciFi = TopicConfig.new("SciFi"),
         }
+    },
+    Jobs = {
+        Cashier = {
+            CashierInstance = CashierConfig.new(),
+            ShiftCooldown = os.time()
+        }
+        -- add other jobs
     }
 }
 
