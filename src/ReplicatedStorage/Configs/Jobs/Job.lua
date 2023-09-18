@@ -17,24 +17,24 @@ function Job.new()
     return newJob
 end
 
-function Job:CalcPaycheck(): number
-    return math.floor(Job.PaycheckBaseRate * math.pow(Job.PaycheckMultiplier, self.Level))
+function Job.CalcPaycheck(jobInstance): number
+    return math.floor(Job.PaycheckBaseRate * math.pow(Job.PaycheckMultiplier, jobInstance.Level))
 end
 
-function Job:CalcTraitPoints(): number
-    return math.floor(Job.TraitPointsBaseRate * math.pow(Job.TraitPointsMultiplier, self.Level))
+function Job.CalcTraitPoints(jobInstance): number
+    return math.floor(Job.TraitPointsBaseRate * math.pow(Job.TraitPointsMultiplier, jobInstance.Level))
 end
 
-function Job:CalcLevelUpXpRequirement(): number
-    return if self.Level == 1 then Job.XpPerLevel else Job.XpPerLevel * self.Level
+function Job.CalcLevelUpXpRequirement(jobInstance): number
+    return if jobInstance.Level == 1 then Job.XpPerLevel else Job.XpPerLevel * jobInstance.Level
 end
 
-function Job:GetLevel(): number
-    return self.Level
+function Job.GetLevel(jobInstance): number
+    return jobInstance.Level
 end
 
-function Job:GetXp(): number
-    return self.Exp
+function Job.GetXp(jobInstance): number
+    return jobInstance.Exp
 end
 
 return Job

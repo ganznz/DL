@@ -5,7 +5,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local Zone = require(ReplicatedStorage.Libs.Zone)
-local JobConfig = require(ReplicatedStorage.Configs.Jobs.Job)
+local JobConfig = require(ReplicatedStorage.Configs.Jobs.Cashier)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -19,10 +19,10 @@ zone.playerEntered:Connect(function(plr: Player)
     local plrCashierInstance = profile.Data.Jobs.Cashier.CashierInstance
 
     Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "cashierJobInfo", true, {
-        -- jobLevel = plrCashierInstance:GetLevel(),
-        -- xp = plrCashierInstance:GetXp(),
-        -- levelUpXpRequirement = plrCashierInstance:CalcLevelUpXpRequirement(),
-        -- traitPointsReward = plrCashierInstance:CalcTraitPoints(),
+        jobLevel = JobConfig.GetLevel(plrCashierInstance),
+        xp = JobConfig.GetXp(plrCashierInstance),
+        levelUpXpRequirement = JobConfig.CalcLevelUpXpRequirement(plrCashierInstance),
+        traitPointsReward = JobConfig.CalcTraitPoints(plrCashierInstance),
     })
 end)
 

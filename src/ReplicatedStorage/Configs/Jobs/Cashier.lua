@@ -11,6 +11,7 @@ function Cashier.new()
     setmetatable(newJob, Cashier)
 
     newJob.Trait = "Focus"
+    return newJob
 end
 
 return Cashier
