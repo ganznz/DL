@@ -13,11 +13,11 @@ for _i, areaFolder in accessibleAreas do
     local zone = Zone.new(teleportHitbox)
 
     zone.playerEntered:Connect(function(plr: Player)
-        Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", true, areaFolder)
+        Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", true, { areaFolder = areaFolder })
     end)
 
     zone.playerExited:Connect(function(plr: Player)
-        Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", false, nil)
+        Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", false, {})
     end)
 
 end
