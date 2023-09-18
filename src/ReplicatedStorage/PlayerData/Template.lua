@@ -53,7 +53,7 @@ local Template = {
     Jobs = {
         Cashier = {
             CashierInstance = CashierConfig.new(),
-            ShiftCooldown = os.time()
+            ShiftCooldown = os.time() + 70
         }
         -- add other jobs
     }

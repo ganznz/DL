@@ -7,6 +7,7 @@ local GuiServices = {}
 
 function GuiServices.DefaultMainGuiStyling(guiInstance: Frame)
     guiInstance.Position = UDim2.fromScale(0.5, guiInstance.Position.Y.Scale + 0.3)
+    guiInstance.Visible = false
     GuiTransparency:SetTransparency(guiInstance, 1, TweenInfo.new(0))
 end
 
