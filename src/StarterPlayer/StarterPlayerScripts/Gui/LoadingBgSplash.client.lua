@@ -19,13 +19,13 @@ local loadingScreenPositionEnabled = UDim2.fromScale(0.5, 0)
 local showLoadingBgTween = TweenService:Create(LoadingBgSplash, tweenInfo, { Position = loadingScreenPositionEnabled})
 local hideLoadingBgTween = TweenService:Create(LoadingBgSplash, tweenInfo, { Position = loadingScreenPositionDisabled})
 
-Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGui, options)
+Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGui)
     if guiName == "loadingBgSplash" then
         if showGui then
             showLoadingBgTween:Play()
             PlayerControls:Disable()
             task.delay(TWEEN_TIME, function()
-                Remotes.Player.TeleportPlr:FireServer(options.areaFolder)
+                Remotes.Player.TeleportPlr:FireServer()
             end)
         else
             hideLoadingBgTween:Play()
