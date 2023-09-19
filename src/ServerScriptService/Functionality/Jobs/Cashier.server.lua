@@ -10,8 +10,9 @@ local plrDataTemplate = require(ReplicatedStorage.PlayerData.Template)
 
 local Remotes = ReplicatedStorage.Remotes
 
-local IcecreamStoreTeleportHitbox = Workspace.Map.Buildings.IceCreamStore.IceCreamStoreExterior:WaitForChild("HitboxZone")
-local zone = Zone.new(IcecreamStoreTeleportHitbox)
+local iceCreamStoreFolder = Workspace.Map.Buildings.IceCreamStore
+local icecreamStoreTeleportHitbox = iceCreamStoreFolder:FindFirstChild("TeleportHitboxZone", true)
+local zone = Zone.new(icecreamStoreTeleportHitbox)
 
 zone.playerEntered:Connect(function(plr: Player)
     local profile = PlrDataManager.Profiles[plr]
