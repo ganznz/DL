@@ -30,6 +30,7 @@ local BTN_DISABLED_COLOUR = Color3.fromRGB(210, 210, 210)
 local BTN_TEXT_STROKE_ENABLED_COLOUR = Color3.fromRGB(67, 153, 66)
 local BTN_TEXT_STROKE_DISABLED_COLOUR = Color3.fromRGB(133, 133, 133)
 
+local cooldownDifference = nil
 
 GuiServices.DefaultMainGuiStyling(jobInfoContainer)
 
@@ -41,17 +42,17 @@ local function updateJobInfoGui(info)
 end
 
 local function updateJobBtnTimer(cooldown)
-    local difference = cooldown - os.time()
+    cooldownDifference = cooldown - os.time()
     -- if negative, enable
     -- if positive, disable
-    if difference <= 0 then
+    if cooldownDifference <= 0 then
         startBtn.BackgroundColor3 = BTN_ENABLED_COLOUR
         startBtn.TextStrokeColor3 = BTN_TEXT_STROKE_ENABLED_COLOUR
         startBtn.Text = "Start shift!"
     else
         startBtn.BackgroundColor3 = BTN_DISABLED_COLOUR
         startBtn.TextStrokeColor3 = BTN_TEXT_STROKE_DISABLED_COLOUR
-        local parsedTime = TimeUtils.ParseTime(difference)
+        local parsedTime = TimeUtils.ParseTime(cooldownDifference)
         if parsedTime.Minutes == 0 then
             startBtn.Text = COOLDOWN_TEXT_TEMPLATE_2:gsub("SEC", parsedTime.Seconds)
         else
@@ -62,6 +63,13 @@ end
 
 exitBtn.Activated:Connect(function(_inputObj, _clickCount)
     GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
+end)
+
+startBtn.Activated:Connect(function(_inputObject, _clickCount)
+    if cooldownDifference <= 0 then
+        Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { Destination = "IceCreamStore" })
+        GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
+    end
 end)
 
 Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGui, options)
