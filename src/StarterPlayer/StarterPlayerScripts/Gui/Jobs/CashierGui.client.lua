@@ -68,6 +68,7 @@ end)
 startBtn.Activated:Connect(function(_inputObject, _clickCount)
     if cooldownDifference <= 0 then
         Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { Destination = "IceCreamStore" })
+        Remotes.Jobs.StartShift:FireServer("IceCreamStoreCashier")
         GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
     end
 end)
