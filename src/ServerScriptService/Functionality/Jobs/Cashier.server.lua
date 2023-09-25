@@ -38,6 +38,31 @@ end)
 -- { [Player]: { remainingTime: number, goodOrders: number, badOrders: number } }
 local activeShifts = {}
 
+local SHIFT_TIMER = 8
+local ICECREAM_FLAVOURS = {"Chocolate", "Vanilla", "Strawberry"}
+
+local function startActiveShift(plr: Player)
+    local shift = {
+        remainingTime = SHIFT_TIMER,
+        goodOrders = 0,
+        badOrders = 0,
+        currentCustomer = nil -- information on current customer
+    }
+    activeShifts[plr.Name] = shift
+end
+
+local function sendCustomer(plr: Player)
+    local customerInfo = { icecream = ICECREAM_FLAVOURS[math.random(1, #ICECREAM_FLAVOURS)] }
+    activeShifts[plr.Name].currentCustomer = customerInfo
+    Remotes.Jobs.Cashier.SendCustomer:FireClient(plr, customerInfo)
+end
+
+Remotes.Jobs.StartShift.OnServerEvent:Connect(function(plr: Player, job: string)
+    if job == "IceCreamStoreCashier" then
+        startActiveShift(plr)
+        sendCustomer(plr)
+    end
+end)
 
 while true do
     for _, plr in Players:GetPlayers() do
@@ -46,6 +71,14 @@ while true do
         local plrData: plrDataTemplate.PlayerData = profile.Data
 
         Remotes.GUI.Jobs.UpdateJobTimerBtn:FireClient(plr, "cashierJob", plrData.Jobs.Cashier.ShiftCooldown)
+    end
+
+    -- update current active shifts
+    for plrName, _shiftInfo in activeShifts do
+        activeShifts[plrName].remainingTime -= 1
+        if activeShifts[plrName].remainingTime == 0 then
+            -- finish shift
+        end
     end
 
     task.wait(1)
