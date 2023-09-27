@@ -9,7 +9,7 @@ local Remotes = ReplicatedStorage.Remotes
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
-local jobInfoContainer = PlayerGui:WaitForChild("Jobs").CashierJob.CashierJob.JobInfo:WaitForChild("Container")
+local jobInfoContainer = PlayerGui:WaitForChild("Jobs").CashierJob:WaitForChild("JobInfoContainer")
 local exitBtn = jobInfoContainer.ExitBtn
 local startBtn = jobInfoContainer.StartBtn
 local rewardText = jobInfoContainer.RewardsContainer.RewardText
