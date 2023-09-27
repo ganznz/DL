@@ -1,9 +1,7 @@
-local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
@@ -11,11 +9,54 @@ local Remotes = ReplicatedStorage.Remotes
 
 local mouse = localPlr:GetMouse()
 
-local npcSpawnPart = Workspace.Map.Buildings.IceCreamStore:WaitForChild("IceCreamStoreInterior"):WaitForChild("NpcSpawnPart")
-local npcDestinationPart = Workspace.Map.Buildings.IceCreamStore:WaitForChild("IceCreamStoreInterior"):WaitForChild("NpcDestinationPart")
+local icecreamStoreModel = Workspace.Map.Buildings.IceCreamStore
+local icecreamStoreInterior = icecreamStoreModel:WaitForChild("IceCreamStoreInterior")
+local npcSpawnPart = icecreamStoreInterior:WaitForChild("NpcSpawnPart")
+local npcDestinationPart = icecreamStoreInterior:WaitForChild("NpcDestinationPart")
+local icecreamFlavourParts = icecreamStoreInterior.Flavours:GetChildren()
+
+local currentEquippedTool = nil
+local currentOrderStatus: 'good' | 'bad' = nil
 
 -- gui
-local customerOrderBillboard = PlayerGui:WaitForChild("Jobs").CashierJob.CashierJobCustomerOrder:WaitForChild("CustomerOrderBillboard")
+local customerOrderBillboard = PlayerGui:WaitForChild("Jobs").CashierJob:WaitForChild("CustomerOrderBillboard")
+
+local ICECREAM_FLAVOURS = {"Chocolate", "Vanilla", "Strawberry"}
+
+local function clearIcecreamFlavours(plr: Player, backpack: Backpack)
+    for i, tool in backpack:GetChildren() do
+        if table.find(ICECREAM_FLAVOURS, tool.Name) and tool:IsA("Tool") then
+            tool:Destroy()
+        end
+    end
+    -- remove equipped flavour also if any
+    for i, flavour in ICECREAM_FLAVOURS do
+        local equippedTool = plr.Character:FindFirstChild(flavour)
+        if equippedTool then
+            equippedTool:Destroy()
+            break
+        end
+    end
+end
+
+local function obtainIcecreamTool(plr: Player, flavour: string)
+    local backpack = plr:FindFirstChildOfClass("Backpack")
+    clearIcecreamFlavours(plr, backpack)
+
+    local icecreamTool = ReplicatedStorage.Assets.Tools.Icecreams:FindFirstChild(flavour):Clone()
+    icecreamTool.Parent = backpack
+    icecreamTool.Equipped:Connect(function(_mouse)
+        currentEquippedTool = icecreamTool.Name
+    end)
+end
+
+for _, icecreamPart in icecreamFlavourParts do
+    local proxPrompt = icecreamPart:FindFirstChild("ProximityPrompt", true)
+    proxPrompt.Triggered:Connect(function(plr)
+        obtainIcecreamTool(plr, icecreamPart.Name)
+    end)
+end
+
 
 local function displayCustomerOrder(customerModel: Model, customerInfo)
     local npcModelHead = customerModel:FindFirstChild("Head")
@@ -35,25 +76,22 @@ local function displayCustomerOrder(customerModel: Model, customerInfo)
     billboardGui.Enabled = true
 end
 
-local function customerInteraction(customerModel: Model)
+local function customerInteraction(customerModel: Model, customerInfo)
     mouse.Button1Down:Connect(function()
         local target = mouse.Target
-        if target:IsDescendantOf(customerModel) then
-            customerModel:SetAttribute("orderFulfilled", true)
+
+        -- if clicked target is part of customer model AND plr has icecream equipped
+        if target:IsDescendantOf(customerModel) and not customerModel:GetAttribute("orderFulfilled") then
+            if currentEquippedTool and localPlr.Character:FindFirstChild(currentEquippedTool) then
+                currentOrderStatus = if currentEquippedTool.Name == customerInfo.icecream then "good" else "bad"
+                print('delivered!!')
+                customerModel:SetAttribute("orderFulfilled", true)
+            end
         end
     end)
 end
 
-local customerLifecycle = coroutine.create(function(customerModel: Model, customerInfo)
-    displayCustomerOrder(customerModel, customerInfo)
-    customerInteraction(customerModel)
-    print('a')
-    coroutine.yield()
-    print('b')
-
-end)
-
-local function followPath(customerModel: Model, customerInfo)
+local function followPath(customerModel: Model, customerInfo, startPos, finishPos)
     local humanoid = customerModel:FindFirstChild("Humanoid")
     local path = PathfindingService:CreatePath()
     local waypoints
@@ -61,8 +99,17 @@ local function followPath(customerModel: Model, customerInfo)
     local reachedConnection
     local blockedConnection
 
+    local customerLifecycle = coroutine.create(function(customerModel: Model, customerInfo)
+        displayCustomerOrder(customerModel, customerInfo)
+        customerInteraction(customerModel, customerInfo)
+        
+        coroutine.yield()
+    
+        Remotes.Jobs.Cashier.CustomerOrderFulfilled:FireServer(currentOrderStatus)
+    end)
+
     local success, errorMessage = pcall(function()
-        path:ComputeAsync(npcSpawnPart.Position, npcDestinationPart.Position)
+        path:ComputeAsync(startPos, finishPos)
     end)
 
     if success and path.status == Enum.PathStatus.Success then
@@ -74,7 +121,7 @@ local function followPath(customerModel: Model, customerInfo)
                 blockedConnection = nil
 
                 -- recompute new path
-                followPath(humanoid)
+                followPath(humanoid, customerInfo, startPos, finishPos)
             end
         end)
 
@@ -87,10 +134,12 @@ local function followPath(customerModel: Model, customerInfo)
                     humanoid:MoveTo(waypoints[nextWaypointIndex].Position)
                 else
                     reachedConnection:Disconnect()
-					blockedConnection:Disconnect()
+                    blockedConnection:Disconnect()
 
+                    -- if customer has spawned in
                     coroutine.resume(customerLifecycle, customerModel, customerInfo)
-                    
+
+                    -- resume coroutine to remove customer after order has been fulfilled
                     customerModel:GetAttributeChangedSignal("orderFulfilled"):Connect(function()
                         coroutine.resume(customerLifecycle, customerModel, customerInfo)
                     end)
@@ -111,5 +160,5 @@ Remotes.Jobs.Cashier.SendCustomer.OnClientEvent:Connect(function(customerInfo)
     customerModel.Parent = Workspace
     customerModel.PrimaryPart.Position = npcSpawnPart.Position
 
-    followPath(customerModel, customerInfo)
+    followPath(customerModel, customerInfo, npcSpawnPart.Position, npcDestinationPart.Position)
 end)

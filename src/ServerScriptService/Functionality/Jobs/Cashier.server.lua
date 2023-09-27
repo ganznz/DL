@@ -58,8 +58,19 @@ local function sendCustomer(plr: Player)
 end
 
 Remotes.Jobs.StartShift.OnServerEvent:Connect(function(plr: Player, job: string)
-    if job == "IceCreamStoreCashier" then
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    if job == "IceCreamStoreCashier" and (profile.Data.Jobs.Cashier.ShiftCooldown - os.time() <= 0) then
         startActiveShift(plr)
+        sendCustomer(plr)
+    end
+end)
+
+Remotes.Jobs.Cashier.CustomerOrderFulfilled.OnServerEvent:Connect(function(plr: Player, orderStatus: 'good' | 'bad')
+    if activeShifts[plr.Name] then
+        if orderStatus == 'good' then activeShifts[plr.Name].goodOrders += 1 else activeShifts[plr.Name].badOrders += 1 end
+        print(activeShifts[plr.Name])
         sendCustomer(plr)
     end
 end)
