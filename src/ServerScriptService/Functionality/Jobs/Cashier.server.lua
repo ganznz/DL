@@ -11,6 +11,7 @@ local plrDataTemplate = require(ReplicatedStorage.PlayerData.Template)
 local Remotes = ReplicatedStorage.Remotes
 
 local iceCreamStoreFolder = Workspace.Map.Buildings.IceCreamStore
+local icecreamStoreExteriorTeleport = iceCreamStoreFolder.IceCreamStoreExterior.TeleportToPart
 local icecreamStoreTeleportHitbox = iceCreamStoreFolder:FindFirstChild("TeleportHitboxZone", true)
 local zone = Zone.new(icecreamStoreTeleportHitbox)
 
@@ -62,15 +63,17 @@ Remotes.Jobs.StartShift.OnServerEvent:Connect(function(plr: Player, job: string)
     if not profile then return end
 
     if job == "IceCreamStoreCashier" and (profile.Data.Jobs.Cashier.ShiftCooldown - os.time() <= 0) then
-        startActiveShift(plr)
-        sendCustomer(plr)
+        task.delay(4, function()
+            startActiveShift(plr)
+            Remotes.GUI.Jobs.ChangeJobTimerVisibility:FireClient(plr, true)
+            sendCustomer(plr)
+        end)
     end
 end)
 
 Remotes.Jobs.Cashier.CustomerOrderFulfilled.OnServerEvent:Connect(function(plr: Player, orderStatus: 'good' | 'bad')
     if activeShifts[plr.Name] then
         if orderStatus == 'good' then activeShifts[plr.Name].goodOrders += 1 else activeShifts[plr.Name].badOrders += 1 end
-        print(activeShifts[plr.Name])
         sendCustomer(plr)
     end
 end)
@@ -81,14 +84,25 @@ while true do
         if not profile then continue end
         local plrData: plrDataTemplate.PlayerData = profile.Data
 
-        Remotes.GUI.Jobs.UpdateJobTimerBtn:FireClient(plr, "cashierJob", plrData.Jobs.Cashier.ShiftCooldown)
+        Remotes.GUI.Jobs.UpdateJobAvailableTimer:FireClient(plr, "cashierJob", plrData.Jobs.Cashier.ShiftCooldown)
     end
 
     -- update current active shifts
     for plrName, _shiftInfo in activeShifts do
+        local plr = Players:FindFirstChild(plrName)
+        local profile = PlrDataManager.Profiles[plr]
+        if not profile then continue end
+        
         activeShifts[plrName].remainingTime -= 1
+        Remotes.GUI.Jobs.UpdateJobTimer:FireClient(plr, activeShifts[plrName].remainingTime)
+
+
         if activeShifts[plrName].remainingTime == 0 then
             -- finish shift
+            activeShifts[plrName] = nil
+            Remotes.GUI.Jobs.ChangeJobTimerVisibility:FireClient(plr, false)
+            Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", true, { TeleportPart = icecreamStoreExteriorTeleport })
+            profile.Data.Jobs.Cashier.ShiftCooldown = os.time() + SHIFT_TIMER
         end
     end
 
