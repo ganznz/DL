@@ -15,8 +15,8 @@ local npcSpawnPart = icecreamStoreInterior:WaitForChild("NpcSpawnPart")
 local npcDestinationPart = icecreamStoreInterior:WaitForChild("NpcDestinationPart")
 local icecreamFlavourParts = icecreamStoreInterior.Flavours:GetChildren()
 
-local currentEquippedTool = nil
-local currentOrderStatus: 'good' | 'bad' = nil
+local currentEquippedTool
+local currentOrderStatus: 'good' | 'bad'
 
 -- gui
 local customerOrderBillboard = PlayerGui:WaitForChild("Jobs").CashierJob:WaitForChild("CustomerOrderBillboard")
@@ -46,7 +46,7 @@ local function obtainIcecreamTool(plr: Player, flavour: string)
     local icecreamTool = ReplicatedStorage.Assets.Tools.Icecreams:FindFirstChild(flavour):Clone()
     icecreamTool.Parent = backpack
     icecreamTool.Equipped:Connect(function(_mouse)
-        currentEquippedTool = icecreamTool.Name
+        currentEquippedTool = icecreamTool
     end)
 end
 
@@ -82,7 +82,7 @@ local function customerInteraction(customerModel: Model, customerInfo)
 
         -- if clicked target is part of customer model AND plr has icecream equipped
         if target:IsDescendantOf(customerModel) and not customerModel:GetAttribute("orderFulfilled") then
-            if currentEquippedTool and localPlr.Character:FindFirstChild(currentEquippedTool) then
+            if currentEquippedTool and localPlr.Character:FindFirstChild(currentEquippedTool.Name) then
                 currentOrderStatus = if currentEquippedTool.Name == customerInfo.icecream then "good" else "bad"
                 print('delivered!!')
                 customerModel:SetAttribute("orderFulfilled", true)
