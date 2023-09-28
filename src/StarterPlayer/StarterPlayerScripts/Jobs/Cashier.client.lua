@@ -3,6 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 
+local NpcUtils = require(ReplicatedStorage.Utils.Npc:WaitForChild("Npc"))
+
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 local Remotes = ReplicatedStorage.Remotes
@@ -106,6 +108,8 @@ local function followPath(customerModel: Model, customerInfo, startPos, finishPo
         coroutine.yield()
     
         Remotes.Jobs.Cashier.CustomerOrderFulfilled:FireServer(currentOrderStatus)
+        local npcColour = currentOrderStatus == 'good' and Color3.fromRGB(71, 217, 54) or Color3.fromRGB(217, 77, 79)
+        NpcUtils.RemoveNpcStandard(customerModel, npcColour)
     end)
 
     local success, errorMessage = pcall(function()
