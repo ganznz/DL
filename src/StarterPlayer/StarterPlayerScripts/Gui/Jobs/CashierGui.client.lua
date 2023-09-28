@@ -1,3 +1,4 @@
+local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -8,6 +9,9 @@ local Remotes = ReplicatedStorage.Remotes
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
+
+local icecreamStoreFolder = Workspace:WaitForChild("Map").Buildings.IceCreamStore
+local interiorTeleportToPart = icecreamStoreFolder:WaitForChild("IceCreamStoreInterior"):WaitForChild("TeleportToPart")
 
 local jobInfoContainer = PlayerGui:WaitForChild("Jobs").CashierJob:WaitForChild("JobInfoContainer")
 local exitBtn = jobInfoContainer.ExitBtn
@@ -32,7 +36,7 @@ local BTN_TEXT_STROKE_DISABLED_COLOUR = Color3.fromRGB(133, 133, 133)
 
 local cooldownDifference = nil
 
-GuiServices.DefaultMainGuiStyling(jobInfoContainer)
+GuiServices.DefaultMainGuiStyling(jobInfoContainer, 0.3)
 
 local function updateJobInfoGui(info)
     rewardText.Text = REWARD_TEXT_TEMPLATE:gsub("AMT", info.traitPointsReward)
@@ -62,14 +66,14 @@ local function updateJobBtnTimer(cooldown)
 end
 
 exitBtn.Activated:Connect(function(_inputObj, _clickCount)
-    GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
+    GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0), true)
 end)
 
 startBtn.Activated:Connect(function(_inputObject, _clickCount)
     if cooldownDifference <= 0 then
-        Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { Destination = "IceCreamStore" })
+        Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = interiorTeleportToPart })
         Remotes.Jobs.StartShift:FireServer("IceCreamStoreCashier")
-        GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
+        GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0), true)
     end
 end)
 
@@ -77,14 +81,14 @@ Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGu
     if guiName == "cashierJobInfo" then
         if showGui then
             updateJobInfoGui(options)
-            GuiServices.ShowGuiStandard(jobInfoContainer, visibleGuiPos, visibleGuiSize)
+            GuiServices.ShowGuiStandard(jobInfoContainer, visibleGuiPos, visibleGuiSize, true)
         else
-            GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
+            GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0), true)
         end
     end
 end)
 
-Remotes.GUI.Jobs.UpdateJobTimerBtn.OnClientEvent:Connect(function(jobType, timeUntilEnabled)
+Remotes.GUI.Jobs.UpdateJobAvailableTimer.OnClientEvent:Connect(function(jobType, timeUntilEnabled)
     if jobType == "cashierJob" then
         updateJobBtnTimer(timeUntilEnabled)
     end
