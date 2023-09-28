@@ -23,7 +23,7 @@ local customerOrderBillboard = PlayerGui:WaitForChild("Jobs").CashierJob:WaitFor
 
 local ICECREAM_FLAVOURS = {"Chocolate", "Vanilla", "Strawberry"}
 
-local function clearIcecreamFlavours(plr: Player, backpack: Backpack)
+local function clearIcecreamTools(plr: Player, backpack: Backpack)
     for i, tool in backpack:GetChildren() do
         if table.find(ICECREAM_FLAVOURS, tool.Name) and tool:IsA("Tool") then
             tool:Destroy()
@@ -41,7 +41,7 @@ end
 
 local function obtainIcecreamTool(plr: Player, flavour: string)
     local backpack = plr:FindFirstChildOfClass("Backpack")
-    clearIcecreamFlavours(plr, backpack)
+    clearIcecreamTools(plr, backpack)
 
     local icecreamTool = ReplicatedStorage.Assets.Tools.Icecreams:FindFirstChild(flavour):Clone()
     icecreamTool.Parent = backpack
@@ -84,8 +84,8 @@ local function customerInteraction(customerModel: Model, customerInfo)
         if target:IsDescendantOf(customerModel) and not customerModel:GetAttribute("orderFulfilled") then
             if currentEquippedTool and localPlr.Character:FindFirstChild(currentEquippedTool.Name) then
                 currentOrderStatus = if currentEquippedTool.Name == customerInfo.icecream then "good" else "bad"
-                print('delivered!!')
                 customerModel:SetAttribute("orderFulfilled", true)
+                clearIcecreamTools(localPlr, localPlr.Backpack)
             end
         end
     end)
