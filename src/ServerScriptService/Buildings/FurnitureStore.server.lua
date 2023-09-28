@@ -6,10 +6,10 @@ local Zone = require(ReplicatedStorage.Libs.Zone)
 local Remotes = ReplicatedStorage.Remotes
 
 local furnitureStoreFolder = Workspace.Map.Buildings.FurnitureStore
--- local teleportToPart = furnitureStoreFolder:FindFirstChild("TeleportToPart", true)
 local teleportHitbox: Model = furnitureStoreFolder:FindFirstChild("TeleportHitboxZone", true)
 local zone = Zone.new(teleportHitbox)
 
 zone.playerEntered:Connect(function(plr: Player)
-    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", true, { Destination = "FurnitureStore" })
+    local teleportToPart = furnitureStoreFolder.FurnitureStoreInterior:FindFirstChild("TeleportToPart")
+    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", true, { TeleportPart = teleportToPart })
 end)

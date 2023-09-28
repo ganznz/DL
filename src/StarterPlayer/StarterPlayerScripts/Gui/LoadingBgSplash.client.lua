@@ -24,7 +24,7 @@ local function enableLoadingTween(showGui: boolean, options)
         showLoadingBgTween:Play()
         PlayerControls:Disable()
         task.delay(TWEEN_TIME, function()
-            Remotes.Player.TeleportPlr:FireServer(options.Destination)
+            Remotes.Player.TeleportPlr:FireServer(options.TeleportPart)
         end)
     else
         hideLoadingBgTween:Play()
