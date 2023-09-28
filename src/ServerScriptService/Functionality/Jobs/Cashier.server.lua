@@ -39,7 +39,7 @@ end)
 -- { [Player]: { remainingTime: number, goodOrders: number, badOrders: number } }
 local activeShifts = {}
 
-local SHIFT_TIMER = 8
+local SHIFT_TIMER = 120 -- seconds
 local ICECREAM_FLAVOURS = {"Chocolate", "Vanilla", "Strawberry"}
 
 local function startActiveShift(plr: Player)
@@ -65,6 +65,7 @@ Remotes.Jobs.StartShift.OnServerEvent:Connect(function(plr: Player, job: string)
     if job == "IceCreamStoreCashier" and (profile.Data.Jobs.Cashier.ShiftCooldown - os.time() <= 0) then
         task.delay(4, function()
             startActiveShift(plr)
+            Remotes.GUI.Jobs.UpdateJobTimer:FireClient(plr, activeShifts[plr.Name].remainingTime)
             Remotes.GUI.Jobs.ChangeJobTimerVisibility:FireClient(plr, true)
             sendCustomer(plr)
         end)
