@@ -5,7 +5,8 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local Zone = require(ReplicatedStorage.Libs.Zone)
-local JobConfig = require(ReplicatedStorage.Configs.Jobs.Cashier)
+local CashierConfig = require(ReplicatedStorage.Configs.Jobs.Cashier)
+local PlayerConfig = require(ReplicatedStorage.Configs.Player)
 local plrDataTemplate = require(ReplicatedStorage.PlayerData.Template)
 
 local Remotes = ReplicatedStorage.Remotes
@@ -23,10 +24,10 @@ zone.playerEntered:Connect(function(plr: Player)
     local plrCashierInstance = plrData.Jobs.Cashier.CashierInstance
 
     Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "cashierJobInfo", true, {
-        jobLevel = JobConfig.GetLevel(plrCashierInstance),
-        xp = JobConfig.GetXp(plrCashierInstance),
-        levelUpXpRequirement = JobConfig.CalcLevelUpXpRequirement(plrCashierInstance),
-        traitPointsReward = JobConfig.CalcTraitPoints(plrCashierInstance),
+        jobLevel = CashierConfig.GetLevel(plrCashierInstance),
+        xp = CashierConfig.GetXp(plrCashierInstance),
+        levelUpXpRequirement = CashierConfig.CalcLevelUpXpRequirement(plrCashierInstance),
+        skillPointsReward = CashierConfig.CalcPotentialSkillPoints(plrCashierInstance),
     })
 end)
 
@@ -39,7 +40,8 @@ end)
 -- { [Player]: { remainingTime: number, goodOrders: number, badOrders: number } }
 local activeShifts = {}
 
-local SHIFT_TIMER = 120 -- seconds
+local SHIFT_TIMER = 10 -- seconds
+local SHIFT_COOLDOWN = 600 -- seconds
 local ICECREAM_FLAVOURS = {"Chocolate", "Vanilla", "Strawberry"}
 
 local function startActiveShift(plr: Player)
@@ -72,6 +74,49 @@ Remotes.Jobs.StartShift.OnServerEvent:Connect(function(plr: Player, job: string)
     end
 end)
 
+local function endActiveShift(plr: Player, forceEndedShift: boolean)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+    local plrData: plrDataTemplate.PlayerData = profile.Data
+
+    local cashierJobInstance = plrData.Jobs.Cashier.CashierInstance
+    local shiftDetails = activeShifts[plr.Name]
+    activeShifts[plr.Name] = nil
+
+    -- details to populate gui with
+    local preShiftSkillLvl = CashierConfig.GetLevel(cashierJobInstance)
+    local preShiftSkillXp = CashierConfig.GetXp(cashierJobInstance)
+    local preShiftSkillLvlUpXpRequirement = CashierConfig.CalcLevelUpXpRequirement(cashierJobInstance)
+    local skillPointsReward = CashierConfig.CalcActualSkillPoints(cashierJobInstance, shiftDetails)
+    
+    local preShiftPlrLvl = PlayerConfig.GetLevel(plrData)
+    local preShiftPlrXp = PlayerConfig.GetXp(plrData)
+    local preShiftPlrLvlUpXpRequirement = PlayerConfig.CalcLevelUpXpRequirement(plrData)
+
+    -- ADD METHODS FOR DETECTING IF THERE ARE NEW JOB UPGRADES ON LEVEL UP!!!!
+
+    -- gui remotes
+    Remotes.GUI.Jobs.ChangeJobTimerVisibility:FireClient(plr, false)
+    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", true, { TeleportPart = icecreamStoreExteriorTeleport })
+    profile.Data.Jobs.Cashier.ShiftCooldown = os.time() + SHIFT_COOLDOWN
+    task.delay(1, function()
+        -- show shift details
+        Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "jobShiftDetails", true, {
+            jobType = "cashierJob",
+            jobInstance = cashierJobInstance,
+            forceEndedShift = forceEndedShift,
+            preShiftSkillLvl = preShiftSkillLvl,
+            preShiftSkillXp = preShiftSkillXp,
+            preShiftSkillLvlUpXpRequirement = preShiftSkillLvlUpXpRequirement,
+            skillPointsReward = skillPointsReward,
+            preShiftPlrLvl = preShiftPlrLvl,
+            preShiftPlrXp = preShiftPlrXp,
+            preShiftPlrLvlUpXpRequirement = preShiftPlrLvlUpXpRequirement,
+            
+        })
+    end)
+end
+
 Remotes.Jobs.Cashier.CustomerOrderFulfilled.OnServerEvent:Connect(function(plr: Player, orderStatus: 'good' | 'bad')
     if activeShifts[plr.Name] then
         if orderStatus == 'good' then activeShifts[plr.Name].goodOrders += 1 else activeShifts[plr.Name].badOrders += 1 end
@@ -99,11 +144,7 @@ while true do
 
 
         if activeShifts[plrName].remainingTime == 0 then
-            -- finish shift
-            activeShifts[plrName] = nil
-            Remotes.GUI.Jobs.ChangeJobTimerVisibility:FireClient(plr, false)
-            Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", true, { TeleportPart = icecreamStoreExteriorTeleport })
-            profile.Data.Jobs.Cashier.ShiftCooldown = os.time() + SHIFT_TIMER
+            endActiveShift(plr, false)
         end
     end
 
