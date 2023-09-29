@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local TimeUtils = require(ReplicatedStorage.Utils.Time:WaitForChild("Time"))
+local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -36,10 +37,10 @@ local BTN_TEXT_STROKE_DISABLED_COLOUR = Color3.fromRGB(133, 133, 133)
 
 local cooldownDifference = nil
 
-GuiServices.DefaultMainGuiStyling(jobInfoContainer, 0.3)
+GuiServices.DefaultMainGuiStyling(jobInfoContainer, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
 
 local function updateJobInfoGui(info)
-    rewardText.Text = REWARD_TEXT_TEMPLATE:gsub("AMT", info.traitPointsReward)
+    rewardText.Text = REWARD_TEXT_TEMPLATE:gsub("AMT", info.skillPointsReward)
     levelText.Text = info.jobLevel
     levelXpText.Text = LEVEL_XP_TEXT_TEMPLATE:gsub("CURRENT", info.xp):gsub("MAX", info.levelUpXpRequirement)
     levelBarProg.Size = UDim2.fromScale(info.xp / info.levelUpXpRequirement, 1)
