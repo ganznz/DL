@@ -3,8 +3,8 @@ Job.__index = Job
 
 Job.PaycheckBaseRate = 100
 Job.PaycheckMultiplier = 1.2
-Job.TraitPointsBaseRate = 4
-Job.TraitPointsMultiplier = 1.2
+Job.SkillPointsBaseRate = 4
+Job.SkillPointsMultiplier = 1.2
 Job.XpPerLevel = 100
 
 function Job.new()
@@ -21,8 +21,8 @@ function Job.CalcPaycheck(jobInstance): number
     return math.floor(Job.PaycheckBaseRate * math.pow(Job.PaycheckMultiplier, jobInstance.Level))
 end
 
-function Job.CalcTraitPoints(jobInstance): number
-    return math.floor(Job.TraitPointsBaseRate * math.pow(Job.TraitPointsMultiplier, jobInstance.Level))
+function Job.CalcPotentialSkillPoints(jobInstance): number
+    return math.floor(Job.SkillPointsBaseRate * math.pow(Job.SkillPointsMultiplier, jobInstance.Level))
 end
 
 function Job.CalcLevelUpXpRequirement(jobInstance): number
@@ -35,6 +35,10 @@ end
 
 function Job.GetXp(jobInstance): number
     return jobInstance.Exp
+end
+
+function Job.GetSkillType(jobInstance): string
+    return jobInstance.Skill
 end
 
 return Job
