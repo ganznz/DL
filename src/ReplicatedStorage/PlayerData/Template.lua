@@ -19,7 +19,7 @@ local Template = {
             MaxHunger = 10,
         },
     },
-    Traits = {
+    Skills = {
         Creativity = 10,
         Logic = 10,
         Focus = 10,
