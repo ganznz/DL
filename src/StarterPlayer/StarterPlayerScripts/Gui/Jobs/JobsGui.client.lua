@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local TimeUtils = require(ReplicatedStorage.Utils.Time:WaitForChild("Time"))
@@ -24,7 +25,7 @@ local TIME_TEXT_TEMPLATE_2 = "SECs"
 -- shift results gui
 local jobShiftResultsContainer = PlayerGui:WaitForChild("Jobs").AllJobs:WaitForChild("JobShiftResults")
 local shiftResultsHeaderText = jobShiftResultsContainer.HeaderText
-local shiftResultsSkillIdentifierText = jobShiftResultsContainer.SkillLevelHeaderText
+local shiftResultsJobIdentifierText = jobShiftResultsContainer.JobLevelHeaderText
 local shiftResultsEnterBtn = jobShiftResultsContainer.EnterBtn
 local shiftResultsNewUpgradesText = jobShiftResultsContainer.NewUpgradesText
 local shiftResultsSkillPtsRewardText = jobShiftResultsContainer.SkillPointsReward
@@ -43,7 +44,7 @@ local shiftResultsPlrLvlBarProg = shiftResultsPlrLvlBar.LevelBarProg
 
 local jobShiftResultsContainerVisibleGuiPos = jobShiftResultsContainer.Position
 local jobShiftResultsContainerVisibleGuiSize = jobShiftResultsContainer.Size
-local SKILL_IDENTIFIER_TEXT_TEMPLATE = "SKILL skill level"
+local JOB_IDENTIFIER_TEXT_TEMPLATE = "JOB_TYPE job level"
 local SKILL_PTS_REWARD_TEXT_TEMPLATE = "+AMT SKILL points"
 local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
 local DEFAULT_HEADER_TEXT = "Shift complete!"
@@ -55,9 +56,8 @@ GuiServices.DefaultMainGuiStyling(jobTimeRemainingContainer, -0.1)
 GuiServices.DefaultMainGuiStyling(jobShiftResultsContainer, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
 
 local function updateShiftResultsGui(options)
-
     if options.forceEndedShift then shiftResultsHeaderText.Text = FORCE_ENDED_HEADER_TEXT else shiftResultsHeaderText.Text = DEFAULT_HEADER_TEXT end
-    shiftResultsSkillIdentifierText.Text = SKILL_IDENTIFIER_TEXT_TEMPLATE:gsub("SKILL", JobConfig.GetSkillType(options.jobInstance))
+
     shiftResultsSkillLvlText.Text = options.preShiftSkillLvl
     shiftResultsSkillLevelXpText.Text = LEVEL_XP_TEXT_TEMPLATE:gsub("CURRENT", options.preShiftSkillXp):gsub("MAX", options.preShiftSkillLvlUpXpRequirement)
     shiftResultsSkillLvlBarProg.Size = UDim2.fromScale(options.preShiftSkillXp / options.preShiftSkillLvlUpXpRequirement, 1)
@@ -65,10 +65,11 @@ local function updateShiftResultsGui(options)
     shiftResultsPlrLevelXpText.Text = LEVEL_XP_TEXT_TEMPLATE:gsub("CURRENT", options.preShiftPlrXp):gsub("MAX", options.preShiftPlrLvlUpXpRequirement)
     shiftResultsPlrLvlBarProg.Size = UDim2.fromScale(options.preShiftPlrXp / options.preShiftPlrLvlUpXpRequirement, 1)
     shiftResultsSkillPtsRewardText.Text = SKILL_PTS_REWARD_TEXT_TEMPLATE:gsub("AMT", options.skillPointsReward):gsub("SKILL", JobConfig.GetSkillType(options.jobInstance))
-
+    
     -- for cashier job
     if options.jobType == "cashierJob" then
-        shiftResultsSkillIdentifierText.TextColor3 = CASHIER_SKILL_BAR_PROG_COLOUR
+        shiftResultsJobIdentifierText.Text = JOB_IDENTIFIER_TEXT_TEMPLATE:gsub("JOB_TYPE", "Cashier")
+        shiftResultsJobIdentifierText.TextColor3 = CASHIER_SKILL_BAR_PROG_COLOUR
         shiftResultsSkillLevelXpText.TextStrokeColor3 = CASHIER_SKILL_BAR_PROG_COLOUR
         shiftResultsSkillLvlBar.BackgroundColor3 = CASHIER_SKILL_BAR_COLOUR
         shiftResultsSkillLvlBarProg.BackgroundColor3 = CASHIER_SKILL_BAR_PROG_COLOUR
@@ -92,7 +93,9 @@ end)
 Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGui, options)
     if guiName == "jobShiftDetails" then
         if showGui then
+            shiftResultsSkillLevelXpText.TextTransparency = 1
             updateShiftResultsGui(options)
+
             GuiServices.ShowGuiStandard(jobShiftResultsContainer, jobShiftResultsContainerVisibleGuiPos, jobShiftResultsContainerVisibleGuiSize, true)
         end
     end
@@ -104,5 +107,11 @@ Remotes.GUI.Jobs.UpdateJobTimer.OnClientEvent:Connect(function(seconds: number)
         jobTimeRemainingText.Text = TIME_TEXT_TEMPLATE_2:gsub("SEC", parsedTime.Seconds)
     else
         jobTimeRemainingText.Text = TIME_TEXT_TEMPLATE_1:gsub("MIN", parsedTime.Minutes):gsub("SEC", parsedTime.Seconds)
-    end
+    end 
+end)
+
+Remotes.Jobs.AdjustJobXp.OnClientEvent:Connect(function(_jobType, jobInstance, preAdjustmentLvl, postAdjustmentLvl, postAdjustmentXp)
+    task.delay(1, function()
+        GuiServices.TweenProgBar(shiftResultsSkillLvlBarProg, shiftResultsSkillLvlText, shiftResultsSkillLevelXpText, preAdjustmentLvl, postAdjustmentLvl, postAdjustmentXp, JobConfig.CalcLevelUpXpRequirement(jobInstance))
+    end)
 end)
