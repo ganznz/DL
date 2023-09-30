@@ -1,6 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- local PlrDataTemplate = require(ReplicatedStorage.PlayerData.Template)
+local JobConfig = require(ReplicatedStorage.Configs.Jobs.Job)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -42,6 +43,38 @@ function Manager.AdjustPlrEnergy(plr: Player, adjustBy: number)
     Remotes.Character.AdjustPlrEnergy:FireClient(plr, profile.Data)
 
     return "Adjusted the players energy by " .. if adjustBy < 0 then "minus " else "" .. tostring(math.abs(adjustBy)) .. "."
+end
+
+function Manager.AdjustPlrJobXp(plr: Player, jobType: string, adjustBy: number): number
+    local profile = Manager.Profiles[plr]
+    if not profile then return end
+
+    local jobInstance
+    if jobType == "cashierJob" then
+        jobInstance = profile.Data.Jobs.Cashier.CashierInstance
+    end
+
+    local preAdjustLvl = JobConfig.GetLevel(jobInstance)
+    local preAdjustmentXp = JobConfig.GetXp(jobInstance) -- 0
+    local xpLvlRequirement = JobConfig.CalcLevelUpXpRequirement(jobInstance) -- 100
+
+    -- adjust xp and/or level
+    if preAdjustmentXp + adjustBy >= xpLvlRequirement then
+
+        local leftOverXp = preAdjustmentXp + adjustBy - xpLvlRequirement --240
+        -- while plr job can continue to level up more than once
+        while leftOverXp >= 0 do
+            jobInstance.Level += 1
+            xpLvlRequirement = JobConfig.CalcLevelUpXpRequirement(jobInstance)
+            jobInstance.Exp = leftOverXp
+            leftOverXp -= xpLvlRequirement -- 40
+        end
+    else -- no level up, only xp adjustment
+        jobInstance.Exp += adjustBy
+    end
+
+    local postAdjustLvl = JobConfig.GetLevel(jobInstance)
+    Remotes.Jobs.AdjustJobXp:FireClient(plr, "cashierJob", jobInstance, preAdjustLvl, postAdjustLvl, JobConfig.GetXp(jobInstance))
 end
 
 

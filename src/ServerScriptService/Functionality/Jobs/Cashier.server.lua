@@ -40,8 +40,8 @@ end)
 -- { [Player]: { remainingTime: number, goodOrders: number, badOrders: number } }
 local activeShifts = {}
 
-local SHIFT_TIMER = 10 -- seconds
-local SHIFT_COOLDOWN = 600 -- seconds
+local SHIFT_TIMER = 3 -- seconds
+local SHIFT_COOLDOWN = 0 -- seconds
 local ICECREAM_FLAVOURS = {"Chocolate", "Vanilla", "Strawberry"}
 
 local function startActiveShift(plr: Player)
@@ -88,12 +88,16 @@ local function endActiveShift(plr: Player, forceEndedShift: boolean)
     local preShiftSkillXp = CashierConfig.GetXp(cashierJobInstance)
     local preShiftSkillLvlUpXpRequirement = CashierConfig.CalcLevelUpXpRequirement(cashierJobInstance)
     local skillPointsReward = CashierConfig.CalcActualSkillPoints(cashierJobInstance, shiftDetails)
-    
     local preShiftPlrLvl = PlayerConfig.GetLevel(plrData)
     local preShiftPlrXp = PlayerConfig.GetXp(plrData)
     local preShiftPlrLvlUpXpRequirement = PlayerConfig.CalcLevelUpXpRequirement(plrData)
 
     -- ADD METHODS FOR DETECTING IF THERE ARE NEW JOB UPGRADES ON LEVEL UP!!!!
+
+    -- adjust plr stats
+    local jobXpGained = CashierConfig.CalcXpGained(cashierJobInstance, shiftDetails)
+    -- PlrDataManager.AdjustPlrJobXp(plr, "cashierJob", jobXpGained)
+    PlrDataManager.AdjustPlrJobXp(plr, "cashierJob", 50)
 
     -- gui remotes
     Remotes.GUI.Jobs.ChangeJobTimerVisibility:FireClient(plr, false)
