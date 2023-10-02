@@ -7,13 +7,17 @@ local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
 
 local GuiServices = {}
 
-function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number)
+function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number, ignoreElements: {})
+    if not ignoreElements then ignoreElements = {} end
+
     guiInstance.Position = UDim2.fromScale(0.5, guiInstance.Position.Y.Scale + posOffset)
     guiInstance.Visible = false
-    GuiTransparency:SetTransparency(guiInstance, 1, TweenInfo.new(0))
+    GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0), ignoreElements)
 end
 
-function GuiServices.ShowGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean)
+function GuiServices.ShowGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean, ignoreElements: {})
+    if not ignoreElements then ignoreElements = {} end
+
     guiInstance.Visible = true
     local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
     local mainTween = TweenService:Create(guiInstance, tweenInfo, {
@@ -22,16 +26,18 @@ function GuiServices.ShowGuiStandard(guiInstance: Frame, goalPos, goalSize, opac
     })
 
     if opacityTween then
-        GuiTransparency:SetTransparency(guiInstance, 0, TweenInfo.new(0.2))
+        GuiServices.AdjustTransparency(guiInstance, 0, TweenInfo.new(0.2), ignoreElements)
     else
-        GuiTransparency:SetTransparency(guiInstance, 0, TweenInfo.new(0))
+        GuiServices.AdjustTransparency(guiInstance, 0, TweenInfo.new(0), ignoreElements)
     end
     mainTween:Play()
 
     return mainTween
 end
 
-function GuiServices.HideGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean)
+function GuiServices.HideGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean, ignoreElements: {})
+    if not ignoreElements then ignoreElements = {} end
+
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
     local mainTween = TweenService:Create(guiInstance, tweenInfo, {
         Position = goalPos,
@@ -40,28 +46,35 @@ function GuiServices.HideGuiStandard(guiInstance: Frame, goalPos, goalSize, opac
     mainTween:Play()
 
     if opacityTween then
-        GuiTransparency:SetTransparency(guiInstance, 1, TweenInfo.new(0.2))
+        GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0.2), ignoreElements)
     end
 
     task.delay(0.5, function()
         guiInstance.Visible = false
         if not opacityTween then
-            GuiTransparency:SetTransparency(guiInstance, 1, TweenInfo.new(0))
+            GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0), ignoreElements)
         end
     end)
 
     return mainTween
 end
 
-function GuiServices.AdjustTransparency(guiInstance, transparencyValue, tweenInfo)
-    GuiTransparency:SetTransparency(guiInstance, transparencyValue, tweenInfo)
+function GuiServices.AdjustTransparency(guiInstance, transparencyValue, tweenInfo, ignoreElements: {})
+    if not ignoreElements then ignoreElements = {} end
+
+    GuiTransparency:SetTransparency(guiInstance, transparencyValue, tweenInfo, ignoreElements)
 end
 
 function GuiServices.AdjustTextTransparency(guiInstance, transparencyValue: number, transparencyTween: boolean)
+    local tweenInfo
     if transparencyTween then
-        local tween = TweenService:Create(guiInstance, TweenInfo.new(0.3), { TextTransparency = transparencyValue })
-        tween:Play()
+        tweenInfo = TweenInfo.new(0.3)
+    else
+        tweenInfo = TweenInfo.new(0)
     end
+
+    local tween = TweenService:Create(guiInstance, tweenInfo, { TextTransparency = transparencyValue })
+    tween:Play()
 end
 
 function GuiServices.TweenProgBar(progBarInstance, progBarLvlTxt, progBarXpText, preAdjustmentLevel, postAdjustmentLevel, postAdjustmentXp, postAdjustmentMaxXp)
@@ -84,8 +97,9 @@ function GuiServices.TweenProgBar(progBarInstance, progBarLvlTxt, progBarXpText,
         tween:Play()
 
         -- update xp text
-        task.delay(0.1, function()
+        tween.Completed:Connect(function(_playbackState)
             progBarXpText.Text = LEVEL_XP_TEXT_TEMPLATE:gsub("CURRENT", postAdjustmentXp):gsub("MAX", postAdjustmentMaxXp)
+            GuiServices.AdjustTextTransparency(progBarXpText, 0, true)
         end)
     end
 end
