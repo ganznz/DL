@@ -83,7 +83,7 @@ local function customerInteraction(customerModel: Model, customerInfo)
         local target = mouse.Target
 
         -- if clicked target is part of customer model AND plr has icecream equipped
-        if target:IsDescendantOf(customerModel) and not customerModel:GetAttribute("orderFulfilled") then
+        if target and target:IsDescendantOf(customerModel) and not customerModel:GetAttribute("orderFulfilled") then
             if currentEquippedTool and localPlr.Character:FindFirstChild(currentEquippedTool.Name) then
                 currentOrderStatus = if currentEquippedTool.Name == customerInfo.icecream then "good" else "bad"
                 customerModel:SetAttribute("orderFulfilled", true)
