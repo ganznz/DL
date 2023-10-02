@@ -93,10 +93,9 @@ end)
 Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGui, options)
     if guiName == "jobShiftDetails" then
         if showGui then
-            shiftResultsSkillLevelXpText.TextTransparency = 1
             updateShiftResultsGui(options)
-
             GuiServices.ShowGuiStandard(jobShiftResultsContainer, jobShiftResultsContainerVisibleGuiPos, jobShiftResultsContainerVisibleGuiSize, true)
+            GuiServices.AdjustTextTransparency(shiftResultsSkillLevelXpText, 1, false)
         end
     end
 end)

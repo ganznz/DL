@@ -96,8 +96,7 @@ local function endActiveShift(plr: Player, forceEndedShift: boolean)
 
     -- adjust plr stats
     local jobXpGained = CashierConfig.CalcXpGained(cashierJobInstance, shiftDetails)
-    -- PlrDataManager.AdjustPlrJobXp(plr, "cashierJob", jobXpGained)
-    PlrDataManager.AdjustPlrJobXp(plr, "cashierJob", 50)
+    PlrDataManager.AdjustPlrJobXp(plr, "cashierJob", jobXpGained)
 
     -- gui remotes
     Remotes.GUI.Jobs.ChangeJobTimerVisibility:FireClient(plr, false)
