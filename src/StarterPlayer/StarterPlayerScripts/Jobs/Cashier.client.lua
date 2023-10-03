@@ -41,6 +41,15 @@ local function clearIcecreamTools(plr: Player, backpack: Backpack)
     end
 end
 
+local function clearNpcs(plr: Player)
+    local npcFolder = Workspace.TempAssets.Jobs.CashierJob[localPlr.UserId].Npcs
+    if npcFolder then
+        for _, child in npcFolder:GetChildren() do
+            NpcUtils.RemoveNpcStandard(child)
+        end
+    end
+end
+
 local function obtainIcecreamTool(plr: Player, flavour: string)
     local backpack = plr:FindFirstChildOfClass("Backpack")
     clearIcecreamTools(plr, backpack)
@@ -91,6 +100,11 @@ local function customerInteraction(customerModel: Model, customerInfo)
             end
         end
     end)
+end
+
+local function cleanUpJob(plr)
+    clearIcecreamTools(plr, plr.Backpack)
+    clearNpcs(plr)
 end
 
 local function followPath(customerModel: Model, customerInfo, startPos, finishPos)
@@ -161,8 +175,21 @@ end
 
 Remotes.Jobs.Cashier.SendCustomer.OnClientEvent:Connect(function(customerInfo)
     local customerModel = ReplicatedStorage.Assets.Models:FindFirstChild("NPC"):Clone()
-    customerModel.Parent = Workspace
+    local plrFolder = Workspace.TempAssets.Jobs.CashierJob:FindFirstChild(localPlr.UserId)
+    if not plrFolder then plrFolder = Instance.new("Folder", Workspace.TempAssets.Jobs.CashierJob) end
+    plrFolder.Name = localPlr.UserId
+    local npcFolder = plrFolder:FindFirstChild("Npcs")
+    if not npcFolder then npcFolder = Instance.new("Folder", plrFolder) end
+    npcFolder.Name = "Npcs"
+
+    customerModel.Parent = npcFolder
     customerModel.PrimaryPart.Position = npcSpawnPart.Position
 
     followPath(customerModel, customerInfo, npcSpawnPart.Position, npcDestinationPart.Position)
+end)
+
+Remotes.Jobs.EndShift.OnClientEvent:Connect(function(jobType)
+    if jobType == "cashierJob" then
+        cleanUpJob(localPlr)
+    end
 end)

@@ -40,7 +40,7 @@ end)
 -- { [Player]: { remainingTime: number, goodOrders: number, badOrders: number } }
 local activeShifts = {}
 
-local SHIFT_TIMER = 3 -- seconds
+local SHIFT_TIMER = 10 -- seconds
 local SHIFT_COOLDOWN = 0 -- seconds
 local ICECREAM_FLAVOURS = {"Chocolate", "Vanilla", "Strawberry"}
 
@@ -65,8 +65,8 @@ Remotes.Jobs.StartShift.OnServerEvent:Connect(function(plr: Player, job: string)
     if not profile then return end
 
     if job == "IceCreamStoreCashier" and (profile.Data.Jobs.Cashier.ShiftCooldown - os.time() <= 0) then
-        task.delay(4, function()
-            startActiveShift(plr)
+        startActiveShift(plr)
+        task.delay(2, function()
             Remotes.GUI.Jobs.UpdateJobTimer:FireClient(plr, activeShifts[plr.Name].remainingTime)
             Remotes.GUI.Jobs.ChangeJobTimerVisibility:FireClient(plr, true)
             sendCustomer(plr)
@@ -118,6 +118,8 @@ local function endActiveShift(plr: Player, forceEndedShift: boolean)
             
         })
     end)
+
+    Remotes.Jobs.EndShift:FireClient(plr, "cashierJob")
 end
 
 Remotes.Jobs.Cashier.CustomerOrderFulfilled.OnServerEvent:Connect(function(plr: Player, orderStatus: 'good' | 'bad')
@@ -125,6 +127,17 @@ Remotes.Jobs.Cashier.CustomerOrderFulfilled.OnServerEvent:Connect(function(plr: 
         if orderStatus == 'good' then activeShifts[plr.Name].goodOrders += 1 else activeShifts[plr.Name].badOrders += 1 end
         sendCustomer(plr)
     end
+end)
+
+Players.PlayerAdded:Connect(function(plr: Player)
+    plr.CharacterAdded:Connect(function(char: Model)
+        local humanoid: Humanoid = char:WaitForChild("Humanoid")
+        humanoid.Died:Connect(function()
+            if activeShifts[plr.Name] then
+                endActiveShift(plr, true) -- force end shift early
+            end
+        end)
+    end)
 end)
 
 while true do
