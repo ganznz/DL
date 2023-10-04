@@ -12,7 +12,7 @@ local consoleInputValues = {12, 13, 14, 15, 16, 17, 18, 19}
 
 PlrPlatformManager.CreateProfile(localPlr)
 
-local function determinePlatform(plr: Player, lastInputType: UserInputType)
+local function determinePlatform(plr: Player, lastInputType)
     
     -- plr on PC
     if table.find(pcInputValues, lastInputType.Value) and UserInputService.KeyboardEnabled then
@@ -34,7 +34,6 @@ Players.PlayerRemoving:Connect(function(plr: Player)
     PlrPlatformManager.DeleteProfile(plr)
 end)
 
-UserInputService.LastInputTypeChanged:Connect(function(lastInputType: UserInputType)
+UserInputService.LastInputTypeChanged:Connect(function(lastInputType)
     determinePlatform(localPlr, lastInputType)
-    print(PlrPlatformManager.GetProfile(localPlr).Platform)
 end)
