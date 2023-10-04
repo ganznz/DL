@@ -104,4 +104,14 @@ function GuiServices.TweenProgBar(progBarInstance, progBarLvlTxt, progBarXpText,
     end
 end
 
+function GuiServices.DisplayClickIcon(adornee)
+    local clickIconBillboard = ReplicatedStorage.Assets.Gui:FindFirstChild("ClickIconBillboard"):Clone()
+    clickIconBillboard.Parent = adornee
+
+    local tween = TweenService:Create(clickIconBillboard, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, math.huge, true), {
+        Size = UDim2.fromScale(1.3, 1.3)
+    })
+    tween:Play()
+end
+
 return GuiServices

@@ -4,6 +4,7 @@ local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 
 local NpcUtils = require(ReplicatedStorage.Utils.Npc:WaitForChild("Npc"))
+local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
@@ -87,6 +88,13 @@ local function displayCustomerOrder(customerModel: Model, customerInfo)
     billboardGui.Enabled = true
 end
 
+local function displayClickIcon(customerModel: Model)
+    local hrp = customerModel:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    GuiServices.DisplayClickIcon(hrp)
+end
+
 local function customerInteraction(customerModel: Model, customerInfo)
     mouse.Button1Down:Connect(function()
         local target = mouse.Target
@@ -117,6 +125,7 @@ local function followPath(customerModel: Model, customerInfo, startPos, finishPo
 
     local customerLifecycle = coroutine.create(function(customerModel: Model, customerInfo)
         displayCustomerOrder(customerModel, customerInfo)
+        displayClickIcon(customerModel)
         customerInteraction(customerModel, customerInfo)
         
         coroutine.yield()
