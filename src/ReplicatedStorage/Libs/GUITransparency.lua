@@ -51,7 +51,6 @@ end
 local function Set(cache, transparency, tweenInfo, ignoreElements)
 	for object, properties in next, cache do
 		if not table.find(ignoreElements, object) then
-			-- print('a')
 			local tbl = {}
 			for property, value in next, properties do
 				tbl[property] = value + ((1 - value) * transparency)
@@ -69,10 +68,7 @@ end
 -- revert the object back to normal transparency
 function transparency:Revert(object, tweenInfo)
 	local cache = self.Cache[object]
-	print(self.Cache)
-	print(object)
 	if cache then
-		print(cache)
 		Set(cache, 0, tweenInfo)
 	end
 end
