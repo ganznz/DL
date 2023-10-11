@@ -30,8 +30,8 @@ local REWARD_TEXT_TEMPLATE = "+AMT Focus"
 local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
 local COOLDOWN_TEXT_TEMPLATE_1 = "Wait MINm SECs"
 local COOLDOWN_TEXT_TEMPLATE_2 = "Wait SECs"
-local BTN_ENABLED_COLOUR = Color3.fromRGB(93, 217, 91)
-local BTN_DISABLED_COLOUR = Color3.fromRGB(210, 210, 210)
+local BTN_ENABLED_COLOUR = GuiServices.ValidGreenColour
+local BTN_DISABLED_COLOUR = GuiServices.InvalidGreyColour
 local BTN_TEXT_STROKE_ENABLED_COLOUR = Color3.fromRGB(67, 153, 66)
 local BTN_TEXT_STROKE_DISABLED_COLOUR = Color3.fromRGB(133, 133, 133)
 
@@ -67,14 +67,14 @@ local function updateJobBtnTimer(cooldown)
 end
 
 exitBtn.Activated:Connect(function(_inputObj, _clickCount)
-    GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0), true)
+    GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
 end)
 
 startBtn.Activated:Connect(function(_inputObject, _clickCount)
     if cooldownDifference <= 0 then
         Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = interiorTeleportToPart })
         Remotes.Jobs.StartShift:FireServer("IceCreamStoreCashier")
-        GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0), true)
+        GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
     end
 end)
 
@@ -82,9 +82,9 @@ Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGu
     if guiName == "cashierJobInfo" then
         if showGui then
             updateJobInfoGui(options)
-            GuiServices.ShowGuiStandard(jobInfoContainer, visibleGuiPos, visibleGuiSize, true)
+            GuiServices.ShowGuiStandard(jobInfoContainer, visibleGuiPos, visibleGuiSize)
         else
-            GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0), true)
+            GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
         end
     end
 end)

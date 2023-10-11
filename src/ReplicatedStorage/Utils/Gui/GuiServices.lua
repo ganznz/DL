@@ -7,15 +7,38 @@ local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
 
 local GuiServices = {}
 
+GuiServices.ValidGreenColour = Color3.fromRGB(93, 217, 91)
+GuiServices.InvalidGreyColour = Color3.fromRGB(210, 210, 210)
+
 function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number, ignoreElements: {})
     if not ignoreElements then ignoreElements = {} end
 
     guiInstance.Position = UDim2.fromScale(0.5, guiInstance.Position.Y.Scale + posOffset)
     guiInstance.Visible = false
-    GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0), ignoreElements)
+    -- GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0), ignoreElements)
 end
 
-function GuiServices.ShowGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean, ignoreElements: {})
+-- function GuiServices.ShowGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean, ignoreElements: {})
+--     if not ignoreElements then ignoreElements = {} end
+
+--     guiInstance.Visible = true
+--     local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+--     local mainTween = TweenService:Create(guiInstance, tweenInfo, {
+--         Position = goalPos,
+--         Size = goalSize
+--     })
+
+--     if opacityTween then
+--         GuiServices.AdjustTransparency(guiInstance, 0, TweenInfo.new(0.2), ignoreElements)
+--     else
+--         GuiServices.AdjustTransparency(guiInstance, 0, TweenInfo.new(0), ignoreElements)
+--     end
+--     mainTween:Play()
+
+--     return mainTween
+-- end
+
+function GuiServices.ShowGuiStandard(guiInstance, goalPos, goalSize, ignoreElements: {})
     if not ignoreElements then ignoreElements = {} end
 
     guiInstance.Visible = true
@@ -25,17 +48,36 @@ function GuiServices.ShowGuiStandard(guiInstance: Frame, goalPos, goalSize, opac
         Size = goalSize
     })
 
-    if opacityTween then
-        GuiServices.AdjustTransparency(guiInstance, 0, TweenInfo.new(0.2), ignoreElements)
-    else
-        GuiServices.AdjustTransparency(guiInstance, 0, TweenInfo.new(0), ignoreElements)
-    end
     mainTween:Play()
 
     return mainTween
 end
 
-function GuiServices.HideGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean, ignoreElements: {})
+-- function GuiServices.HideGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean, ignoreElements: {})
+--     if not ignoreElements then ignoreElements = {} end
+
+--     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+--     local mainTween = TweenService:Create(guiInstance, tweenInfo, {
+--         Position = goalPos,
+--         Size = goalSize
+--     })
+--     mainTween:Play()
+
+--     if opacityTween then
+--         GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0.2), ignoreElements)
+--     end
+
+--     task.delay(0.5, function()
+--         guiInstance.Visible = false
+--         if not opacityTween then
+--             GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0), ignoreElements)
+--         end
+--     end)
+
+--     return mainTween
+-- end
+
+function GuiServices.HideGuiStandard(guiInstance, goalPos, goalSize, ignoreElements: {})
     if not ignoreElements then ignoreElements = {} end
 
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
@@ -44,16 +86,8 @@ function GuiServices.HideGuiStandard(guiInstance: Frame, goalPos, goalSize, opac
         Size = goalSize
     })
     mainTween:Play()
-
-    if opacityTween then
-        GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0.2), ignoreElements)
-    end
-
-    task.delay(0.5, function()
+    mainTween.Completed:Connect(function(_playbackState)
         guiInstance.Visible = false
-        if not opacityTween then
-            GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0), ignoreElements)
-        end
     end)
 
     return mainTween

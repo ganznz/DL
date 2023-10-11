@@ -79,14 +79,14 @@ local function updateShiftResultsGui(options)
 end
 
 shiftResultsEnterBtn.Activated:Connect(function(_inputObj, _clickCount)
-    GuiServices.HideGuiStandard(jobShiftResultsContainer, UDim2.new(jobShiftResultsContainerVisibleGuiPos.X.Scale, 0, jobShiftResultsContainerVisibleGuiPos.Y.Scale + 0.3, 0), UDim2.new(jobShiftResultsContainerVisibleGuiSize.X.Scale, 0, jobShiftResultsContainerVisibleGuiSize.Y.Scale - 0.2, 0), true)
+    GuiServices.HideGuiStandard(jobShiftResultsContainer, UDim2.new(jobShiftResultsContainerVisibleGuiPos.X.Scale, 0, jobShiftResultsContainerVisibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(jobShiftResultsContainerVisibleGuiSize.X.Scale, 0, jobShiftResultsContainerVisibleGuiSize.Y.Scale - 0.2, 0))
 end)
 
 Remotes.GUI.Jobs.ChangeJobTimerVisibility.OnClientEvent:Connect(function(showGui)
     if showGui then
-        GuiServices.ShowGuiStandard(jobTimeRemainingContainer, UDim2.new(jobTimeRemainingContainerVisibleGuiPos.X.Scale, 0, jobTimeRemainingContainerVisibleGuiPos.Y.Scale + 0.1, 0), jobTimeRemainingContainerVisibleGuiSize, false)
+        GuiServices.ShowGuiStandard(jobTimeRemainingContainer, UDim2.new(jobTimeRemainingContainerVisibleGuiPos.X.Scale, 0, jobTimeRemainingContainerVisibleGuiPos.Y.Scale + 0.1, 0), jobTimeRemainingContainerVisibleGuiSize)
     else
-        GuiServices.HideGuiStandard(jobTimeRemainingContainer, jobTimeRemainingContainerVisibleGuiPos, jobTimeRemainingContainerVisibleGuiSize, false)
+        GuiServices.HideGuiStandard(jobTimeRemainingContainer, jobTimeRemainingContainerVisibleGuiPos, jobTimeRemainingContainerVisibleGuiSize)
     end
 end)
 
@@ -94,7 +94,7 @@ Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGu
     if guiName == "jobShiftDetails" then
         if showGui then
             updateShiftResultsGui(options)
-            GuiServices.ShowGuiStandard(jobShiftResultsContainer, jobShiftResultsContainerVisibleGuiPos, jobShiftResultsContainerVisibleGuiSize, true)
+            GuiServices.ShowGuiStandard(jobShiftResultsContainer, jobShiftResultsContainerVisibleGuiPos, jobShiftResultsContainerVisibleGuiSize)
             GuiServices.AdjustTextTransparency(shiftResultsSkillLevelXpText, 1, false)
         end
     end
