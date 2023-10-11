@@ -7,9 +7,6 @@ local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
 
 local GuiServices = {}
 
-GuiServices.ValidGreenColour = Color3.fromRGB(93, 217, 91)
-GuiServices.InvalidGreyColour = Color3.fromRGB(210, 210, 210)
-
 function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number, ignoreElements: {})
     if not ignoreElements then ignoreElements = {} end
 
