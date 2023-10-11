@@ -5,7 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
 local ComputerConfig = require(ReplicatedStorage.Configs:WaitForChild("Computer"))
--- add router config
+local RouterConfig = require(ReplicatedStorage.Configs:WaitForChild("Router"))
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -25,6 +25,7 @@ local itemShopContainerVisibleGuiSize = itemShopContainer.Size
 GuiServices.DefaultMainGuiStyling(itemShopContainer, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
 
 local COMPUTER_ITEM_STAT_TEMPLATE = "Power: AMT"
+local ROUTER_ITEM_STAT_TEMPLATE = "Upload Speed: AMT/sec"
 local BUY_BTN_PRICE_TEMPLATE = "AMT Cash"
 local purchasableItemBtnColour = GuiServices.ValidGreenColour
 local notPurchasableItemBtnColour = GuiServices.InvalidGreyColour
@@ -41,7 +42,7 @@ local function createComputerScrollingFrameItem(plrData, itemIndex, itemConfig: 
     
     local template = itemShopScrollingFrameTemplate:Clone()
     template.Name = itemIndex
-    template.LayoutOrder = itemConfig.Price -- orders from cheapest item first
+    template.LayoutOrder = itemIndex
     template.Parent = itemShopScrollingFrame
     
     local itemNameText = template:FindFirstChild("ItemName")
@@ -72,13 +73,51 @@ local function createComputerScrollingFrameItem(plrData, itemIndex, itemConfig: 
 
     local vpFrame = template:FindFirstChild("ViewportFrame")
     local vpCamera = Instance.new("Camera", vpFrame)
-    vpFrame.CurrentCamera = vpCamera
     local itemModel = ComputerConfig.GetModel(itemIndex)
-    if itemModel then
-        itemModel.Parent = vpFrame
-        vpCamera.CFrame = CFrame.new(itemModel.PrimaryPart.Position + Vector3.new(-6, 4, 3), itemModel.PrimaryPart.Position)
-    end
+    if itemModel then GuiServices.GenerateViewportFrame(vpFrame, vpCamera, itemModel, Vector3.new(-6, 4, 3)) end
+
+    template.Visible = true
+end
+
+local function createRouterScrollingFrameItem(plrData, itemIndex, itemConfig: RouterConfig.RouterConfig)
+    local plrRouterLevel = plrData.GameDev.Router
     
+    local template = itemShopScrollingFrameTemplate:Clone()
+    template.Name = itemIndex
+    template.LayoutOrder = itemIndex
+    template.Parent = itemShopScrollingFrame
+    
+    local itemNameText = template:FindFirstChild("ItemName")
+    itemNameText.Text = itemConfig.Name
+    local itemStatText = template:FindFirstChild("ItemStat")
+    itemStatText.Text = ROUTER_ITEM_STAT_TEMPLATE:gsub("AMT", itemConfig.UploadSpeed)
+    
+    local buyBtn = template:FindFirstChild("BuyBtn")
+    if plrRouterLevel >= itemIndex then
+        -- already owns item
+        buyBtn.BackgroundColor3 = purchasableItemBtnColour
+        buyBtn.Text = "Owned"
+        
+        elseif plrRouterLevel + 1 == itemIndex then
+            -- item player next upgrades to
+            if RouterConfig.CanUpgrade(plrData) then
+                buyBtn.BackgroundColor3 = purchasableItemBtnColour
+            else
+                buyBtn.BackgroundColor3 = notPurchasableItemBtnColour
+        end
+        buyBtn.Text = BUY_BTN_PRICE_TEMPLATE:gsub("AMT", RouterConfig.GetItemPrice(itemIndex))
+        
+    else
+        -- item is locked
+        buyBtn.BackgroundColor3 = notPurchasableItemBtnColour
+        buyBtn.Text = "Locked"
+    end
+
+    local vpFrame = template:FindFirstChild("ViewportFrame")
+    local vpCamera = Instance.new("Camera", vpFrame)
+    local itemModel = RouterConfig.GetModel(itemIndex)
+    if itemModel then GuiServices.GenerateViewportFrame(vpFrame, vpCamera, itemModel, Vector3.new(-6, 4, 3)) end
+
     template.Visible = true
 end
 
@@ -87,8 +126,12 @@ local function populateItemShopScrollingFrame(plrData, itemType: "Computers" | "
     if itemType == "Computers" then
         allItems = ComputerConfig.Config
         for key, itemConfig: ComputerConfig.ComputerConfig in allItems do
-            print(itemConfig.Name)
             createComputerScrollingFrameItem(plrData, key, itemConfig)
+        end
+    elseif itemType == "Routers" then
+        allItems = RouterConfig.Config
+        for key, itemConfig: RouterConfig.RouterConfig in allItems do
+            createRouterScrollingFrameItem(plrData, key, itemConfig)
         end
     end
 end
