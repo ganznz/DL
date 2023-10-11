@@ -72,9 +72,6 @@ function Computer.CanUpgrade(plrData): boolean
 
     local nextComputerConfig = Computer.GetConfig(currentComputerLevel + 1)
     local plrCash = plrData.Cash
-    -- print(plrCash)
-    -- print(nextComputerConfig.Price)
-    -- print(plrCash >= nextComputerConfig.Price)
     return plrCash >= nextComputerConfig.Price
 end
 

@@ -30,8 +30,8 @@ local REWARD_TEXT_TEMPLATE = "+AMT Focus"
 local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
 local COOLDOWN_TEXT_TEMPLATE_1 = "Wait MINm SECs"
 local COOLDOWN_TEXT_TEMPLATE_2 = "Wait SECs"
-local BTN_ENABLED_COLOUR = GuiServices.ValidGreenColour
-local BTN_DISABLED_COLOUR = GuiServices.InvalidGreyColour
+local BTN_ENABLED_COLOUR = GlobalVariables.Gui.ValidGreenColour
+local BTN_DISABLED_COLOUR = GlobalVariables.Gui.InvalidGreyColour
 local BTN_TEXT_STROKE_ENABLED_COLOUR = Color3.fromRGB(67, 153, 66)
 local BTN_TEXT_STROKE_DISABLED_COLOUR = Color3.fromRGB(133, 133, 133)
 
