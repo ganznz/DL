@@ -27,8 +27,9 @@ GuiServices.DefaultMainGuiStyling(itemShopContainer, GlobalVariables.Gui.MainGui
 local COMPUTER_ITEM_STAT_TEMPLATE = "Power: AMT"
 local ROUTER_ITEM_STAT_TEMPLATE = "Upload Speed: AMT/sec"
 local BUY_BTN_PRICE_TEMPLATE = "AMT Cash"
-local purchasableItemBtnColour = GuiServices.ValidGreenColour
-local notPurchasableItemBtnColour = GuiServices.InvalidGreyColour
+local purchasableItemBtnColour = GlobalVariables.Gui.ValidGreenColour
+local notPurchasableItemBtnColour = GlobalVariables.Gui.InvalidGreyColour
+local cantAffordBtnColour = GlobalVariables.Gui.CantAffordColour
 
 local function clearItemShopScrollingFrame()
     for _i, instance in itemShopScrollingFrame:GetChildren() do
@@ -58,10 +59,14 @@ local function createComputerScrollingFrameItem(plrData, itemIndex, itemConfig: 
         
         elseif plrComputerLevel + 1 == itemIndex then
             -- item player next upgrades to
+            buyBtn.Activated:Connect(function()
+                Remotes.Purchase.PurchaseComputer:FireServer(itemIndex)
+            end)
+
             if ComputerConfig.CanUpgrade(plrData) then
                 buyBtn.BackgroundColor3 = purchasableItemBtnColour
             else
-                buyBtn.BackgroundColor3 = notPurchasableItemBtnColour
+                buyBtn.BackgroundColor3 = cantAffordBtnColour
         end
         buyBtn.Text = BUY_BTN_PRICE_TEMPLATE:gsub("AMT", ComputerConfig.GetItemPrice(itemIndex))
         
@@ -100,10 +105,14 @@ local function createRouterScrollingFrameItem(plrData, itemIndex, itemConfig: Ro
         
         elseif plrRouterLevel + 1 == itemIndex then
             -- item player next upgrades to
+            buyBtn.Activated:Connect(function()
+                Remotes.Purchase.PurchaseRouter:FireServer(itemIndex)
+            end)
+
             if RouterConfig.CanUpgrade(plrData) then
                 buyBtn.BackgroundColor3 = purchasableItemBtnColour
             else
-                buyBtn.BackgroundColor3 = notPurchasableItemBtnColour
+                buyBtn.BackgroundColor3 = cantAffordBtnColour
         end
         buyBtn.Text = BUY_BTN_PRICE_TEMPLATE:gsub("AMT", RouterConfig.GetItemPrice(itemIndex))
         
@@ -138,15 +147,7 @@ end
 
 local function updateItemShopGui(itemType: "Computers" | "Routers")
     local plrData = Remotes.Data.GetAllData:InvokeServer()
-
-    local plrItemLevel
-    if itemType == "Computers" then
-        plrItemLevel = plrData.GameDev.Computer
-
-    elseif itemType == "Routers" then
-        plrItemLevel = plrData.GameDev.Router
-    end
-
+    
     itemShopHeader.Text = itemType
     populateItemShopScrollingFrame(plrData, itemType)
 end

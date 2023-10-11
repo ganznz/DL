@@ -1,9 +1,13 @@
 local Workspace = game:GetService("Workspace")
+local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 
 local Zone = require(ReplicatedStorage.Libs.Zone)
+local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
+local Template = require(ReplicatedStorage.PlayerData.Template)
 local ComputerConfig = require(ReplicatedStorage.Configs.Computer)
+local RouterConfig = require(ReplicatedStorage.Configs.Router)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -64,4 +68,38 @@ populateArea("routers")
 zone.playerEntered:Connect(function(plr: Player)
     local teleportToPart = techStoreFolder.TechStoreInterior:FindFirstChild("TeleportToPart")
     Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", true, { TeleportPart = teleportToPart })
+end)
+
+Remotes.Purchase.PurchaseComputer.OnServerEvent:Connect(function(plr: Player, itemIndex: number)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local plrData: Template.PlayerData = profile.Data
+
+    local itemConfig: ComputerConfig.ComputerConfig = ComputerConfig.GetConfig(itemIndex)
+
+    if not itemConfig then return "Item doesn't exist." end
+    if plrData.GameDev.Computer + 1 ~= itemIndex then return "Buy previous computer first." end
+    local itemPrice = ComputerConfig.GetItemPrice(itemIndex)
+    if plrData.Cash < itemPrice then return "You need " .. tostring(itemPrice - plrData.Cash) .. " more cash!" end
+
+    PlrDataManager.AdjustPlrCash(plr, -itemPrice)
+    return "Purchased " .. itemConfig.Name .. "!"
+end)
+
+Remotes.Purchase.PurchaseRouter.OnServerEvent:Connect(function(plr: Player, itemIndex: number)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local plrData: Template.PlayerData = profile.Data
+
+    local itemConfig: RouterConfig.RouterConfig = RouterConfig.GetConfig(itemIndex)
+    
+    if not itemConfig then return "Item doesn't exist." end
+    if plrData.GameDev.Router + 1 ~= itemIndex then return "Buy previous router first." end
+    local itemPrice = RouterConfig.GetItemPrice(itemIndex)
+    if plrData.Cash < itemPrice then return "You need " .. tostring(itemPrice - plrData.Cash) .. " more cash!" end
+
+    PlrDataManager.AdjustPlrCash(plr, -itemPrice)
+    return "Purchased " .. itemConfig.Name .. "!"
 end)
