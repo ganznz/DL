@@ -9,6 +9,22 @@ local Manager = {}
 
 Manager.Profiles = {}
 
+function Manager.AdjustPlrCash(plr: Player, adjustBy: number)
+    local profile = Manager.Profiles[plr]
+    if not profile then return end
+
+    if profile.Data.Cash + adjustBy < 0 then
+        profile.Data.Cash = 0
+    else
+        profile.Data.Cash += adjustBy
+    end
+
+    local leaderstats = plr:WaitForChild("leaderstats")
+	leaderstats.Cash.Value += adjustBy
+
+    Remotes.Character.AdjustPlrCash:FireClient(plr, profile.Data.Cash)
+end
+
 function Manager.AdjustPlrHunger(plr: Player, adjustBy: number)
     local profile = Manager.Profiles[plr]
     if not profile then return end
