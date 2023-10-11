@@ -3,6 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GenreConfig = require(ReplicatedStorage.Configs:WaitForChild("Genre"))
 local TopicConfig = require(ReplicatedStorage.Configs:WaitForChild("Topic"))
 local CashierConfig = require(ReplicatedStorage.Configs.Jobs:WaitForChild("Cashier"))
+local ComputerConfig = require(ReplicatedStorage.Configs.Jobs:WaitForChild("Cashier"))
+
 
 -- Template is what empty profiles default to
 local Template = {
@@ -25,19 +27,10 @@ local Template = {
         Focus = 10,
     },
     GameDev = {
+        Computer = 1, -- computer level
+        Router = 1, -- router level
         Sizes = {
             Small = true;
-        },
-        Platforms = {
-            PC = {
-                Default = true
-            },
-            Console = {
-                Default = true
-            },
-            Mobile = {
-                Default = true
-            }
         },
         Genres = {
             Action = GenreConfig.new('Action'),
