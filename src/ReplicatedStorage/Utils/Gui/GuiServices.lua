@@ -148,4 +148,10 @@ function GuiServices.DisplayClickIcon(adornee)
     tween:Play()
 end
 
+function GuiServices.GenerateViewportFrame(vpf: ViewportFrame, vpc: Camera, model, posOffset: Vector3)
+    vpf.CurrentCamera = vpc
+    model.Parent = vpf
+    vpc.CFrame = CFrame.new(model.PrimaryPart.Position + posOffset, model.PrimaryPart.Position)
+end
+
 return GuiServices
