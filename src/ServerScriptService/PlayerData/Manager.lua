@@ -13,16 +13,19 @@ function Manager.AdjustPlrCash(plr: Player, adjustBy: number)
     local profile = Manager.Profiles[plr]
     if not profile then return end
 
+    local leaderstats = plr:WaitForChild("leaderstats")
+    
     if profile.Data.Cash + adjustBy < 0 then
         profile.Data.Cash = 0
+        leaderstats.Cash.Value = 0
     else
         profile.Data.Cash += adjustBy
+        leaderstats.Cash.Value += adjustBy
     end
 
-    local leaderstats = plr:WaitForChild("leaderstats")
-	leaderstats.Cash.Value += adjustBy
-
     Remotes.Character.AdjustPlrCash:FireClient(plr, profile.Data.Cash)
+
+    return "Adjusted the players cash by " .. tostring(adjustBy) .. "."
 end
 
 function Manager.AdjustPlrHunger(plr: Player, adjustBy: number)
@@ -40,6 +43,8 @@ function Manager.AdjustPlrHunger(plr: Player, adjustBy: number)
     end
 
     Remotes.Character.AdjustPlrHunger:FireClient(plr, profile.Data)
+
+    return "Adjusted the players hunger by " .. tostring(adjustBy) .. "."
 end
 
 function Manager.AdjustPlrEnergy(plr: Player, adjustBy: number)
@@ -58,7 +63,7 @@ function Manager.AdjustPlrEnergy(plr: Player, adjustBy: number)
 
     Remotes.Character.AdjustPlrEnergy:FireClient(plr, profile.Data)
 
-    return "Adjusted the players energy by " .. if adjustBy < 0 then "minus " else "" .. tostring(math.abs(adjustBy)) .. "."
+    return "Adjusted the players energy by " .. tostring(adjustBy) .. "."
 end
 
 function Manager.AdjustPlrJobXp(plr: Player, jobType: string, adjustBy: number): number
@@ -66,8 +71,10 @@ function Manager.AdjustPlrJobXp(plr: Player, jobType: string, adjustBy: number):
     if not profile then return end
 
     local jobInstance
+    local jobName
     if jobType == "cashierJob" then
         jobInstance = profile.Data.Jobs.Cashier.CashierInstance
+        jobName = "Cashier"
     end
 
     local preAdjustLvl = JobConfig.GetLevel(jobInstance)
@@ -91,6 +98,8 @@ function Manager.AdjustPlrJobXp(plr: Player, jobType: string, adjustBy: number):
 
     local postAdjustLvl = JobConfig.GetLevel(jobInstance)
     Remotes.Jobs.AdjustJobXp:FireClient(plr, "cashierJob", jobInstance, preAdjustLvl, postAdjustLvl, JobConfig.GetXp(jobInstance))
+
+    return "Adjusted the players " .. jobName .. " job XP by " .. tostring(adjustBy) .. "."
 end
 
 

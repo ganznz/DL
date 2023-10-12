@@ -18,15 +18,15 @@ local function CreateLeaderstats(plr: Player)
     leaderstats.Name = "leaderstats"
 
     local cash = Instance.new("NumberValue", leaderstats)
-    cash.Name = "💸"
+    cash.Name = "Cash"
     cash.Value = profile.Data.Cash
 
     local fans = Instance.new("NumberValue", leaderstats)
-    fans.Name = "👨‍👩‍👧"
+    fans.Name = "Fans"
     fans.Value = profile.Data.Fans
 
     local gems = Instance.new("NumberValue", leaderstats)
-    gems.Name = "💎"
+    gems.Name = "Gems"
     gems.Value = profile.Data.Gems
 end
 

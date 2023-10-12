@@ -1,7 +1,7 @@
 return {
     Name = "adjustPlayerEnergy";
-    Aliases = { "apd" };
-    Description = "Adjust the players energy need,";
+    Aliases = { "ape" };
+    Description = "Adjust the players energy need";
     Group = "Admin";
     Args = {
         {
