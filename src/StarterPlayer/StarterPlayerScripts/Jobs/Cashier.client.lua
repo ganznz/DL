@@ -1,5 +1,6 @@
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 
@@ -55,7 +56,7 @@ local function obtainIcecreamTool(plr: Player, flavour: string)
     local backpack = plr:FindFirstChildOfClass("Backpack")
     clearIcecreamTools(plr, backpack)
 
-    local icecreamTool = ReplicatedStorage.Assets.Tools.Icecreams:FindFirstChild(flavour):Clone()
+    local icecreamTool = ReplicatedFirst.Assets.Tools.Icecreams:FindFirstChild(flavour):Clone()
     icecreamTool.Parent = backpack
     icecreamTool.Equipped:Connect(function(_mouse)
         currentEquippedTool = icecreamTool
