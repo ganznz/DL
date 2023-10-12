@@ -1,10 +1,10 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local PlacementHandler = require(ReplicatedStorage.Libs:WaitForChild("PlacementHandler"))
+local PlacementSystem = require(ReplicatedStorage.Libs:WaitForChild("PlacementSystem"))
 
 local studioFurnitureFolder = ReplicatedStorage.Assets.Models.StudioFurnishing
 
-local placement = PlacementHandler.new(2, studioFurnitureFolder, Enum.KeyCode.R, Enum.KeyCode.X)
+local placement = PlacementSystem.new(2, studioFurnitureFolder, Enum.KeyCode.R, Enum.KeyCode.X)
 
 task.wait(2)
 
