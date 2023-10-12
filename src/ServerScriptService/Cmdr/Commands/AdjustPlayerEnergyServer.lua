@@ -7,5 +7,5 @@ return function(context, plr: Player?, amt: number?)
     
     amt = if amt then amt else 1
 
-    PlrDataManager.AdjustPlrEnergy(plr, amt)
+    return PlrDataManager.AdjustPlrEnergy(plr, amt)
 end
