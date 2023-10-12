@@ -31,6 +31,11 @@ local purchasableItemBtnColour = GlobalVariables.Gui.ValidGreenColour
 local notPurchasableItemBtnColour = GlobalVariables.Gui.InvalidGreyColour
 local cantAffordBtnColour = GlobalVariables.Gui.CantAffordColour
 
+local buyBtnConnections = {
+    Computers = {},
+    Routers = {}
+}
+
 local function clearItemShopScrollingFrame()
     for _i, instance in itemShopScrollingFrame:GetChildren() do
         if instance.Name == "Template" or instance.Name == "UIListLayout" then continue end
@@ -58,12 +63,11 @@ local function createComputerScrollingFrameItem(plrData, itemIndex, itemConfig: 
         buyBtn.Text = "Owned"
         
         elseif plrComputerLevel + 1 == itemIndex then
-            -- item player next upgrades to
-            buyBtn.Activated:Connect(function()
-                Remotes.Purchase.PurchaseComputer:FireServer(itemIndex)
-            end)
-
             if ComputerConfig.CanUpgrade(plrData) then
+                -- item player next upgrades to
+                buyBtnConnections.Computers[itemIndex] = buyBtn.Activated:Connect(function()
+                    Remotes.Purchase.PurchaseComputer:FireServer(itemIndex)
+                end)
                 buyBtn.BackgroundColor3 = purchasableItemBtnColour
             else
                 buyBtn.BackgroundColor3 = cantAffordBtnColour
@@ -103,16 +107,16 @@ local function createRouterScrollingFrameItem(plrData, itemIndex, itemConfig: Ro
         buyBtn.BackgroundColor3 = purchasableItemBtnColour
         buyBtn.Text = "Owned"
         
-        elseif plrRouterLevel + 1 == itemIndex then
+    elseif plrRouterLevel + 1 == itemIndex then
+
+        if RouterConfig.CanUpgrade(plrData) then
             -- item player next upgrades to
-            buyBtn.Activated:Connect(function()
+            buyBtnConnections.Routers[itemIndex] = buyBtn.Activated:Connect(function()
                 Remotes.Purchase.PurchaseRouter:FireServer(itemIndex)
             end)
-
-            if RouterConfig.CanUpgrade(plrData) then
-                buyBtn.BackgroundColor3 = purchasableItemBtnColour
-            else
-                buyBtn.BackgroundColor3 = cantAffordBtnColour
+            buyBtn.BackgroundColor3 = purchasableItemBtnColour
+        else
+            buyBtn.BackgroundColor3 = cantAffordBtnColour
         end
         buyBtn.Text = BUY_BTN_PRICE_TEMPLATE:gsub("AMT", RouterConfig.GetItemPrice(itemIndex))
         
@@ -145,17 +149,80 @@ local function populateItemShopScrollingFrame(plrData, itemType: "Computers" | "
     end
 end
 
-local function updateItemShopGui(itemType: "Computers" | "Routers")
+local function generateItemShopGui(itemType: "Computers" | "Routers")
     local plrData = Remotes.Data.GetAllData:InvokeServer()
     
     itemShopHeader.Text = itemType
     populateItemShopScrollingFrame(plrData, itemType)
 end
 
+local function updateItemShopGui(itemType: "Computers" | "Routers", purchasedItemIndex: number)
+    local plrData = Remotes.Data.GetAllData:InvokeServer()
+    local itemConfig
+    local purchaseRemote
+    if itemType == "Computers" then
+        itemConfig = ComputerConfig
+        purchaseRemote = "PurchaseComputer"
+    elseif itemType == "Routers" then
+        itemConfig = RouterConfig
+        purchaseRemote = "PurchaseRouter"
+    end
+
+    for _i, instance in itemShopScrollingFrame:GetChildren() do
+        if instance.Name == "Template" or instance.Name == "UIListLayout" then continue end
+        
+        local itemIndex = tonumber(instance.Name)
+
+        -- update buttons from newly bought item onwards
+        if tonumber(itemIndex) < purchasedItemIndex then continue end
+
+        local buyBtn = instance:FindFirstChild("BuyBtn")
+        if tonumber(itemIndex) == purchasedItemIndex then
+            -- item that was just purchased
+            buyBtn.BackgroundColor3 = purchasableItemBtnColour
+            buyBtn.Text = "Owned"
+
+            -- disconnect connection so player can't click/purchase using this btn again
+            buyBtnConnections[itemType][purchasedItemIndex]:Disconnect()
+
+        elseif tonumber(itemIndex) == purchasedItemIndex + 1 then
+            -- item player next upgrades to
+            if itemConfig.CanUpgrade(plrData) then
+                buyBtnConnections[itemType][itemIndex] = buyBtn.Activated:Connect(function()
+                    Remotes.Purchase[purchaseRemote]:FireServer(itemIndex)
+                end)
+                buyBtn.BackgroundColor3 = purchasableItemBtnColour
+            else
+                buyBtn.BackgroundColor3 = cantAffordBtnColour
+            end
+            buyBtn.Text = BUY_BTN_PRICE_TEMPLATE:gsub("AMT", itemConfig.GetItemPrice(tonumber(itemIndex)))
+        
+        else
+            -- item is locked
+            buyBtn.BackgroundColor3 = notPurchasableItemBtnColour
+            buyBtn.Text = "Locked"
+        end
+    end
+end
+
+itemShopExitBtn.Activated:Connect(function()
+    GuiServices.HideGuiStandard(itemShopContainer,
+        UDim2.new(itemShopContainerVisibleGuiPos.X.Scale, 0, itemShopContainerVisibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0),
+        UDim2.new(itemShopContainerVisibleGuiSize.X.Scale, 0, itemShopContainerVisibleGuiSize.Y.Scale - 0.2, 0))
+end)
+
+Remotes.Purchase.PurchaseComputer.OnClientEvent:Connect(function(purchasedItemIndex)
+    updateItemShopGui("Computers", purchasedItemIndex)
+end)
+
+Remotes.Purchase.PurchaseRouter.OnClientEvent:Connect(function(purchasedItemIndex)
+    updateItemShopGui("Routers", purchasedItemIndex)
+end)
+
 Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGui, options)
     if guiName == "techStoreItemShop" and showGui then
         clearItemShopScrollingFrame()
-        updateItemShopGui(options.itemsToDisplay)
+        generateItemShopGui(options.itemsToDisplay)
         GuiServices.ShowGuiStandard(itemShopContainer, itemShopContainerVisibleGuiPos, itemShopContainerVisibleGuiSize)
     end
 end)

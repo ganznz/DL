@@ -84,6 +84,8 @@ Remotes.Purchase.PurchaseComputer.OnServerEvent:Connect(function(plr: Player, it
     if plrData.Cash < itemPrice then return "You need " .. tostring(itemPrice - plrData.Cash) .. " more cash!" end
 
     PlrDataManager.AdjustPlrCash(plr, -itemPrice)
+    profile.Data.GameDev.Computer = itemIndex
+    Remotes.Purchase.PurchaseComputer:FireClient(plr, itemIndex)
     return "Purchased " .. itemConfig.Name .. "!"
 end)
 
@@ -101,5 +103,7 @@ Remotes.Purchase.PurchaseRouter.OnServerEvent:Connect(function(plr: Player, item
     if plrData.Cash < itemPrice then return "You need " .. tostring(itemPrice - plrData.Cash) .. " more cash!" end
 
     PlrDataManager.AdjustPlrCash(plr, -itemPrice)
+    profile.Data.GameDev.Router = itemIndex
+    Remotes.Purchase.PurchaseRouter:FireClient(plr, itemIndex)
     return "Purchased " .. itemConfig.Name .. "!"
 end)
