@@ -1,7 +1,7 @@
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local remotes = ReplicatedStorage.Remotes
+local Remotes = ReplicatedStorage.Remotes
 
 local function handleCollisions(object, char)
     local collided = false
@@ -62,7 +62,9 @@ local function place(plr: Player, objectName, objectLocation, cframe, plot): boo
         end
     end
 
+    -- once the object has been placed, exit 'place mode' for that object
+    Remotes.Studio.ExitPlaceMode:FireClient(plr)
     return true
 end
 
-remotes.Studio.PlaceItem.OnServerInvoke = place
+Remotes.Studio.PlaceItem.OnServerInvoke = place

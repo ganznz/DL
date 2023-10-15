@@ -30,6 +30,9 @@ local Placement = {}
 
 Placement.__index = Placement
 
+-- placement instance data
+local PLACEMENT_INSTANCE_DATA = nil
+
 -- Constructor variables
 local GRID_SIZE -- size of each tile on plot, in studs
 local ITEM_LOCATION
@@ -41,6 +44,7 @@ local object
 local placedObjects
 local plot
 local isStackable
+
 
 -- Variables used in calculations
 local posX
@@ -56,6 +60,11 @@ local collided = nil
 
 
 local function renderGrid()
+    -- destroy previous build-mode session plot texture if it still exists
+    if plot:FindFirstChildOfClass("Texture") then
+        plot:FindFirstChildOfClass("Texture"):Destroy()
+    end
+
     local texture = Instance.new("Texture")
     texture.StudsPerTileU = GRID_SIZE
     texture.StudsPerTileV = GRID_SIZE
@@ -124,6 +133,16 @@ local function rotate(_actionName, inputState, _inputObj)
     end
 end
 
+local function cancelOnTermination(_actionName, inputState, _inputObj)
+    if inputState == Enum.UserInputState.Begin then
+        object:Destroy()
+        plot:FindFirstChild("Texture"):Destroy()
+        mouse.TargetFilter = nil
+        PLACEMENT_INSTANCE_DATA.buildModeActivated = false
+        PLACEMENT_INSTANCE_DATA.placeModeActivated = false
+    end
+end
+
 -- snap selected object to grid tile
 local function snap(cframe: CFrame)
     local newX = math.round(cframe.X / GRID_SIZE) * GRID_SIZE
@@ -173,10 +192,12 @@ end
 
 local function bindInputs()
     ContextActionService:BindAction("Rotate", rotate, false, ROTATE_KEY)
+    ContextActionService:BindAction("Cancel", cancelOnTermination, false, TERMINATE_KEY)
 end
 
 local function unbindInputs()
     ContextActionService:UnbindAction("Rotate")
+    ContextActionService:UnbindAction("Cancel")
 end
 
 -- set object position based on pivot
@@ -191,7 +212,7 @@ local function translateObj()
 end
 
 local function getInstantCFrame()
-    -- gets the exact CFrame where item should be placed
+    -- returns the exact CFrame where item should be placed and ENSURES it gets placed w/ snapping
     -- for when player clicks during object interpolation (and non-snapped CFrame value gets returned)
     return calculateItemPosition()
 end
@@ -240,11 +261,18 @@ function Placement.new(gridSize, objects, rotateKey, terminateKey)
     data.rotateKey = ROTATE_KEY or Enum.KeyCode.R
     data.terminateKey = TERMINATE_KEY or Enum.KeyCode.X
 
+    PLACEMENT_INSTANCE_DATA = data
+
     return data
 end
 
 -- activates placement
 function Placement:Activate(objectName: string, placedObjs: {}, plt, stackable: boolean)
+    -- destroy previous build-mode session object if it still exists
+    if object then
+        object:Destroy()
+    end
+
     -- assigns values for necessary variables
     object = ITEM_LOCATION:FindFirstChild(objectName):Clone()
     placedObjects = placedObjs
@@ -252,9 +280,12 @@ function Placement:Activate(objectName: string, placedObjs: {}, plt, stackable: 
     isStackable = stackable
     rotation = 0
     rotationVal = true
+    self.buildModeActivated = true
+    self.placeModeActivated = true
 
+    -- ensures that while in 'place mode', object collisions don't interfere with anything
     for _i, v in object:GetDescendants() do
-        if v:IsA("Part") or v:IsA("MeshPart") or v:IsA("UnionOperation") then
+        if v:IsA("BasePart") then
             v.CanCollide = false
         end
     end
@@ -282,6 +313,15 @@ function Placement:Activate(objectName: string, placedObjs: {}, plt, stackable: 
 
     bindInputs()
     speed = tempSpeed
+end
+
+function Placement:Deactivate()
+    unbindInputs()
+    object:Destroy()
+    plot:FindFirstChild("Texture"):Destroy()
+    mouse.TargetFilter = nil
+    self.buildModeActivated = false
+    self.placeModeActivated = false
 end
 
 RunService:BindToRenderStep("Input", Enum.RenderPriority.Input.Value, translateObj)
