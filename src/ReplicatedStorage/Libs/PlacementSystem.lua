@@ -66,11 +66,13 @@ local function renderGrid()
     end
 
     local texture = Instance.new("Texture")
+    texture.Transparency = 1
     texture.StudsPerTileU = GRID_SIZE
     texture.StudsPerTileV = GRID_SIZE
     texture.Texture = gridTexture
     texture.Face = Enum.NormalId.Top
     texture.Parent = plot
+    TweenService:Create(texture, TweenInfo.new(1), { Transparency = 0 }):Play()
 end
 
 local function changeHitboxColour()
@@ -136,7 +138,13 @@ end
 local function cancelOnTermination(_actionName, inputState, _inputObj)
     if inputState == Enum.UserInputState.Begin then
         object:Destroy()
-        plot:FindFirstChild("Texture"):Destroy()
+        local texture = plot:FindFirstChild("Texture")
+        local textureTween = TweenService:Create(texture, TweenInfo.new(0.2), { Transparency = 0 })
+        textureTween:Play()
+        textureTween.Completed:Connect(function()
+            plot:FindFirstChild("Texture"):Destroy()
+        end)
+
         mouse.TargetFilter = nil
         PLACEMENT_INSTANCE_DATA.buildModeActivated = false
         PLACEMENT_INSTANCE_DATA.placeModeActivated = false
