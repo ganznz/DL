@@ -24,10 +24,12 @@ placement.placeModeActivated = true
 
 mouse.Button1Down:Connect(function()
     if placement.buildModeActivated and placement.placeModeActivated then
+        print('activateddd')
         placement:place(Remotes.Studio.PlaceItem)
     end
 end)
 
 Remotes.Studio.ExitPlaceMode.OnClientEvent:Connect(function()
+    print(placement)
     placement:Deactivate()
 end)
