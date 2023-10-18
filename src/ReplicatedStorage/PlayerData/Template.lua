@@ -49,6 +49,28 @@ local Template = {
             ShiftCooldown = os.time()
         }
         -- add other jobs
+    },
+    Inventory = {
+        StudioFurnishing = {
+            -- character need name = { items that fulfill the need }
+            Happiness = {},
+            Energy = {},
+            Hunger = {},
+            Decor = {}
+        }
+    },
+    Studio = {
+        -- the studio that the player is currently using
+        ActiveStudio = 1,
+
+        -- the tables in this Studios table holds info for the players unlocked studio, in order of unlockable studios in-game
+        Studios = {
+            {
+                Furnishings = {
+                    -- contain information for placed items in this studio
+                },
+            },
+        }
     }
 }
 
