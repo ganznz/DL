@@ -46,6 +46,10 @@ function Studio.GetStudioPrice(studioIndex: number): number
     return Studio.GetConfig(studioIndex).Price
 end
 
+function Studio.GetPlrStudioLevel(plrData)
+    return #(plrData.Studio.Studios)
+end
+
 function Studio.HasLastStudio(plrData): boolean
     return #(plrData.Studio.Studios) == #(Studio.Config)
 end
