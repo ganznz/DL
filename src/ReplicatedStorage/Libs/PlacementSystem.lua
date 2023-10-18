@@ -226,6 +226,7 @@ local function getInstantCFrame()
 end
 
 function Placement:place(remote: RemoteFunction)
+    print('aaa')
     if not collided and object then
         local placementCFrame = getInstantCFrame()
 
@@ -324,12 +325,13 @@ function Placement:Activate(objectName: string, placedObjs: {}, plt, stackable: 
 end
 
 function Placement:Deactivate()
-    unbindInputs()
-    object:Destroy()
-    plot:FindFirstChild("Texture"):Destroy()
-    mouse.TargetFilter = nil
-    self.buildModeActivated = false
-    self.placeModeActivated = false
+    -- print(plot:FindFirstChild("Texture"))
+    -- unbindInputs()
+    -- object:Destroy()
+    -- plot:FindFirstChild("Texture"):Destroy()
+    -- mouse.TargetFilter = nil
+    -- self.buildModeActivated = false
+    -- self.placeModeActivated = false
 end
 
 RunService:BindToRenderStep("Input", Enum.RenderPriority.Input.Value, translateObj)
