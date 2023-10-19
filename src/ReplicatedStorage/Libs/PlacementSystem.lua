@@ -226,7 +226,6 @@ local function getInstantCFrame()
 end
 
 function Placement:place(remote: RemoteFunction)
-    print('aaa')
     if not collided and object then
         local placementCFrame = getInstantCFrame()
 
@@ -325,7 +324,6 @@ function Placement:Activate(objectName: string, placedObjs: {}, plt, stackable: 
 end
 
 function Placement:Deactivate()
-    print(plot:FindFirstChild("Texture"))
     unbindInputs()
     object:Destroy()
     plot:FindFirstChild("Texture"):Destroy()

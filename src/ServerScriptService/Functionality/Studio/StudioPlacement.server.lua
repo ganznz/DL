@@ -44,7 +44,6 @@ local function checkBoundaries(plot, object): boolean
 end
 
 local function place(plr: Player, objectName, objectLocation, cframe, plot): boolean
-    print('bb')
     local item = ReplicatedStorage.Assets.Models.StudioFurnishing:FindFirstChild(objectName):Clone()
     item.PrimaryPart.CanCollide = false
     item:PivotTo(cframe)
