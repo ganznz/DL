@@ -50,6 +50,11 @@ function Studio.GetPlrStudioLevel(plrData)
     return #(plrData.Studio.Studios)
 end
 
+function Studio.OwnsStudio(plrData, studioIndex: number): boolean
+    local numberOfStudiosOwned = #(plrData.Studio.Studios)
+    return numberOfStudiosOwned >= studioIndex
+end
+
 function Studio.HasLastStudio(plrData): boolean
     return #(plrData.Studio.Studios) == #(Studio.Config)
 end
