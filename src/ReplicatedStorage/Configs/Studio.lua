@@ -18,19 +18,19 @@ local Config: { [number]: StudioConfig } = {
     },
     [2]  = {
         Name = "2",
-        Price = 50,000,
+        Price = 50000,
         FurnishingCapacity = 10,
         NewEmployee = false,
     },
     [3]  = {
         Name = "3",
-        Price = 250,000,
+        Price = 250000,
         FurnishingCapacity = 15,
         NewEmployee = true,
     },
     [4]  = {
         Name = "4",
-        Price = 1,000,000,
+        Price = 1000000,
         FurnishingCapacity = 20,
         NewEmployee = false,
     }
@@ -83,8 +83,8 @@ function Studio.ReachedFurnishingCapacity(plrData, studioIndex: number): number
 end
 
 function Studio.CanPurchaseNextStudio(plrData): boolean
-    local currentStudioLevel = #(plrData.Studios)
-    if Studio.HasLastItem(plrData) then return false end
+    local currentStudioLevel = #(plrData.Studio.Studios)
+    if Studio.HasLastStudio(plrData) then return false end
 
     local nextStudioConfig = Studio.GetConfig(currentStudioLevel + 1)
     local plrCash = plrData.Cash
