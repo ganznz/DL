@@ -102,6 +102,13 @@ function Manager.AdjustPlrJobXp(plr: Player, jobType: string, adjustBy: number):
     return "Adjusted the players " .. jobName .. " job XP by " .. tostring(adjustBy) .. "."
 end
 
+function Manager.UnlockArea(plr: Player, areaName: string)
+    local profile = Manager.Profiles[plr]
+    if not profile then return end
+
+    profile.Data.Areas[areaName] = true
+end
+
 
 local function GetData(plr: Player, directory: string)
     -- ensure function doesn't return a nil value
