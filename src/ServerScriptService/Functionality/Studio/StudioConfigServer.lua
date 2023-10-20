@@ -39,8 +39,4 @@ function Studio.PurchaseNextStudio(plr: Player)
     return "Purchased " .. nextStudioConfig.Name .. "!"
 end
 
-Remotes.Studio.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
-    Studio.PurchaseNextStudio(plr)
-end)
-
 return Studio
