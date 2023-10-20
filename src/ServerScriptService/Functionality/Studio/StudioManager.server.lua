@@ -91,6 +91,15 @@ for _i, studioFolder in studioExteriorsFolder do
     end)
 end
 
+Remotes.Studio.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local studioIndex = profile.Data.Studio.ActiveStudio
+
+    visitStudio(plr, plr, studioIndex)
+end)
+
 Remotes.Studio.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
     StudioConfigServer.PurchaseNextStudio(plr)
 end)
