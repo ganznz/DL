@@ -30,7 +30,7 @@ function Studio.PurchaseNextStudio(plr: Player)
 
     -- can afford, purchase studio
     PlrDataManager.AdjustPlrCash(plr, -studioUpgradePrice)
-    profile.Data.Studio.CurrentActiveStudio = nextPlrStudioLevel
+    profile.Data.Studio.ActiveStudio = nextPlrStudioLevel
     PlrDataManager.UnlockArea(plr, 'Studio'..tostring(nextPlrStudioLevel))
     table.insert(profile.Data.Studio.Studios, { Furnishings = {} })
 
