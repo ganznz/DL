@@ -18,7 +18,6 @@ local studioExteriorsFolder = CollectionService:GetTagged("Studio")
 -- { [plr.UserId] = { studioOwnerId: number, studioIndex: number }, else false }
 local plrsInStudio = {}
 
--- make changes to 'plrsInStudio' table
 Players.PlayerAdded:Connect(function(plr: Player)
     if not plrsInStudio[plr.UserId] then
         plrsInStudio[plr.UserId] = false
@@ -26,9 +25,9 @@ Players.PlayerAdded:Connect(function(plr: Player)
 end)
 
 -- generate studio interior player tp parts
-for _i, studioFolder in studioExteriorsFolder do
+for _i, exteriorStudioFolder in studioExteriorsFolder do
     -- part that studio interior model pivots to
-    local interiorTpToPart = studioFolder:FindFirstChild("InteriorTeleportPart")
+    local interiorTpToPart = exteriorStudioFolder:FindFirstChild("InteriorTeleportPart")
 
     -- generate part that plr teleports to when visiting studio
     local tpPart = Instance.new("Part")
@@ -36,10 +35,10 @@ for _i, studioFolder in studioExteriorsFolder do
     tpPart.Anchored = true
     tpPart.CanCollide = false
     tpPart.Transparency = 1
-    tpPart.Parent = studioFolder
-    tpPart.CFrame = interiorTpToPart.CFrame
+    tpPart.Parent = exteriorStudioFolder
+    tpPart.CFrame = interiorTpToPart.CFrame * CFrame.new(0, 7, 0) -- adjust Y-coord to prevent player clipping into studio interior floor/tp below studio
     tpPart:SetAttribute("AreaAccessibility", "General")  -- this value doesn't matter
-    tpPart:SetAttribute("AreaName", "Studio"..studioFolder.Name)
+    tpPart:SetAttribute("AreaName", "Studio"..exteriorStudioFolder.Name)
 end
 
 -- register studio exterior teleports
