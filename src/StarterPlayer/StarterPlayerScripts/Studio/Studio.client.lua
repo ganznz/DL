@@ -63,8 +63,7 @@ local function showStudioExterior(studioIndex, studioInteriorFolder, exteriorPlr
     end)
 end
 
-Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(plrData, interiorPlrTpPart, exteriorPlrTpPart)
-    local studioIndex = plrData.Studio.ActiveStudio
+Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
     local studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(studioIndex):Clone()
 
     showStudioInterior(studioIndex, studioInteriorFolder, interiorPlrTpPart)
