@@ -12,28 +12,7 @@ function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number
 
     guiInstance.Position = UDim2.fromScale(0.5, guiInstance.Position.Y.Scale + posOffset)
     guiInstance.Visible = false
-    -- GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0), ignoreElements)
 end
-
--- function GuiServices.ShowGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean, ignoreElements: {})
---     if not ignoreElements then ignoreElements = {} end
-
---     guiInstance.Visible = true
---     local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
---     local mainTween = TweenService:Create(guiInstance, tweenInfo, {
---         Position = goalPos,
---         Size = goalSize
---     })
-
---     if opacityTween then
---         GuiServices.AdjustTransparency(guiInstance, 0, TweenInfo.new(0.2), ignoreElements)
---     else
---         GuiServices.AdjustTransparency(guiInstance, 0, TweenInfo.new(0), ignoreElements)
---     end
---     mainTween:Play()
-
---     return mainTween
--- end
 
 function GuiServices.ShowGuiStandard(guiInstance, goalPos, goalSize, ignoreElements: {})
     if not ignoreElements then ignoreElements = {} end
@@ -49,30 +28,6 @@ function GuiServices.ShowGuiStandard(guiInstance, goalPos, goalSize, ignoreEleme
 
     return mainTween
 end
-
--- function GuiServices.HideGuiStandard(guiInstance: Frame, goalPos, goalSize, opacityTween: boolean, ignoreElements: {})
---     if not ignoreElements then ignoreElements = {} end
-
---     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
---     local mainTween = TweenService:Create(guiInstance, tweenInfo, {
---         Position = goalPos,
---         Size = goalSize
---     })
---     mainTween:Play()
-
---     if opacityTween then
---         GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0.2), ignoreElements)
---     end
-
---     task.delay(0.5, function()
---         guiInstance.Visible = false
---         if not opacityTween then
---             GuiServices.AdjustTransparency(guiInstance, 1, TweenInfo.new(0), ignoreElements)
---         end
---     end)
-
---     return mainTween
--- end
 
 function GuiServices.HideGuiStandard(guiInstance, goalPos, goalSize, ignoreElements: {})
     if not ignoreElements then ignoreElements = {} end
