@@ -6,6 +6,7 @@ local CollectionService = game:GetService("CollectionService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio)
+local StudioConfigServer = require(script.Parent.StudioConfigServer)
 local Zone = require(ReplicatedStorage.Libs.Zone)
 
 local Remotes = ReplicatedStorage.Remotes
@@ -24,9 +25,14 @@ Players.PlayerAdded:Connect(function(plr: Player)
     end
 end)
 
+Players.PlayerRemoving:Connect(function(plr)
+    plrsInStudio[plr.UserId] = nil
+end)
+
 -- generate studio interior player tp parts
 for _i, exteriorStudioFolder in studioExteriorsFolder do
     -- part that studio interior model pivots to
+    -- plr tp part that gets generated will share same x,y coords as this so plr gets tp'd to center of studio
     local interiorTpToPart = exteriorStudioFolder:FindFirstChild("InteriorTeleportPart")
 
     -- generate part that plr teleports to when visiting studio
@@ -40,6 +46,28 @@ for _i, exteriorStudioFolder in studioExteriorsFolder do
     tpPart:SetAttribute("AreaAccessibility", "General")  -- this value doesn't matter
     tpPart:SetAttribute("AreaName", "Studio"..exteriorStudioFolder.Name)
 end
+
+
+
+local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local studioExteriorFolder = Workspace.Map.Buildings.Studios:FindFirstChild(tostring(studioIndex))
+    local interiorPlayerTpPart = studioExteriorFolder:FindFirstChild("PlrTeleportToPartInterior")
+    local exteriorPlayerTpPart = studioExteriorFolder:FindFirstChild("TeleportToPart")
+
+    plrsInStudio[plr.UserId] = {
+        PlrId = plr.UserId,
+        StudioIndex = studioIndex
+    }
+
+    if plr == plrToVisit then
+        profile.Data.Studio.ActiveStudio = studioIndex
+        Remotes.Studio.VisitOwnStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart)
+    end
+end
+
 
 -- register studio exterior teleports
 for _i, studioFolder in studioExteriorsFolder do
@@ -56,20 +84,13 @@ for _i, studioFolder in studioExteriorsFolder do
         -- check if plr owns the studio
         -- if so, teleport player into studio, else show studio purchase prompt
         if StudioConfig.OwnsStudio(plrData, studioIndex) then
-            -- set plr current active studio to the studio they interacted with
-            profile.Data.Studio.ActiveStudio = studioIndex
-
-            local interiorPlayerTpPart = studioFolder:FindFirstChild("PlrTeleportToPartInterior")
-            local exteriorPlayerTpPart = studioFolder:FindFirstChild("TeleportToPart")
-
-            plrsInStudio[plr.UserId] = {
-                PlrId = plr.UserId,
-                StudioIndex = studioIndex
-            }
-
-            Remotes.Studio.VisitOwnStudio:FireClient(plr, plrData, interiorPlayerTpPart, exteriorPlayerTpPart)
+            visitStudio(plr, plr, studioIndex)
         else
             -- show studio purchase prompt
         end
     end)
 end
+
+Remotes.Studio.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
+    StudioConfigServer.PurchaseNextStudio(plr)
+end)
