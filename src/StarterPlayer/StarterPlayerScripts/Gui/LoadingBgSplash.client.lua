@@ -2,6 +2,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
+
 local Remotes = ReplicatedStorage.Remotes
 
 local localPlr = Players.LocalPlayer
@@ -11,8 +13,7 @@ local PlayerGui = localPlr.PlayerGui
 local LoadingBgSplashScreenGui = PlayerGui:WaitForChild("LoadingBgSplash")
 local LoadingBgSplash = LoadingBgSplashScreenGui.LoadingBgSplash
 
-local TWEEN_TIME = 0.5
-local tweenInfo = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Exponential)
+local tweenInfo = TweenInfo.new(GlobalVariables.Gui.LoadingBgTweenTime, Enum.EasingStyle.Exponential)
 local loadingScreenPositionDisabled = UDim2.fromScale(0.5, -1)
 local loadingScreenPositionEnabled = UDim2.fromScale(0.5, 0)
 
@@ -23,7 +24,7 @@ local function enableLoadingTween(showGui: boolean, options)
     if showGui then
         showLoadingBgTween:Play()
         PlayerControls:Disable()
-        task.delay(TWEEN_TIME, function()
+        task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
             Remotes.Player.TeleportPlr:FireServer(options.TeleportPart)
         end)
     else
