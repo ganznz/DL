@@ -37,13 +37,27 @@ Players.PlayerAdded:Connect(function(plr: Player)
     plrsInStudio[plr.UserId] = false
 
     Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "add", plrStudios[plr.UserId])
+
+    -- plr died listener
+    plr.CharacterAdded:Connect(function(char: Model)
+        char:WaitForChild("Humanoid").Died:Connect(function()
+            -- check if plr is in studio on death
+            if plrsInStudio[plr.UserId] then
+                local studioIndex = plrsInStudio[plr.UserId].StudioIndex
+                local studioExteriorFolder = Workspace.Map.Buildings.Studios:FindFirstChild(tostring(studioIndex))
+            
+                plrsInStudio[plr.UserId] = false
+                Remotes.Studio.LeaveStudio:FireClient(plr, studioIndex)
+            end
+        end)
+    end)
 end)
 
 Players.PlayerRemoving:Connect(function(plr)
     plrStudios[plr.UserId] = nil
     plrsInStudio[plr.UserId] = nil
 
-    Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "add", nil)
+    Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "remove", nil)
 end)
 
 -- generate studio interior player tp parts
@@ -131,6 +145,10 @@ Remotes.Studio.VisitOtherStudio.OnServerEvent:Connect(function(plr: Player, user
     local studioIndex = profile.Data.Studio.ActiveStudio
 
     visitStudio(plr, plrToVisit, studioIndex)
+end)
+
+Remotes.Studio.LeaveStudio.OnServerEvent:Connect(function(plr: Player)
+    plrsInStudio[plr.UserId] = false
 end)
 
 Remotes.Studio.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
