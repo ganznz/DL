@@ -168,11 +168,31 @@ local function switchStudioBtns(btnToHide, btnToShow)
     btnToShow.Visible = true
 end
 
+local debounce = true
 StudioTeleportBtn.Activated:Connect(function()
-    Remotes.Studio.VisitOwnStudio:FireServer()
+    if debounce then
+        debounce = false
+        Remotes.Studio.VisitOwnStudio:FireServer()
+        task.wait(1)
+        debounce = true
+    end
+end)
 
+Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart)
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioTeleportBtn, StudioBuildModeBtn)
+    end)
+end)
+
+Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart)
+    task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
+        switchStudioBtns(StudioTeleportBtn, StudioBuildModeBtn)
+    end)
+end)
+
+Remotes.Studio.LeaveStudio.OnClientEvent:Connect(function()
+    task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
+        switchStudioBtns(StudioBuildModeBtn, StudioTeleportBtn)
     end)
 end)
 
