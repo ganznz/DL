@@ -15,18 +15,35 @@ local numOfStudios = #(StudioConfig.Config)
 repeat task.wait() until #(CollectionService:GetTagged("Studio")) == numOfStudios
 local studioExteriorsFolder = CollectionService:GetTagged("Studio")
 
--- table keeps track of all players in the server and if they're in a studio or not
--- { [plr.UserId] = { studioOwnerId: number, studioIndex: number }, else false }
+-- table keeps track of all players in the server and their respective studio information
+-- { [plr.UserId] = { studioIndex: number, studioStatus: "open" | "closed" | "friends" } }
+local plrStudios = {}
+
+-- table keeps track of players who are in a studio
+-- { [plr.UserId] = { studioOwnerId: number, studioIndex: number } | false }
 local plrsInStudio = {}
 
 Players.PlayerAdded:Connect(function(plr: Player)
-    if not plrsInStudio[plr.UserId] then
-        plrsInStudio[plr.UserId] = false
-    end
+    repeat task.wait() until PlrDataManager.Profiles[plr]
+
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    plrStudios[plr.UserId] = {
+        StudioIndex = profile.Data.Studio.ActiveStudio,
+        StudioStatus = profile.Data.Studio.StudioStatus,
+    }
+
+    plrsInStudio[plr.UserId] = false
+
+    Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "add", plrStudios[plr.UserId])
 end)
 
 Players.PlayerRemoving:Connect(function(plr)
+    plrStudios[plr.UserId] = nil
     plrsInStudio[plr.UserId] = nil
+
+    Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "add", nil)
 end)
 
 -- generate studio interior player tp parts
@@ -65,6 +82,8 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
     if plr == plrToVisit then
         profile.Data.Studio.ActiveStudio = studioIndex
         Remotes.Studio.VisitOwnStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart)
+    else
+        Remotes.Studio.VisitOtherStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart)
     end
 end
 
@@ -100,6 +119,31 @@ Remotes.Studio.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player)
     visitStudio(plr, plr, studioIndex)
 end)
 
-Remotes.Studio.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
-    StudioConfigServer.PurchaseNextStudio(plr)
+Remotes.Studio.VisitOtherStudio.OnServerEvent:Connect(function(plr: Player, userIdOfPlrToVisit: number)
+    if not plrStudios[plr.UserId] then return end
+
+    local plrToVisit: Player = Players:GetPlayerByUserId(userIdOfPlrToVisit)
+    if not plrToVisit then return end
+
+    local profile = PlrDataManager.Profiles[plrToVisit]
+    if not profile then return end
+
+    local studioIndex = profile.Data.Studio.ActiveStudio
+
+    visitStudio(plr, plrToVisit, studioIndex)
 end)
+
+Remotes.Studio.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local purchased = StudioConfigServer.PurchaseNextStudio(plr)
+    if purchased then
+        plrStudios[plr.UserId]["StudioIndex"] = profile.Data.Studio.ActiveStudio
+        Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "update", plrStudios[plr.UserId])
+    end
+end)
+
+Remotes.Studio.GetStudioPlrInfo.OnServerInvoke = function()
+    return plrStudios
+end

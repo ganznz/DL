@@ -68,9 +68,18 @@ Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interi
 
     showStudioInterior(studioIndex, studioInteriorFolder, interiorPlrTpPart)
 
-    -- listener for when player exists studio
+    -- listener for when player exits studio
     showStudioExterior(studioIndex, studioInteriorFolder, exteriorPlrTpPart)
 
+end)
+
+Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
+    local studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(studioIndex):Clone()
+
+    showStudioInterior(studioIndex, studioInteriorFolder, interiorPlrTpPart)
+
+    -- listener for when player exits studio
+    showStudioExterior(studioIndex, studioInteriorFolder, exteriorPlrTpPart)
 end)
 
 local PlayerGui = plr.PlayerGui
