@@ -11,6 +11,8 @@ local plr = Players.LocalPlayer
 local StudioExteriorsFolder = Workspace:WaitForChild("Map").Buildings.Studios
 local StudioInteriorsFolder = ReplicatedStorage:WaitForChild("Assets").Models.Studios
 
+local studioInteriorFolder = nil
+local studioInteriorExitZone = nil
 
 -- make a copy of all studio exteriors, so when player leaves a studio and
 -- needs to make the studio exterior visible again, copy it from this table
@@ -26,7 +28,7 @@ local function calculateYOffset(model: Model): number
     return model.PrimaryPart.Size.Y / 2
 end
 
-local function showStudioInterior(studioIndex, studioInteriorFolder, interiorPlrTpPart)
+local function enterStudio(studioIndex, interiorPlrTpPart)
     -- tp plr into studio interior
     Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = interiorPlrTpPart })
 
@@ -45,41 +47,55 @@ local function showStudioInterior(studioIndex, studioInteriorFolder, interiorPlr
     end)
 end
 
--- when plr leaves studio, remove studio interior and replace with exterior
-local function showStudioExterior(studioIndex, studioInteriorFolder, exteriorPlrTpPart)
+-- when plr exists studio, destroy all traces of the studio interior
+local function destroyInterior()
+    studioInteriorExitZone:destroy()
+    studioInteriorFolder:Destroy()
+end
+
+local function regenerateExterior(studioIndex)
+    local replacedStudioExterior = studioExteriorsCopy[studioIndex]:Clone()
+    replacedStudioExterior.Parent = Workspace.Map.Buildings.Studios
+end
+
+local function studioInteriorExitListener(studioIndex, exteriorPlrTpPart)
     local studioInteriorExitHitbox = studioInteriorFolder:FindFirstChild("TeleportHitboxZone", true)
 
-    local zone = Zone.new(studioInteriorExitHitbox)
-
-    zone.playerEntered:Connect(function(_plr: Player)
+    studioInteriorExitZone = Zone.new(studioInteriorExitHitbox)
+    studioInteriorExitZone.localPlayerEntered:Connect(function(_plr: Player)
         Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = exteriorPlrTpPart })
+        Remotes.Studio.LeaveStudio:FireServer()
 
         task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
-            zone:destroy()
-            studioInteriorFolder:Destroy()
-            local replacedStudioExterior = studioExteriorsCopy[studioIndex]:Clone()
-            replacedStudioExterior.Parent = Workspace.Map.Buildings.Studios
+            destroyInterior()
+            regenerateExterior(studioIndex)
         end)
     end)
 end
 
 Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
-    local studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(studioIndex):Clone()
+    studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(studioIndex):Clone()
 
-    showStudioInterior(studioIndex, studioInteriorFolder, interiorPlrTpPart)
+    enterStudio(studioIndex, interiorPlrTpPart)
 
     -- listener for when player exits studio
-    showStudioExterior(studioIndex, studioInteriorFolder, exteriorPlrTpPart)
+    studioInteriorExitListener(studioIndex, exteriorPlrTpPart)
 
 end)
 
 Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
-    local studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(studioIndex):Clone()
+    studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(studioIndex):Clone()
 
-    showStudioInterior(studioIndex, studioInteriorFolder, interiorPlrTpPart)
+    enterStudio(studioIndex, interiorPlrTpPart)
 
     -- listener for when player exits studio
-    showStudioExterior(studioIndex, studioInteriorFolder, exteriorPlrTpPart)
+    studioInteriorExitListener(studioIndex, exteriorPlrTpPart)
+end)
+
+Remotes.Studio.LeaveStudio.OnClientEvent:Connect(function(studioIndex)
+    destroyInterior()
+    regenerateExterior(studioIndex)
+    Remotes.Studio.LeaveStudio:FireServer()
 end)
 
 local PlayerGui = plr.PlayerGui
