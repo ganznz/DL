@@ -73,6 +73,7 @@ local Template = {
     Studio = {
         -- the studio that the player is currently using
         ActiveStudio = 1,
+        StudioStatus = "open", -- "open" | "closed"| "friends"
 
         -- the tables in this Studios table holds info for the players unlocked studio, in order of unlockable studios in-game
         Studios = {
