@@ -7,7 +7,7 @@ local Remotes = ReplicatedStorage.Remotes
 
 local Studio = {}
 
-function Studio.PurchaseNextStudio(plr: Player)
+function Studio.PurchaseNextStudio(plr: Player): boolean
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -16,7 +16,8 @@ function Studio.PurchaseNextStudio(plr: Player)
     local currentPlrStudioLevel = StudioConfig.GetPlrStudioLevel(plrData)
 
     -- check if plr already has every studio unlocked
-    if StudioConfig.HasLastStudio(plrData) then return "You already own every studio!" end
+    -- if StudioConfig.HasLastStudio(plrData) then return "You already own every studio!" end
+    if StudioConfig.HasLastStudio(plrData) then return false end
 
     local nextPlrStudioLevel = currentPlrStudioLevel + 1
     local nextStudioConfig = StudioConfig.GetConfig(nextPlrStudioLevel)
@@ -26,7 +27,8 @@ function Studio.PurchaseNextStudio(plr: Player)
     local studioUpgradePrice = nextStudioConfig.Price
 
     local canAfford = StudioConfig.CanPurchaseNextStudio(plrData)
-    if not canAfford then return "You need " .. tostring(studioUpgradePrice - plrCash) .. " more cash!" end
+    -- if not canAfford then return "You need " .. tostring(studioUpgradePrice - plrCash) .. " more cash!" end
+    if not canAfford then return false end
 
     -- can afford, purchase studio
     PlrDataManager.AdjustPlrCash(plr, -studioUpgradePrice)
@@ -34,9 +36,10 @@ function Studio.PurchaseNextStudio(plr: Player)
     PlrDataManager.UnlockArea(plr, 'Studio'..tostring(nextPlrStudioLevel))
     table.insert(profile.Data.Studio.Studios, { Furnishings = {} })
 
-    Remotes.Purchase.PurchaseComputer:FireClient(plr, nextPlrStudioLevel)
+    Remotes.Purchase.PurchaseStudio:FireClient(plr, nextPlrStudioLevel)
 
-    return "Purchased " .. nextStudioConfig.Name .. "!"
+    -- return "Purchased " .. nextStudioConfig.Name .. "!"
+    return true
 end
 
 return Studio
