@@ -13,9 +13,11 @@ local humanoid = char:WaitForChild("Humanoid")
 local StudioExteriorsFolder = Workspace:WaitForChild("Map").Buildings.Studios
 local StudioInteriorsFolder = ReplicatedStorage:WaitForChild("Assets").Models.Studios
 
+local inStudio = false
 local currentStudioIndex = nil
 local studioInteriorFolder = nil
 local studioInteriorExitZone = nil
+local studioExteriorTpPart = nil
 
 -- make a copy of all studio exteriors, so when player leaves a studio and
 -- needs to make the studio exterior visible again, copy it from this table
@@ -61,13 +63,14 @@ local function regenerateExterior()
     replacedStudioExterior.Parent = Workspace.Map.Buildings.Studios
 end
 
-local function studioInteriorExitListener(exteriorPlrTpPart)
+local function studioInteriorExitListener()
     local studioInteriorExitHitbox = studioInteriorFolder:FindFirstChild("TeleportHitboxZone", true)
 
     studioInteriorExitZone = Zone.new(studioInteriorExitHitbox)
     studioInteriorExitZone.localPlayerEntered:Connect(function(_plr: Player)
-        Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = exteriorPlrTpPart })
+        Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
         Remotes.Studio.LeaveStudio:FireServer()
+        inStudio = false
 
         task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
             destroyInterior()
@@ -77,42 +80,66 @@ local function studioInteriorExitListener(exteriorPlrTpPart)
 end
 
 Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
+    inStudio = true
+    studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
 
     enterStudio(interiorPlrTpPart)
 
     -- listener for when player exits studio
-    studioInteriorExitListener(exteriorPlrTpPart)
+    studioInteriorExitListener()
 
 end)
 
 Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
+    inStudio = true
+    studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
 
     enterStudio(interiorPlrTpPart)
 
     -- listener for when player exits studio
-    studioInteriorExitListener(exteriorPlrTpPart)
+    studioInteriorExitListener()
 end)
 
--- Remotes.Studio.LeaveStudio.OnClientEvent:Connect(function(studioIndex)
---     destroyInterior()
---     regenerateExterior(studioIndex)
---     Remotes.Studio.LeaveStudio:FireServer()
--- end)
+Remotes.Studio.KickFromStudio.OnClientEvent:Connect(function()
+    inStudio = false
+    Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
+    task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
+        destroyInterior()
+        regenerateExterior()
+    end)
+end)
 
 humanoid.Died:Connect(function()
-    destroyInterior()
-    regenerateExterior(currentStudioIndex)
-    Remotes.Studio.LeaveStudio:FireServer()
+    if inStudio then
+        inStudio = false
+        destroyInterior()
+        regenerateExterior()
+        Remotes.Studio.LeaveStudio:FireServer()
+    end
 end)
 
 plr.CharacterAdded:Connect(function(character: Model)
     char = character
     humanoid = char:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        if inStudio then
+            destroyInterior()
+            regenerateExterior()
+            Remotes.Studio.LeaveStudio:FireServer()
+        end
+    end)
 end)
+
+
+
+
+
+
+
 
 local PlayerGui = plr.PlayerGui
 
