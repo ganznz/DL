@@ -1,5 +1,3 @@
-local PolicyService = game:GetService("PolicyService")
-local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -27,8 +25,12 @@ local StudioWhitelistBtn = StudioListContainer.StudioSettings.WhitelistBtn
 local StudioKickAllBtn = StudioListContainer.StudioSettings.KickBtn
 
 local WHITELIST_BTN_TEXT_TEMPLATE = "Studio: SETTING"
+local KICK_PLRS_COOLDOWN = 15 -- seconds
 local visibleGuiPos = StudioListContainer.Position
 local visibleGuiSize = StudioListContainer.Size
+
+local char = localPlr.Character or localPlr.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
 
 -- stores Activated connections for when visit buttons get clicked
 -- { [userId] = connection }
@@ -185,13 +187,13 @@ local function switchStudioBtns(btnToHide, btnToShow)
     btnToShow.Visible = true
 end
 
-local debounce = true
+local tpDebounce = true
 StudioTeleportBtn.Activated:Connect(function()
-    if debounce then
-        debounce = false
+    if tpDebounce and localPlr:GetAttribute("IsAlive") then
+        tpDebounce = false
         Remotes.Studio.VisitOwnStudio:FireServer()
         task.wait(1)
-        debounce = true
+        tpDebounce = true
     end
 end)
 
@@ -227,6 +229,20 @@ StudioWhitelistBtn.Activated:Connect(function()
     Remotes.Studio.UpdateWhitelist:FireServer()
 end)
 
+local kickAllDebounce = true
+StudioKickAllBtn.Activated:Connect(function()
+    if kickAllDebounce then
+        kickAllDebounce = false
+        Remotes.Studio.KickFromStudio:FireServer()
+        StudioKickAllBtn.BackgroundColor3 = GlobalVariables.Gui.InvalidGreyColour
+        StudioKickAllBtn.Text = "Wait..."
+        task.wait(KICK_PLRS_COOLDOWN)
+        kickAllDebounce = true
+        StudioKickAllBtn.BackgroundColor3 = GlobalVariables.Gui.InvalidRedColour
+        StudioKickAllBtn.Text = "Kick players"
+    end
+end)
+
 Remotes.GUI.Studio.UpdateStudioList.OnClientEvent:Connect(function(userIdToUpdate: number, updateStatus: "add" | "remove" | "update", userStudioInfo)
     updateStudioListItem(userIdToUpdate, updateStatus, userStudioInfo)
 end)
@@ -237,4 +253,17 @@ end)
 
 Remotes.Studio.UpdateWhitelist.OnClientEvent:Connect(function(newWhitelistSetting)
     updateWhitelistBtn(newWhitelistSetting)
+end)
+
+humanoid.Died:Connect(function()
+    localPlr:SetAttribute("IsAlive", false)
+end)
+
+localPlr.CharacterAdded:Connect(function(character: Model)
+    localPlr:SetAttribute("IsAlive", true)
+    char = character
+    humanoid = char:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        localPlr:SetAttribute("IsAlive", false)
+    end)
 end)

@@ -20,7 +20,7 @@ local studioExteriorsFolder = CollectionService:GetTagged("Studio")
 local plrStudios = {}
 
 -- table keeps track of players who are in a studio
--- { [plr.UserId] = { studioOwnerId: number, studioIndex: number } | false }
+-- { [plr.UserId] = { PlrVisitingId: number, studioIndex: number } | false }
 local plrsInStudio = {}
 
 Players.PlayerAdded:Connect(function(plr: Player)
@@ -73,7 +73,7 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
     local exteriorPlayerTpPart = studioExteriorFolder:FindFirstChild("TeleportToPart")
 
     plrsInStudio[plr.UserId] = {
-        PlrId = plr.UserId,
+        PlrVisitingId = plr.UserId,
         StudioIndex = studioIndex
     }
 
@@ -85,7 +85,10 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
     end
 end
 
-local function updateStudioWhitelist(plr: Player): string
+local function updateStudioWhitelist(plr: Player): "open" | "closed" | "friends"
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
     local plrStudioInfo = plrStudios[plr.UserId]
     if not plrStudioInfo then return end
 
@@ -98,7 +101,21 @@ local function updateStudioWhitelist(plr: Player): string
         plrStudios[plr.UserId].StudioStatus = "open"
     end
 
-    return plrStudios[plr.UserId].StudioStatus
+    profile.Data.Studio.StudioStatus = plrStudios[plr.UserId].StudioStatus
+    return profile.Data.Studio.StudioStatus
+end
+
+local function canVisitStudio(plr: Player, plrToVisit: Player): false
+    if not plrStudios[plr.UserId] then return end
+
+    local whitelistSetting = plrStudios[plr.UserId].StudioStatus
+    if whitelistSetting == "friends" and plr:IsFriendsWith(plrToVisit.UserId) then
+        return true
+    elseif whitelistSetting == "open" then
+        return true
+    end
+
+    return false
 end
 
 -- register studio exterior teleports
@@ -141,9 +158,10 @@ Remotes.Studio.VisitOtherStudio.OnServerEvent:Connect(function(plr: Player, user
     local profile = PlrDataManager.Profiles[plrToVisit]
     if not profile then return end
 
-    local studioIndex = profile.Data.Studio.ActiveStudio
-
-    visitStudio(plr, plrToVisit, studioIndex)
+    if canVisitStudio(plr, plrToVisit) then
+        local studioIndex = profile.Data.Studio.ActiveStudio
+        visitStudio(plr, plrToVisit, studioIndex)
+    end
 end)
 
 Remotes.Studio.LeaveStudio.OnServerEvent:Connect(function(plr: Player)
@@ -170,10 +188,31 @@ end
 
 Remotes.Studio.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)
     local newWhitelistSetting = updateStudioWhitelist(plr)
+    
 
     -- update new whitelist setting visually for plr
     Remotes.Studio.UpdateWhitelist:FireClient(plr, newWhitelistSetting)
 
     -- update new whitelist setting on all client Studio Lists
     Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "update", plrStudios[plr.UserId])
+end)
+
+Remotes.Studio.KickFromStudio.OnServerEvent:Connect(function(plr: Player)
+    for plrUserId, studioInfo in plrsInStudio do
+
+        -- if studioInfo exists then it means the plr is in a studio
+        if studioInfo then
+            -- ignore studio owner
+            -- if plrUserId == plr.UserId then continue end
+
+            -- check if the studio the plr is in matches with who fired this remote
+            if studioInfo.PlrVisitingId == plr.UserId then
+                local plrToKick: Player = Players:GetPlayerByUserId(plrUserId)
+                if plrToKick then
+                    plrsInStudio[plr.UserId] = false
+                    Remotes.Studio.KickFromStudio:FireClient(plrToKick)
+                end
+            end
+        end
+    end
 end)
