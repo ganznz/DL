@@ -16,6 +16,22 @@ local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
 
 local GuiServices = {}
 
+function GuiServices.EnableUnrelatedButtons(guiInstanceToIgnore)
+    for _i, instance in PlayerGui:GetDescendants() do
+        if (instance:IsA("ImageButton") or instance:IsA("TextButton")) and not instance:IsDescendantOf(guiInstanceToIgnore)  then
+            instance.Active = true
+        end
+    end
+end
+
+function GuiServices.DisableUnrelatedButtons(guiInstanceToIgnore)
+    for _i, instance in PlayerGui:GetDescendants() do
+        if (instance:IsA("ImageButton") or instance:IsA("TextButton")) and not instance:IsDescendantOf(guiInstanceToIgnore) then
+            instance.Active = false
+        end
+    end
+end
+
 function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number)
     guiInstance.Position = UDim2.fromScale(0.5, guiInstance.Position.Y.Scale + posOffset)
     guiInstance.Visible = false
@@ -30,7 +46,10 @@ function GuiServices.ShowGuiStandard(guiInstance, goalPos, goalSize, backdropCol
         Size = goalSize
     })
     
+    -- backdrop should be present
     if backdropColour then
+        GuiServices.DisableUnrelatedButtons(guiInstance)
+
         GuiBackdropFrame.BackgroundColor3 = backdropColour
         GuiBackdropFrame.Visible = true
         
@@ -61,6 +80,7 @@ function GuiServices.HideGuiStandard(guiInstance, goalPos, goalSize)
     guiBackdropTween:Play()
     guiBackdropTween.Completed:Connect(function(_playbackState)
         GuiBackdropFrame.Visible = false
+        GuiServices.EnableUnrelatedButtons(guiInstance)
     end)
 
     local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 0 })
