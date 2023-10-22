@@ -218,7 +218,7 @@ end)
 PlrStudiosBtn.Activated:Connect(function()
     clearStudioList()
     populateStudioList()
-    GuiServices.ShowGuiStandard(StudioListContainer, visibleGuiPos, visibleGuiSize)
+    GuiServices.ShowGuiStandard(StudioListContainer, visibleGuiPos, visibleGuiSize, GlobalVariables.Gui.GuiBackdropColourDefault)
 end)
 
 StudioListExitBtn.Activated:Connect(function()

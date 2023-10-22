@@ -223,6 +223,6 @@ Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGu
     if guiName == "techStoreItemShop" and showGui then
         clearItemShopScrollingFrame()
         generateItemShopGui(options.itemsToDisplay)
-        GuiServices.ShowGuiStandard(itemShopContainer, itemShopContainerVisibleGuiPos, itemShopContainerVisibleGuiSize)
+        GuiServices.ShowGuiStandard(itemShopContainer, itemShopContainerVisibleGuiPos, itemShopContainerVisibleGuiSize, GlobalVariables.Gui.GuiBackdropColourDefault)
     end
 end)

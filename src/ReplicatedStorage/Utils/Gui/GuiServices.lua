@@ -1,37 +1,52 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
 
 local GuiTransparency = require(ReplicatedStorage.Libs:WaitForChild("GUITransparency"))
+
+local localPlr = Players.LocalPlayer
+local PlayerGui = localPlr.PlayerGui
+
+local GuiBackdropFrame = PlayerGui:WaitForChild("GuiBackdrop"):WaitForChild("GuiBackdrop")
+
+local GuiBlur = Lighting:WaitForChild("GuiBlur")
 
 local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
 
 local GuiServices = {}
 
-function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number, ignoreElements: {})
-    if not ignoreElements then ignoreElements = {} end
-
+function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number)
     guiInstance.Position = UDim2.fromScale(0.5, guiInstance.Position.Y.Scale + posOffset)
     guiInstance.Visible = false
 end
 
-function GuiServices.ShowGuiStandard(guiInstance, goalPos, goalSize, ignoreElements: {})
-    if not ignoreElements then ignoreElements = {} end
-
+function GuiServices.ShowGuiStandard(guiInstance, goalPos, goalSize, backdropColour: Color3)
     guiInstance.Visible = true
+    
     local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
     local mainTween = TweenService:Create(guiInstance, tweenInfo, {
         Position = goalPos,
         Size = goalSize
     })
+    
+    if backdropColour then
+        GuiBackdropFrame.BackgroundColor3 = backdropColour
+        GuiBackdropFrame.Visible = true
+        
+        local guiBackdropTween = TweenService:Create(GuiBackdropFrame, tweenInfo, { BackgroundTransparency = 0.6 })
+        guiBackdropTween:Play()
+    
+        local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 20 })
+        guiBlurTween:Play()
+    end
 
     mainTween:Play()
 
     return mainTween
 end
 
-function GuiServices.HideGuiStandard(guiInstance, goalPos, goalSize, ignoreElements: {})
-    if not ignoreElements then ignoreElements = {} end
-
+function GuiServices.HideGuiStandard(guiInstance, goalPos, goalSize)
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
     local mainTween = TweenService:Create(guiInstance, tweenInfo, {
         Position = goalPos,
@@ -42,13 +57,20 @@ function GuiServices.HideGuiStandard(guiInstance, goalPos, goalSize, ignoreEleme
         guiInstance.Visible = false
     end)
 
+    local guiBackdropTween = TweenService:Create(GuiBackdropFrame, tweenInfo, { BackgroundTransparency = 1 })
+    guiBackdropTween:Play()
+    guiBackdropTween.Completed:Connect(function(_playbackState)
+        GuiBackdropFrame.Visible = false
+    end)
+
+    local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 0 })
+    guiBlurTween:Play()
+
     return mainTween
 end
 
-function GuiServices.AdjustTransparency(guiInstance, transparencyValue, tweenInfo, ignoreElements: {})
-    if not ignoreElements then ignoreElements = {} end
-
-    GuiTransparency:SetTransparency(guiInstance, transparencyValue, tweenInfo, ignoreElements)
+function GuiServices.AdjustTransparency(guiInstance, transparencyValue, tweenInfo)
+    GuiTransparency:SetTransparency(guiInstance, transparencyValue, tweenInfo)
 end
 
 function GuiServices.AdjustTextTransparency(guiInstance, transparencyValue: number, transparencyTween: boolean)

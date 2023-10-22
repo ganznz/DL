@@ -82,7 +82,7 @@ Remotes.GUI.ChangeGuiStatusRemote.OnClientEvent:Connect(function(guiName, showGu
     if guiName == "cashierJobInfo" then
         if showGui then
             updateJobInfoGui(options)
-            GuiServices.ShowGuiStandard(jobInfoContainer, visibleGuiPos, visibleGuiSize)
+            GuiServices.ShowGuiStandard(jobInfoContainer, visibleGuiPos, visibleGuiSize, GlobalVariables.Gui.GuiBackdropColourDefault)
         else
             GuiServices.HideGuiStandard(jobInfoContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
         end
