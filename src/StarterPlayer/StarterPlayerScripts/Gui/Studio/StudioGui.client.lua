@@ -26,6 +26,7 @@ local StudioListScrollingFrameTemplate = StudioListScrollingFrame:WaitForChild("
 local StudioWhitelistBtn = StudioListContainer.StudioSettings.WhitelistBtn
 local StudioKickAllBtn = StudioListContainer.StudioSettings.KickBtn
 
+local WHITELIST_BTN_TEXT_TEMPLATE = "Studio: SETTING"
 local visibleGuiPos = StudioListContainer.Position
 local visibleGuiSize = StudioListContainer.Size
 
@@ -162,6 +163,22 @@ local function updateStudioListItem(userIdToUpdate: number, updateStatus: "add" 
     end
 end
 
+local function updateWhitelistBtn(whitelistSetting: "open" | "closed" | "friends")
+    if whitelistSetting == "open" then
+        StudioWhitelistBtn.BackgroundColor3 = GlobalVariables.Gui.ValidGreenColour
+        StudioWhitelistBtn.Text = WHITELIST_BTN_TEXT_TEMPLATE:gsub("SETTING", "Open")
+
+    elseif whitelistSetting == "closed" then
+        StudioWhitelistBtn.BackgroundColor3 = GlobalVariables.Gui.InvalidRedColour
+        StudioWhitelistBtn.Text = WHITELIST_BTN_TEXT_TEMPLATE:gsub("SETTING", "Closed")
+
+    elseif whitelistSetting == "friends" then
+        StudioWhitelistBtn.BackgroundColor3 = GlobalVariables.Gui.CantAffordColour
+        StudioWhitelistBtn.Text = WHITELIST_BTN_TEXT_TEMPLATE:gsub("SETTING", "Friends")
+
+    end
+end
+
 -- switches between the left-side studio btns (visit studio btn & build mode btn)
 local function switchStudioBtns(btnToHide, btnToShow)
     btnToHide.Visible = false
@@ -206,10 +223,18 @@ StudioListExitBtn.Activated:Connect(function()
     GuiServices.HideGuiStandard(StudioListContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
 end)
 
+StudioWhitelistBtn.Activated:Connect(function()
+    Remotes.Studio.UpdateWhitelist:FireServer()
+end)
+
 Remotes.GUI.Studio.UpdateStudioList.OnClientEvent:Connect(function(userIdToUpdate: number, updateStatus: "add" | "remove" | "update", userStudioInfo)
     updateStudioListItem(userIdToUpdate, updateStatus, userStudioInfo)
 end)
 
 Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(_studioIndex, _interiorPlrTpPart, _exteriorPlrTpPart)
     GuiServices.HideGuiStandard(StudioListContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
+end)
+
+Remotes.Studio.UpdateWhitelist.OnClientEvent:Connect(function(newWhitelistSetting)
+    updateWhitelistBtn(newWhitelistSetting)
 end)

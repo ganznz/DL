@@ -64,8 +64,6 @@ for _i, exteriorStudioFolder in studioExteriorsFolder do
     tpPart:SetAttribute("AreaName", "Studio"..exteriorStudioFolder.Name)
 end
 
-
-
 local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
@@ -87,6 +85,21 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
     end
 end
 
+local function updateStudioWhitelist(plr: Player): string
+    local plrStudioInfo = plrStudios[plr.UserId]
+    if not plrStudioInfo then return end
+
+    local currentWhitelistSetting = plrStudioInfo.StudioStatus
+    if currentWhitelistSetting ==  "open" then
+        plrStudios[plr.UserId].StudioStatus = "friends"
+    elseif currentWhitelistSetting == "friends" then
+        plrStudios[plr.UserId].StudioStatus = "closed"
+    elseif currentWhitelistSetting == "closed" then
+        plrStudios[plr.UserId].StudioStatus = "open"
+    end
+
+    return plrStudios[plr.UserId].StudioStatus
+end
 
 -- register studio exterior teleports
 for _i, studioFolder in studioExteriorsFolder do
@@ -154,3 +167,13 @@ end)
 Remotes.Studio.GetStudioPlrInfo.OnServerInvoke = function()
     return plrStudios
 end
+
+Remotes.Studio.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)
+    local newWhitelistSetting = updateStudioWhitelist(plr)
+
+    -- update new whitelist setting visually for plr
+    Remotes.Studio.UpdateWhitelist:FireClient(plr, newWhitelistSetting)
+
+    -- update new whitelist setting on all client Studio Lists
+    Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "update", plrStudios[plr.UserId])
+end)
