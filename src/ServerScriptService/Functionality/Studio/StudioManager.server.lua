@@ -118,6 +118,28 @@ local function canVisitStudio(plr: Player, plrToVisit: Player): false
     return false
 end
 
+local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends: boolean)
+    for plrUserId, studioInfo in plrsInStudio do
+
+        -- if studioInfo exists then it means the plr is in a studio
+        if studioInfo then
+            -- ignore studio owner
+            -- if plrUserId == plr.UserId then continue end
+
+            -- check if the studio the plr is in matches with who fired this remote
+            if studioInfo.PlrVisitingId == plrWhosStudioToClear.UserId then
+                local plrToKick: Player = Players:GetPlayerByUserId(plrUserId)
+                if plrToKick then
+                    if ignoreFriends and plrToKick:IsFriendsWith(plrWhosStudioToClear.UserId) then continue end
+
+                    plrsInStudio[plrWhosStudioToClear.UserId] = false
+                    Remotes.Studio.KickFromStudio:FireClient(plrToKick)
+                end
+            end
+        end
+    end
+end
+
 -- register studio exterior teleports
 for _i, studioFolder in studioExteriorsFolder do
     local studioIndex = tonumber(studioFolder.Name)
@@ -189,6 +211,12 @@ end
 Remotes.Studio.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)
     local newWhitelistSetting = updateStudioWhitelist(plr)
     
+    
+    if newWhitelistSetting == "friends" then
+        kickAllPlrsFromStudio(plr, true)
+    elseif newWhitelistSetting == "closed" then
+        kickAllPlrsFromStudio(plr, false)
+    end
 
     -- update new whitelist setting visually for plr
     Remotes.Studio.UpdateWhitelist:FireClient(plr, newWhitelistSetting)
@@ -198,21 +226,5 @@ Remotes.Studio.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)
 end)
 
 Remotes.Studio.KickFromStudio.OnServerEvent:Connect(function(plr: Player)
-    for plrUserId, studioInfo in plrsInStudio do
-
-        -- if studioInfo exists then it means the plr is in a studio
-        if studioInfo then
-            -- ignore studio owner
-            -- if plrUserId == plr.UserId then continue end
-
-            -- check if the studio the plr is in matches with who fired this remote
-            if studioInfo.PlrVisitingId == plr.UserId then
-                local plrToKick: Player = Players:GetPlayerByUserId(plrUserId)
-                if plrToKick then
-                    plrsInStudio[plr.UserId] = false
-                    Remotes.Studio.KickFromStudio:FireClient(plrToKick)
-                end
-            end
-        end
-    end
+    kickAllPlrsFromStudio(plr, false)
 end)
