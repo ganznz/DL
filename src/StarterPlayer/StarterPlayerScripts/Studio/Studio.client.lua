@@ -80,6 +80,12 @@ local function studioInteriorExitListener()
 end
 
 Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
+    -- if plr was already in a studio (their own or someone elses)
+    if inStudio then
+        destroyInterior()
+        regenerateExterior()
+    end
+    
     inStudio = true
     studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
@@ -93,6 +99,12 @@ Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interi
 end)
 
 Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
+    -- if plr was already in a studio (their own or someone elses)
+    if inStudio then
+        destroyInterior()
+        regenerateExterior()
+    end
+
     inStudio = true
     studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
