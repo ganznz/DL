@@ -7,4 +7,26 @@ function GeneralUtils.HasProperty(object, propertyName)
     return success
 end
 
+function GeneralUtils.ShallowCopy(original)
+    local copy = {}
+    for k, v in original do
+        copy[k] = v
+    end
+    return copy
+end
+
+function GeneralUtils.ShallowCopyNested(original)
+    local copy = {}
+
+    for k, v in original do
+        if type(v) == "table" then
+            v = GeneralUtils.ShallowCopyNested(v)
+        end
+
+        copy[k] = v
+    end
+
+    return copy
+end
+
 return GeneralUtils
