@@ -1,4 +1,6 @@
-local ReplicatedFirst = game:GetService("ReplicatedFirst")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
 
 local Studio = {}
 
@@ -89,6 +91,26 @@ function Studio.CanPurchaseNextStudio(plrData): boolean
     local nextStudioConfig = Studio.GetConfig(currentStudioLevel + 1)
     local plrCash = plrData.Cash
     return plrCash >= nextStudioConfig.Price
+end
+
+function Studio.GetFurnitureAvailableForStudio(plrData)
+    local studioIndex = plrData.Studio.ActiveStudio
+
+    local furnitureInInventoryCopy = GeneralUtils.ShallowCopyNested(plrData.Inventory.StudioFurnishing)
+    local furniturePlacedInStudio = plrData.Studio.Studios[studioIndex].Furnishings
+
+    -- remove from inventory whats already placed in studio
+    for furnitureCategory, furnitureItems in furnitureInInventoryCopy do
+
+        -- traverse table in reverse as items may be removed, to maintain index order
+        for i = #furnitureItems, 1, -1 do
+            if table.find(furniturePlacedInStudio[furnitureCategory], furnitureItems[i]) then
+                table.remove(furnitureInInventoryCopy[furnitureCategory], i)
+            end
+        end
+    end
+
+    return furnitureInInventoryCopy
 end
 
 
