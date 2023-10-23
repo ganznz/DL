@@ -35,7 +35,6 @@ Players.PlayerAdded:Connect(function(plr: Player)
     }
 
     plrsInStudio[plr.UserId] = false
-
     Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "add", plrStudios[plr.UserId])
 end)
 
@@ -60,7 +59,7 @@ for _i, exteriorStudioFolder in studioExteriorsFolder do
     tpPart.Transparency = 1
     tpPart.Parent = exteriorStudioFolder
     tpPart.CFrame = interiorTpToPart.CFrame * CFrame.new(0, 7, 0) -- adjust Y-coord to prevent player clipping into studio interior floor/tp below studio
-    tpPart:SetAttribute("AreaAccessibility", "General")  -- this value doesn't matter
+    tpPart:SetAttribute("AreaAccessibility", "General")  -- set to "General" so plrs can tp into other plrs studios.
     tpPart:SetAttribute("AreaName", "Studio"..exteriorStudioFolder.Name)
 end
 
@@ -72,15 +71,18 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
     local interiorPlayerTpPart = studioExteriorFolder:FindFirstChild("PlrTeleportToPartInterior")
     local exteriorPlayerTpPart = studioExteriorFolder:FindFirstChild("TeleportToPart")
 
-    plrsInStudio[plr.UserId] = {
-        PlrVisitingId = plr.UserId,
-        StudioIndex = studioIndex
-    }
-
     if plr == plrToVisit then
+        plrsInStudio[plr.UserId] = {
+            PlrVisitingId = plr.UserId,
+            StudioIndex = studioIndex
+        }
         profile.Data.Studio.ActiveStudio = studioIndex
         Remotes.Studio.VisitOwnStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart)
     else
+        plrsInStudio[plr.UserId] = {
+            PlrVisitingId = plrToVisit.UserId,
+            StudioIndex = studioIndex
+        }
         Remotes.Studio.VisitOtherStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart)
     end
 end
@@ -108,7 +110,7 @@ end
 local function canVisitStudio(plr: Player, plrToVisit: Player): false
     if not plrStudios[plr.UserId] then return end
 
-    local whitelistSetting = plrStudios[plr.UserId].StudioStatus
+    local whitelistSetting = plrStudios[plrToVisit.UserId].StudioStatus
     if whitelistSetting == "friends" and plr:IsFriendsWith(plrToVisit.UserId) then
         return true
     elseif whitelistSetting == "open" then
@@ -124,7 +126,7 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
         -- if studioInfo exists then it means the plr is in a studio
         if studioInfo then
             -- ignore studio owner
-            -- if plrUserId == plr.UserId then continue end
+            if plrUserId == plrWhosStudioToClear.UserId then continue end
 
             -- check if the studio the plr is in matches with who fired this remote
             if studioInfo.PlrVisitingId == plrWhosStudioToClear.UserId then
@@ -132,7 +134,7 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
                 if plrToKick then
                     if ignoreFriends and plrToKick:IsFriendsWith(plrWhosStudioToClear.UserId) then continue end
 
-                    plrsInStudio[plrWhosStudioToClear.UserId] = false
+                    plrsInStudio[plrToKick.UserId] = false
                     Remotes.Studio.KickFromStudio:FireClient(plrToKick)
                 end
             end

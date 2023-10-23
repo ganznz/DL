@@ -33,6 +33,14 @@ local function calculateYOffset(model: Model): number
     return model.PrimaryPart.Size.Y / 2
 end
 
+local function resetStudioVariables()
+    inStudio = false
+    currentStudioIndex = nil
+    studioInteriorFolder = nil
+    studioInteriorExitZone = nil
+    studioExteriorTpPart = nil
+end
+
 local function enterStudio(interiorPlrTpPart)
     -- tp plr into studio interior
     Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = interiorPlrTpPart })
@@ -75,6 +83,7 @@ local function studioInteriorExitListener()
         task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
             destroyInterior()
             regenerateExterior()
+            resetStudioVariables()
         end)
     end)
 end
@@ -84,6 +93,7 @@ Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interi
     if inStudio then
         destroyInterior()
         regenerateExterior()
+        resetStudioVariables()
     end
     
     inStudio = true
@@ -103,6 +113,7 @@ Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, inte
     if inStudio then
         destroyInterior()
         regenerateExterior()
+        resetStudioVariables()
     end
 
     inStudio = true
@@ -122,6 +133,7 @@ Remotes.Studio.KickFromStudio.OnClientEvent:Connect(function()
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         destroyInterior()
         regenerateExterior()
+        resetStudioVariables()
     end)
 end)
 
@@ -130,6 +142,7 @@ humanoid.Died:Connect(function()
         inStudio = false
         destroyInterior()
         regenerateExterior()
+        resetStudioVariables()
         Remotes.Studio.LeaveStudio:FireServer()
     end
 end)
@@ -141,16 +154,11 @@ plr.CharacterAdded:Connect(function(character: Model)
         if inStudio then
             destroyInterior()
             regenerateExterior()
+            resetStudioVariables()
             Remotes.Studio.LeaveStudio:FireServer()
         end
     end)
 end)
-
-
-
-
-
-
 
 
 local PlayerGui = plr.PlayerGui

@@ -138,9 +138,7 @@ local function createStudioListItem(userId: number, userStudioInfo)
     plrIconImage.Image = plrIcon
 
     setStudioVisitBtn(visitBtn, userStudioInfo.StudioStatus)
-    if userStudioInfo.StudioStatus == "open" then
-        visitBtnConnections[userId] = registerStudioVisitBtnListener(visitBtn, userId)
-    end
+    visitBtnConnections[userId] = registerStudioVisitBtnListener(visitBtn, userId)
 
     template.Visible = true
     template.Parent = StudioListScrollingFrame
@@ -158,8 +156,6 @@ local function populateStudioList()
 end
 
 local function updateStudioListItem(userIdToUpdate: number, updateStatus: "add" | "remove" | "update", userStudioInfo)
-    local studioInfoFrame = StudioListScrollingFrame:FindFirstChild(tostring(userIdToUpdate))
-    if not studioInfoFrame then return end
 
     if updateStatus == "add" then
         createStudioListItem(userIdToUpdate, userStudioInfo)
@@ -168,6 +164,9 @@ local function updateStudioListItem(userIdToUpdate: number, updateStatus: "add" 
         removeStudioListItem(userIdToUpdate)
     
     elseif updateStatus == "update" then
+        local studioInfoFrame = StudioListScrollingFrame:FindFirstChild(tostring(userIdToUpdate))
+        if not studioInfoFrame then return end
+
         local studioNameText = studioInfoFrame:FindFirstChild("StudioName")
         local visitBtn = studioInfoFrame:FindFirstChild("VisitBtn")
     
