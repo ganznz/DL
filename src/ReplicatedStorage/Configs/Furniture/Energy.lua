@@ -1,8 +1,7 @@
 local Bed = {}
 
 type BedConfig = {
-    EnergyPerSec: number,
-    ImageUrl: string -- model render image (ADD TO CONFIG BELOW)
+    EnergyPerSec: number
 }
 
 local Config: { [string]: BedConfig } = {
