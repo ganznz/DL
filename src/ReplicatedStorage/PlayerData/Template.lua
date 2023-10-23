@@ -63,7 +63,13 @@ local Template = {
     Inventory = {
         StudioFurnishing = {
             -- character need name = { items that fulfill the need }
-            Happiness = {},
+            Mood = {
+                -- [1]: furnitureItemName
+                "one",
+                "three",
+                "four",
+                "five"
+            },
             Energy = {},
             Hunger = {},
             Decor = {}
@@ -81,6 +87,14 @@ local Template = {
             {
                 Furnishings = {
                     -- contain information for placed items in this studio
+                    Mood = {
+                        "one",
+                        "two",
+                        "three"
+                    },
+                    Energy = {},
+                    Hunger = {},
+                    Decor = {}
                 },
             },
         }
