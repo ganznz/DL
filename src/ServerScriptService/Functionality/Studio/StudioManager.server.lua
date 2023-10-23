@@ -140,6 +140,8 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
     end
 end
 
+-- calc the furniture available for that specific studio
+-- plr can place a furniture item in one studio, but it should still be available to place in another studio
 -- register studio exterior teleports
 for _i, studioFolder in studioExteriorsFolder do
     local studioIndex = tonumber(studioFolder.Name)
@@ -227,4 +229,22 @@ end)
 
 Remotes.Studio.KickFromStudio.OnServerEvent:Connect(function(plr: Player)
     kickAllPlrsFromStudio(plr, false)
+end)
+
+Remotes.Studio.EnterBuildMode.OnServerEvent:Connect(function(plr: Player)
+    -- check if plr is in their own studio, in cases where exploiters might fire remote when not in their studio
+    local plrStudioInfo = plrsInStudio[plr.UserId]
+    if plrStudioInfo then
+        if plrStudioInfo.PlrVisitingId == plr.UserId then
+
+            local profile = PlrDataManager.Profiles[plr]
+            if not profile then return end
+
+            local studioData = profile.Data.Inventory
+            -- 1) populate build-mode gui
+            -- 2) enable build-mode functionality
+            StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
+            Remotes.Studio.EnterBuildMode:FireClient(plr, studioData)
+        end
+    end
 end)

@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
@@ -14,6 +15,8 @@ local LeftSideContainer = PlayerGui:WaitForChild("Left"):WaitForChild("LeftBtnCo
 local StudioTeleportBtn = LeftSideContainer.StudioTpBtn
 local StudioBuildModeBtn = LeftSideContainer.StudioBuildModeBtn
 
+local PlrInfoContainer = PlayerGui:WaitForChild("Left"):WaitForChild("PlrInfoContainer")
+
 local RightSideContainer = PlayerGui:WaitForChild("Right"):WaitForChild("RightBtnContainer")
 local PlrStudiosBtn = RightSideContainer.PlrStudiosBtn
 
@@ -24,10 +27,25 @@ local StudioListScrollingFrameTemplate = StudioListScrollingFrame:WaitForChild("
 local StudioWhitelistBtn = StudioListContainer.StudioSettings.WhitelistBtn
 local StudioKickAllBtn = StudioListContainer.StudioSettings.KickBtn
 
+local StudioBuildModeContainer = PlayerGui:WaitForChild("BuildMode"):WaitForChild("BuildModeContainer")
+
 local WHITELIST_BTN_TEXT_TEMPLATE = "Studio: SETTING"
 local KICK_PLRS_COOLDOWN = 15 -- seconds
-local visibleGuiPos = StudioListContainer.Position
-local visibleGuiSize = StudioListContainer.Size
+
+local visibleGuiPos: UDim2 = StudioListContainer.Position
+local visibleGuiSize: UDim2 = StudioListContainer.Size
+
+local leftSideContainerVisiblePos: UDim2 = LeftSideContainer.Position
+local leftSideContainerVisibleSize: UDim2 = LeftSideContainer.Size
+
+local rightSideContainerVisiblePos: UDim2 = RightSideContainer.Position
+local rightSideContainerVisibleSize: UDim2 = RightSideContainer.Size
+
+local plrInfoContainerVisiblePos: UDim2 = PlrInfoContainer.Position
+local plrInfoContainerVisibleSize: UDim2 = PlrInfoContainer.Size
+
+local studioBuildModeVisiblePos: UDim2 = StudioBuildModeContainer.Position
+local studioBuildModeVisibleSize: UDim2 = StudioBuildModeContainer.Size
 
 local char = localPlr.Character or localPlr.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
@@ -181,6 +199,24 @@ local function updateWhitelistBtn(whitelistSetting: "open" | "closed" | "friends
     end
 end
 
+local function enableBuildModeGui()
+    -- hide unrelated gui
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+    local hideLeftGuiTween = TweenService:Create(LeftSideContainer, tweenInfo, { Position = UDim2.fromScale(-leftSideContainerVisibleSize.X.Scale, leftSideContainerVisiblePos.Y.Scale) })
+    local hideRightGuiTween = TweenService:Create(RightSideContainer, tweenInfo, { Position = UDim2.fromScale(rightSideContainerVisibleSize.X.Scale + 1, rightSideContainerVisiblePos.Y.Scale) })
+    local hidePlrInfoTween = TweenService:Create(PlrInfoContainer, tweenInfo, { Position = UDim2.fromScale(-plrInfoContainerVisibleSize.X.Scale, plrInfoContainerVisiblePos.Y.Scale) })
+    
+    StudioBuildModeContainer.Visible = true
+    local buildModeTween = TweenService:Create(StudioBuildModeContainer, tweenInfo, { Position = studioBuildModeVisiblePos })
+
+    hideLeftGuiTween:Play()
+    hideRightGuiTween:Play()
+    hidePlrInfoTween:Play()
+    buildModeTween:Play()
+
+    Remotes.Studio.EnterBuildMode:FireServer()
+end
+
 -- switches between the left-side studio btns (visit studio btn & build mode btn)
 local function switchStudioBtns(btnToHide, btnToShow)
     btnToHide.Visible = false
@@ -197,17 +233,21 @@ StudioTeleportBtn.Activated:Connect(function()
     end
 end)
 
+StudioBuildModeBtn.Activated:Connect(function()
+    enableBuildModeGui()
+end)
+
 Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart)
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioTeleportBtn, StudioBuildModeBtn)
     end)
 end)
 
-Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart)
-    -- task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
-    --     switchStudioBtns(StudioTeleportBtn, StudioBuildModeBtn)
-    -- end)
-end)
+-- Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart)
+--     -- task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
+--     --     switchStudioBtns(StudioTeleportBtn, StudioBuildModeBtn)
+--     -- end)
+-- end)
 
 Remotes.Studio.LeaveStudio.OnClientEvent:Connect(function()
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
