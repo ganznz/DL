@@ -238,15 +238,15 @@ Remotes.Studio.EnterBuildMode.OnServerEvent:Connect(function(plr: Player)
     local plrStudioInfo = plrsInStudio[plr.UserId]
     if plrStudioInfo then
         if plrStudioInfo.PlrVisitingId == plr.UserId then
-
             local profile = PlrDataManager.Profiles[plr]
             if not profile then return end
 
             local studioData = profile.Data.Inventory
             -- 1) populate build-mode gui
             -- 2) enable build-mode functionality
-            StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
-            Remotes.Studio.EnterBuildMode:FireClient(plr, studioData)
+            local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
+
+            Remotes.Studio.EnterBuildMode:FireClient(plr, studioFurnitureInventory)
         end
     end
 end)
