@@ -250,3 +250,10 @@ Remotes.Studio.EnterBuildMode.OnServerEvent:Connect(function(plr: Player)
         end
     end
 end)
+
+Remotes.Studio.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemName: string, itemCategory: string)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local hasItem: boolean = profile.Data
+end)

@@ -51,4 +51,8 @@ function Studio.PurchaseNextStudio(plr: Player): boolean
     return true
 end
 
+function Studio.ItemAvailableToPlace(plr: Player, itemName: string, itemCategory: string)
+    
+end
+
 return Studio
