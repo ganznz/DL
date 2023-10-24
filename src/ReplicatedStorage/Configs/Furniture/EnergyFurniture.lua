@@ -1,10 +1,14 @@
-local Bed = {}
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-type BedConfig = {
+local modelFolder = ReplicatedStorage.Assets.Models.StudioFurnishing.Energy
+
+local EnergyFurniture = {}
+
+type EnergyFurnitureConfig = {
     EnergyPerSec: number
 }
 
-local Config: { [string]: BedConfig } = {
+local Config: { [string]: EnergyFurnitureConfig } = {
     Default = {
         EnergyPerSec = 1
     },
@@ -49,6 +53,14 @@ local Config: { [string]: BedConfig } = {
     },
 }
 
-Bed.Config = Config
+EnergyFurniture.Config = Config
 
-return Bed
+function EnergyFurniture.GetConfig(itemName: string): EnergyFurnitureConfig
+    return EnergyFurniture.Config[itemName]
+end
+
+function EnergyFurniture.GetModel(itemName: string): Model
+    return modelFolder:FindFirstChild(itemName):Clone()
+end
+
+return EnergyFurniture
