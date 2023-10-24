@@ -102,10 +102,18 @@ function Studio.GetFurnitureAvailableForStudio(plrData)
     -- remove from inventory whats already placed in studio
     for furnitureCategory, furnitureItems in furnitureInInventoryCopy do
 
-        -- traverse table in reverse as items may be removed, to maintain index order
-        for i = #furnitureItems, 1, -1 do
-            if table.find(furniturePlacedInStudio[furnitureCategory], furnitureItems[i]) then
-                table.remove(furnitureInInventoryCopy[furnitureCategory], i)
+        for furnitureItemName, furnitureItemInfo in furnitureItems do
+
+            if furniturePlacedInStudio[furnitureCategory][furnitureItemName] then
+                local amtInInventory = furnitureInInventoryCopy[furnitureCategory][furnitureItemName].Amount
+                local amtInStudio = furniturePlacedInStudio[furnitureCategory][furnitureItemName].Amount
+                local difference = amtInInventory - amtInStudio
+
+                if difference >= 1 then
+                    furnitureInInventoryCopy[furnitureCategory][furnitureItemName].Amount = difference
+                else
+                    furnitureInInventoryCopy[furnitureCategory][furnitureItemName] = nil
+                end
             end
         end
     end
