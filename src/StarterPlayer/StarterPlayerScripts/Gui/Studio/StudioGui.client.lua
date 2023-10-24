@@ -5,6 +5,10 @@ local TweenService = game:GetService("TweenService")
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
 local StudioConfig = require(ReplicatedStorage.Configs:WaitForChild("Studio"))
+local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("HungerFurniture"))
+local EnergyFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("EnergyFurniture"))
+local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
+local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("DecorFurniture"))
 
 local Remotes = ReplicatedStorage.Remotes
 local furnitureModelFolder = ReplicatedStorage.Assets.Models.StudioFurnishing
@@ -65,6 +69,8 @@ local studioBuildModeVisibleSize: UDim2 = StudioBuildModeContainer.Size
 
 -- STATIC VARIABLES
 local WHITELIST_BTN_TEXT_TEMPLATE = "Studio: SETTING"
+local ITEM_STAT_TEXT_TEMPLATE = "+AMT/sec"
+local ITEM_AMOUNT_TEXT_TEMPLATE = "xAMT"
 local KICK_PLRS_COOLDOWN = 1 -- seconds
 
 
@@ -253,17 +259,64 @@ local function showBuildModeGui()
     SelectCategoryText.Visible = true
 end
 
-local function createViewportItem(itemName: string)
-    
+local function createViewportItem(category: "Mood" | "Energy" | "Hunger" | "Decor", itemName: string, itemInfo)
+    local template
+    if category == "Decor" then template = DecoItemTemplate:Clone() else template = NeedItemTemplate:Clone() end
+    template.Name = itemName
+    local itemNameText = template:FindFirstChild("ItemName")
+    itemNameText.Text = itemName
+    local itemAmountText = template:FindFirstChild("ItemAmount")
+    itemAmountText.Text = ITEM_AMOUNT_TEXT_TEMPLATE:gsub("AMT", itemInfo.Amount)
+
+    local itemModel
+
+    if category ~= "Decor" then
+        local itemStatsText = template:FindFirstChild("ItemStats")
+        local config
+        if category == "Mood" then
+            itemModel = MoodFurnitureConfig.GetModel(itemName)
+            config = MoodFurnitureConfig.GetConfig(itemName)
+            itemStatsText.Text = ITEM_STAT_TEXT_TEMPLATE:gsub("AMT", config.MoodPerSec)
+
+        elseif category == "Energy" then
+            itemModel = EnergyFurnitureConfig.GetModel(itemName)
+            config = EnergyFurnitureConfig.GetConfig(itemName)
+            itemStatsText.Text = ITEM_STAT_TEXT_TEMPLATE:gsub("AMT", config.EnergyPerSec)
+
+        elseif category == "Hunger" then
+            itemModel = HungerFurnitureConfig.GetModel(itemName)
+            config = HungerFurnitureConfig.GetConfig(itemName)
+            itemStatsText.Text = ITEM_STAT_TEXT_TEMPLATE:gsub("AMT", config.HungerPerSec)
+        end
+    else
+        itemModel = DecorFurnitureConfig.GetModel(itemName)
+    end
+
+    if itemModel then
+        local viewportFrame = template:FindFirstChild("ViewportFrame")
+        local viewportCamera = Instance.new("Camera", viewportFrame)
+        GuiServices.GenerateViewportFrame(viewportFrame, viewportCamera, itemModel, Vector3.new(-6, 4, 3))
+    end
+
+    template.Visible = true
+
+    return template
 end
 
 local function populateItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor")
     if studioFurnitureInventory then
-        print(studioFurnitureInventory)
-        for _i, itemName in studioFurnitureInventory[category] do
-            createViewportItem(itemName)
+        for itemName, itemInfo in studioFurnitureInventory[category] do
+            local viewportItem = createViewportItem(category, itemName, itemInfo)
+            viewportItem.Parent = BuildModeItemViewport
         end
     end
+end
+
+local function setupItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor")
+    clearBuildModeViewport()
+    populateItemDisplay(category)
+    SelectCategoryText.Visible = false
+    BuildModeItemViewport.Visible = true
 end
 
 -- switches between the left-side studio btns (visit studio btn & build mode btn)
@@ -338,23 +391,26 @@ end)
 
 MoodCategoryBtn.Activated:Connect(function()
     if studioFurnitureInventory then
-        clearBuildModeViewport()
-        populateItemDisplay("Mood")
-        SelectCategoryText.Visible = false
-        BuildModeItemViewport.Visible = true
+        setupItemDisplay("Mood")
     end
 end)
 
 EnergyCategoryBtn.Activated:Connect(function()
-
+    if studioFurnitureInventory then
+        setupItemDisplay("Energy")
+    end
 end)
 
 HungerCategoryBtn.Activated:Connect(function()
-
+    if studioFurnitureInventory then
+        setupItemDisplay("Hunger")
+    end
 end)
 
 DecorCategoryBtn.Activated:Connect(function()
-
+    if studioFurnitureInventory then
+        setupItemDisplay("Decor")
+    end
 end)
 
 
