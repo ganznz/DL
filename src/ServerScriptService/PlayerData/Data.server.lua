@@ -6,7 +6,8 @@ local Template = require(ReplicatedStorage.PlayerData.Template)
 local Manager = require(ServerScriptService.PlayerData.Manager)
 local ProfileService = require(ServerScriptService.Libs.ProfileService)
 
-local ProfileStore = ProfileService.GetProfileStore("Production", Template)
+-- datastores that I've used: Production, Development
+local ProfileStore = ProfileService.GetProfileStore("Development", Template)
 
 local KICK_MSG = "Data issue, try again."
 
@@ -63,4 +64,5 @@ Players.PlayerRemoving:Connect(function(plr)
     if profile then
         profile:Release()
     end
+    ProfileStore:WipeProfileAsync("Player_"..plr.UserId)
 end)

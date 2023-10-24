@@ -64,15 +64,22 @@ local Template = {
         StudioFurnishing = {
             -- character need name = { items that fulfill the need }
             Mood = {
-                -- [1]: furnitureItemName
-                "one",
-                "three",
-                "four",
-                "five"
+                ["Arcade Machine"] = { Amount = 2 },
+                TV = { Amount = 5 },
             },
-            Energy = {},
-            Hunger = {},
-            Decor = {}
+            Energy = {
+                Default = { Amount = 10 },
+                Basic = { Amount = 5 },
+            },
+            Hunger = {
+                Default = { Amount = 3 },
+                Basic = { Amount = 3 },
+            },
+            Decor = {
+                ["Book Stack"] = { Amount = 1 },
+                ["Pot Plant"] = { Amount = 1 },
+                Crate = { Amount = 1 }
+            }
         }
     },
 
@@ -88,13 +95,18 @@ local Template = {
                 Furnishings = {
                     -- contain information for placed items in this studio
                     Mood = {
-                        "one",
-                        "two",
-                        "three"
+                        ["Arcade Machine"] = { Amount = 1 },
+                        TV = { Amount = 2 },
                     },
-                    Energy = {},
+                    Energy = {
+                        Basic = { Amount = 5 },
+                    },
                     Hunger = {},
-                    Decor = {}
+                    Decor = {
+                        ["Book Stack"] = { Amount = 0 },
+                        ["Pot Plant"] = { Amount = 0 },
+                        Crate = { Amount = 1 }
+                    }
                 },
             },
         }

@@ -34,7 +34,16 @@ function Studio.PurchaseNextStudio(plr: Player): boolean
     PlrDataManager.AdjustPlrCash(plr, -studioUpgradePrice)
     profile.Data.Studio.ActiveStudio = nextPlrStudioLevel
     PlrDataManager.UnlockArea(plr, 'Studio'..tostring(nextPlrStudioLevel))
-    table.insert(profile.Data.Studio.Studios, { Furnishings = {} })
+
+    -- insert new studio information into plr data
+    table.insert(profile.Data.Studio.Studios, {
+        Furnishings = {
+            Mood = {},
+            Energy = {},
+            Hunger = {},
+            Decor = {},
+        }
+    })
 
     Remotes.Purchase.PurchaseStudio:FireClient(plr, nextPlrStudioLevel)
 

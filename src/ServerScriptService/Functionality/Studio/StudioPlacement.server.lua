@@ -67,4 +67,4 @@ local function place(plr: Player, objectName, objectLocation, cframe, plot): boo
     return true
 end
 
-Remotes.Studio.PlaceItem.OnServerInvoke = place
+-- Remotes.Studio.PlaceItem.OnServerInvoke = place
