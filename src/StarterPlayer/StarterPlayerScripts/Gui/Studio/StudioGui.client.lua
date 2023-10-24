@@ -88,6 +88,10 @@ StudioBuildModeContainer.Position = studioBuildModeHiddenPos
 -- { [userId] = connection }
 local visitBtnConnections = {}
 
+-- stores Activated connections for when build-mode viewport items get clicked
+-- { [viewportItemInstance] = connection }
+local buildModeItemConnections = {}
+
 GuiServices.DefaultMainGuiStyling(StudioListContainer, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
 
 local function getPlrNameFromUserId(userId: number)
@@ -190,7 +194,6 @@ local function populateStudioList()
 end
 
 local function updateStudioListItem(userIdToUpdate: number, updateStatus: "add" | "remove" | "update", userStudioInfo)
-
     if updateStatus == "add" then
         createStudioListItem(userIdToUpdate, userStudioInfo)
 
@@ -232,13 +235,6 @@ local function updateWhitelistBtn(whitelistSetting: "open" | "closed" | "friends
     end
 end
 
-local function clearBuildModeViewport()
-    for _i, instance in BuildModeItemViewport:GetChildren() do
-        if instance.Name == 'UIListLayout' or instance.Name == 'UIPadding' or instance.Name == 'DecoItemTemplate' or instance.Name == 'NeedItemTemplate' then continue end
-        instance:Destroy()
-    end
-end
-
 local function showBuildModeGui()
     -- hide unrelated gui
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
@@ -248,18 +244,18 @@ local function showBuildModeGui()
     
     StudioBuildModeContainer.Visible = true
     local buildModeTween = TweenService:Create(StudioBuildModeContainer, tweenInfo, { Position = studioBuildModeVisiblePos })
-
+    
     hideLeftGuiTween:Play()
     hideLeftGuiTween.Completed:Connect(function(_playbackState) LeftSideContainer.Visible = false end)
 
     hideRightGuiTween:Play()
     hideRightGuiTween.Completed:Connect(function(_playbackState) RightSideContainer.Visible = false end)
-
+    
     hidePlrInfoTween:Play()
     hidePlrInfoTween.Completed:Connect(function(_playbackState) PlrInfoContainer.Visible = false end)
-
+    
     buildModeTween:Play()
-
+    
     BuildModeItemViewport.Visible = false
     SelectCategoryText.Visible = true
 end
@@ -270,19 +266,41 @@ local function hideBuildModeGui()
     local showLeftGuiTween = TweenService:Create(LeftSideContainer, tweenInfo, { Position = leftSideContainerVisiblePos })
     local showRightGuiTween = TweenService:Create(RightSideContainer, tweenInfo, { Position = rightSideContainerVisiblePos })
     local showPlrInfoTween = TweenService:Create(PlrInfoContainer, tweenInfo, { Position = plrInfoContainerVisiblePos })
-
+    
     local buildModeTween = TweenService:Create(StudioBuildModeContainer, tweenInfo, { Position = studioBuildModeHiddenPos })
-
+    
     LeftSideContainer.Visible = true
     RightSideContainer.Visible = true
     PlrInfoContainer.Visible = true
-
+    
     showLeftGuiTween:Play()
     showRightGuiTween:Play()
     showPlrInfoTween:Play()
-
+    
     buildModeTween:Play()
     buildModeTween.Completed:Connect(function() StudioBuildModeContainer.Visible = false end)
+end
+
+local function clearBuildModeViewport()
+    for _i, instance in BuildModeItemViewport:GetChildren() do
+        if instance.Name == 'UIListLayout' or instance.Name == 'UIPadding' or instance.Name == 'DecoItemTemplate' or instance.Name == 'NeedItemTemplate' then continue end
+
+        -- disconnect old connection if any and replace
+        local itemBtnConnection = buildModeItemConnections[instance]
+        if itemBtnConnection then
+            buildModeItemConnections[instance]:Disconnect()
+        end
+        instance:Destroy()
+    end
+end
+
+local function registerBuildModeItemListener(itemBtn, itemCategory)
+    local connection = itemBtn.Activated:Connect(function()
+        -- check that plr actually has item on server
+        local itemName = itemBtn.Name
+        Remotes.Studio.EnterPlaceMode:FireServer(itemName, itemCategory)
+    end)
+    return connection
 end
 
 local function createViewportItem(category: "Mood" | "Energy" | "Hunger" | "Decor", itemName: string, itemInfo)
@@ -324,6 +342,7 @@ local function createViewportItem(category: "Mood" | "Energy" | "Hunger" | "Deco
         GuiServices.GenerateViewportFrame(viewportFrame, viewportCamera, itemModel, Vector3.new(-6, 4, 3))
     end
 
+    buildModeItemConnections[template] = registerBuildModeItemListener(template, category)
     template.Visible = true
 
     return template
@@ -343,6 +362,7 @@ local function setupItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor"
     populateItemDisplay(category)
     SelectCategoryText.Visible = false
     BuildModeItemViewport.Visible = true
+    print(buildModeItemConnections)
 end
 
 -- switches between the left-side studio btns (visit studio btn & build mode btn)
