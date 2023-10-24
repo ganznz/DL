@@ -35,7 +35,6 @@ local PLACEMENT_INSTANCE_DATA = nil
 
 -- Constructor variables
 local GRID_SIZE -- size of each tile on plot, in studs
-local ITEM_LOCATION
 local ROTATE_KEY
 local TERMINATE_KEY
 
@@ -56,24 +55,6 @@ local rotationVal = false
 
 -- Other
 local collided = nil
-
-
-
-local function renderGrid()
-    -- destroy previous build-mode session plot texture if it still exists
-    if plot:FindFirstChildOfClass("Texture") then
-        plot:FindFirstChildOfClass("Texture"):Destroy()
-    end
-
-    local texture = Instance.new("Texture")
-    texture.Transparency = 1
-    texture.StudsPerTileU = GRID_SIZE
-    texture.StudsPerTileV = GRID_SIZE
-    texture.Texture = gridTexture
-    texture.Face = Enum.NormalId.Top
-    texture.Parent = plot
-    TweenService:Create(texture, TweenInfo.new(1), { Transparency = 0 }):Play()
-end
 
 local function changeHitboxColour()
     if object.PrimaryPart then
@@ -256,16 +237,19 @@ local function approvePlacement()
 end
 
 -- Constructor function
-function Placement.new(gridSize, objects, rotateKey, terminateKey)
+function Placement.new(gridSize, plt, placedObjs, stackable: boolean, rotateKey, terminateKey)
     local data = {}
     local metadata = setmetatable(data, Placement)
+
     GRID_SIZE = gridSize
-    ITEM_LOCATION = objects
     ROTATE_KEY = rotateKey
     TERMINATE_KEY = terminateKey
 
+    plot = plt
+    placedObjects = placedObjs
+    isStackable = stackable
+
     data.grid = GRID_SIZE
-    data.itemLocation = ITEM_LOCATION
     data.rotateKey = ROTATE_KEY or Enum.KeyCode.R
     data.terminateKey = TERMINATE_KEY or Enum.KeyCode.X
 
@@ -275,17 +259,14 @@ function Placement.new(gridSize, objects, rotateKey, terminateKey)
 end
 
 -- activates placement
-function Placement:Activate(objectName: string, placedObjs: {}, plt, stackable: boolean)
+function Placement:Activate(obj: Model)
     -- destroy previous build-mode session object if it still exists
     if object then
         object:Destroy()
     end
 
     -- assigns values for necessary variables
-    object = ITEM_LOCATION:FindFirstChild(objectName):Clone()
-    placedObjects = placedObjs
-    plot = plt
-    isStackable = stackable
+    object = obj
     rotation = 0
     rotationVal = true
     self.buildModeActivated = true
@@ -313,14 +294,30 @@ function Placement:Activate(objectName: string, placedObjs: {}, plt, stackable: 
         speed = 1
     end
 
-    renderGrid()
-
     object.Parent = placedObjects
     
     task.wait()
 
     bindInputs()
     speed = tempSpeed
+
+    RunService:BindToRenderStep("Input", Enum.RenderPriority.Input.Value, translateObj)
+end
+
+function Placement:RenderGrid()
+    -- destroy previous build-mode session plot texture if it still exists
+    if plot:FindFirstChildOfClass("Texture") then
+        plot:FindFirstChildOfClass("Texture"):Destroy()
+    end
+
+    local texture = Instance.new("Texture")
+    texture.Transparency = 1
+    texture.StudsPerTileU = GRID_SIZE
+    texture.StudsPerTileV = GRID_SIZE
+    texture.Texture = gridTexture
+    texture.Face = Enum.NormalId.Top
+    texture.Parent = plot
+    TweenService:Create(texture, TweenInfo.new(1), { Transparency = 0 }):Play()
 end
 
 function Placement:Deactivate()
@@ -331,7 +328,5 @@ function Placement:Deactivate()
     self.buildModeActivated = false
     self.placeModeActivated = false
 end
-
-RunService:BindToRenderStep("Input", Enum.RenderPriority.Input.Value, translateObj)
 
 return Placement
