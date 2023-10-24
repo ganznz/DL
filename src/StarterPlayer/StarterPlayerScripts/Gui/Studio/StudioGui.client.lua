@@ -40,9 +40,9 @@ local MoodCategoryBtn = BuildModeCategoryContainer:WaitForChild("MoodCategoryBtn
 local EnergyCategoryBtn = BuildModeCategoryContainer:WaitForChild("EnergyCategoryBtn")
 local HungerCategoryBtn = BuildModeCategoryContainer:WaitForChild("HungerCategoryBtn")
 local DecorCategoryBtn = BuildModeCategoryContainer:WaitForChild("DecorCategoryBtn")
-local DeleteModeBtn = BuildModeHeader:WaitForChild("DeleteModeBtn")
-local ExitBtn = BuildModeHeader:WaitForChild("ExitBtn")
-local ShopBtn = BuildModeHeader:WaitForChild("ShopBtn")
+local BuildModeDeleteModeBtn = BuildModeHeader:WaitForChild("DeleteModeBtn")
+local BuildModeExitBtn = BuildModeHeader:WaitForChild("ExitBtn")
+local BuildModeShopBtn = BuildModeHeader:WaitForChild("ShopBtn")
 
 local BuildModeItemViewport = StudioBuildModeContainer.ItemDisplay.ItemDisplayViewport
 local NeedItemTemplate = BuildModeItemViewport:WaitForChild("NeedItemTemplate")
@@ -64,7 +64,7 @@ local plrInfoContainerVisiblePos: UDim2 = PlrInfoContainer.Position
 local plrInfoContainerVisibleSize: UDim2 = PlrInfoContainer.Size
 
 local studioBuildModeVisiblePos: UDim2 = StudioBuildModeContainer.Position
-local studioBuildModeVisibleSize: UDim2 = StudioBuildModeContainer.Size
+local studioBuildModeHiddenPos: UDim2 = UDim2.fromScale(0.5, 1.25)
 
 
 -- STATIC VARIABLES
@@ -82,7 +82,7 @@ local studioFurnitureInventory = nil
 
 -- hide buildmode gui by default
 StudioBuildModeContainer.Visible = false
-StudioBuildModeContainer.Position = UDim2.fromScale(0.5, 1.25)
+StudioBuildModeContainer.Position = studioBuildModeHiddenPos
 
 -- stores Activated connections for when visit buttons get clicked
 -- { [userId] = connection }
@@ -250,13 +250,39 @@ local function showBuildModeGui()
     local buildModeTween = TweenService:Create(StudioBuildModeContainer, tweenInfo, { Position = studioBuildModeVisiblePos })
 
     hideLeftGuiTween:Play()
-    hideRightGuiTween:Play()
-    hidePlrInfoTween:Play()
-    buildModeTween:Play()
+    hideLeftGuiTween.Completed:Connect(function(_playbackState) LeftSideContainer.Visible = false end)
 
+    hideRightGuiTween:Play()
+    hideRightGuiTween.Completed:Connect(function(_playbackState) RightSideContainer.Visible = false end)
+
+    hidePlrInfoTween:Play()
+    hidePlrInfoTween.Completed:Connect(function(_playbackState) PlrInfoContainer.Visible = false end)
+
+    buildModeTween:Play()
 
     BuildModeItemViewport.Visible = false
     SelectCategoryText.Visible = true
+end
+
+local function hideBuildModeGui()
+    -- show unrelated gui
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+    local showLeftGuiTween = TweenService:Create(LeftSideContainer, tweenInfo, { Position = leftSideContainerVisiblePos })
+    local showRightGuiTween = TweenService:Create(RightSideContainer, tweenInfo, { Position = rightSideContainerVisiblePos })
+    local showPlrInfoTween = TweenService:Create(PlrInfoContainer, tweenInfo, { Position = plrInfoContainerVisiblePos })
+
+    local buildModeTween = TweenService:Create(StudioBuildModeContainer, tweenInfo, { Position = studioBuildModeHiddenPos })
+
+    LeftSideContainer.Visible = true
+    RightSideContainer.Visible = true
+    PlrInfoContainer.Visible = true
+
+    showLeftGuiTween:Play()
+    showRightGuiTween:Play()
+    showPlrInfoTween:Play()
+
+    buildModeTween:Play()
+    buildModeTween.Completed:Connect(function() StudioBuildModeContainer.Visible = false end)
 end
 
 local function createViewportItem(category: "Mood" | "Energy" | "Hunger" | "Decor", itemName: string, itemInfo)
@@ -349,15 +375,15 @@ StudioTeleportBtn.Activated:Connect(function()
     end
 end)
 
-local debounce = true
+local buildModeDebounce = true
 StudioBuildModeBtn.Activated:Connect(function()
-    if debounce then
-        debounce = false
+    if buildModeDebounce then
+        buildModeDebounce = false
         showBuildModeGui()
         Remotes.Studio.EnterBuildMode:FireServer()
         
         task.wait(2)
-        debounce = true
+        buildModeDebounce = true
     end
 end)
 
@@ -411,6 +437,11 @@ DecorCategoryBtn.Activated:Connect(function()
     if studioFurnitureInventory then
         setupItemDisplay("Decor")
     end
+end)
+
+-- local buildModeExitDebounce = true
+BuildModeExitBtn.Activated:Connect(function()
+    hideBuildModeGui()
 end)
 
 
