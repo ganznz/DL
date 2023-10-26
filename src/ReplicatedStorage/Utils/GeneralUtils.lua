@@ -29,4 +29,13 @@ function GeneralUtils.ShallowCopyNested(original)
     return copy
 end
 
+function GeneralUtils.LengthOfDict(dict)
+	local counter = 0
+	for _, v in dict do
+		counter += 1
+	end
+	return counter
+end
+
+
 return GeneralUtils
