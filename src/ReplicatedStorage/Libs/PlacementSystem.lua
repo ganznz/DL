@@ -127,8 +127,6 @@ local function cancelOnTermination(_actionName, inputState, _inputObj)
         end)
 
         mouse.TargetFilter = nil
-        PLACEMENT_INSTANCE_DATA.buildModeActivated = false
-        PLACEMENT_INSTANCE_DATA.placeModeActivated = false
     end
 end
 
@@ -145,7 +143,7 @@ local function calculateItemPosition()
     local finalCFrame = CFrame.new(0, 0, 0)
     local x, z
     local offsetX, offsetZ
-
+    
     if rotationVal then
         offsetX = object.PrimaryPart.Size.X * 0.5
         offsetZ = object.PrimaryPart.Size.Z * 0.5
@@ -157,7 +155,7 @@ local function calculateItemPosition()
         x =  mouse.Hit.X - offsetX
         z = mouse.Hit.Z - offsetZ
     end
-
+    
     if isStackable and mouse.Target and mouse.Target:IsDescendantOf(plot) then
         posY = calculateYPosition(mouse.Target.Position.Y, mouse.Target.Size.Y, object.PrimaryPart.Size.Y)
     else
@@ -192,7 +190,7 @@ end
 -- set object position based on pivot
 local function translateObj()
     if placedObjects and object.Parent == placedObjects then
-        calculateItemPosition()
+        -- calculateItemPosition()
         handleCollisions()
         changeHitboxColour()
 
@@ -206,11 +204,12 @@ local function getInstantCFrame()
     return calculateItemPosition()
 end
 
-function Placement:place(remote: RemoteFunction)
+function Placement:place(remote: RemoteFunction, additionalParams: {})
     if not collided and object then
         local placementCFrame = getInstantCFrame()
 
-        remote:InvokeServer(object.Name, placedObjects, placementCFrame, plot)
+        -- additionalParams contain info you want to send to the server that are exclusive to your games functionality (e.g. an items rarity)
+        return remote:FireServer(object.Name, placementCFrame, additionalParams)
     end
 end
 
@@ -242,8 +241,8 @@ function Placement.new(gridSize, plt, placedObjs, stackable: boolean, rotateKey,
     local metadata = setmetatable(data, Placement)
 
     GRID_SIZE = gridSize
-    ROTATE_KEY = rotateKey
-    TERMINATE_KEY = terminateKey
+    ROTATE_KEY = rotateKey or Enum.KeyCode.R
+    TERMINATE_KEY = terminateKey or Enum.KeyCode.X
 
     plot = plt
     placedObjects = placedObjs
@@ -252,8 +251,6 @@ function Placement.new(gridSize, plt, placedObjs, stackable: boolean, rotateKey,
     data.grid = GRID_SIZE
     data.rotateKey = ROTATE_KEY or Enum.KeyCode.R
     data.terminateKey = TERMINATE_KEY or Enum.KeyCode.X
-
-    PLACEMENT_INSTANCE_DATA = data
 
     return data
 end
@@ -269,8 +266,6 @@ function Placement:Activate(obj: Model)
     object = obj
     rotation = 0
     rotationVal = true
-    self.buildModeActivated = true
-    self.placeModeActivated = true
 
     -- ensures that while in 'place mode', object collisions don't interfere with anything
     for _i, v in object:GetDescendants() do
@@ -294,8 +289,11 @@ function Placement:Activate(obj: Model)
         speed = 1
     end
 
+    -- prevents visual 'dragging/lerping' of object from it's initial position in ReplicatedStorage to the workspace
+    object:PivotTo(calculateItemPosition())
+
     object.Parent = placedObjects
-    
+
     task.wait()
 
     bindInputs()
@@ -323,10 +321,7 @@ end
 function Placement:Deactivate()
     unbindInputs()
     object:Destroy()
-    plot:FindFirstChild("Texture"):Destroy()
     mouse.TargetFilter = nil
-    self.buildModeActivated = false
-    self.placeModeActivated = false
 end
 
 return Placement

@@ -24,6 +24,8 @@ function PlrPlatformManager.CreateProfile(plr: Player)
     PlrPlatformManager.PlayersInSession[plr.UserId] = {
         Platform = nil
     }
+    
+    return PlrPlatformManager.PlayersInSession[plr.UserId]
 end
 
 function PlrPlatformManager.DeleteProfile(plr: Player)

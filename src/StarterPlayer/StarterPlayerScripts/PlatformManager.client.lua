@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
 
+local Remotes = ReplicatedStorage.Remotes
 local localPlr = Players.LocalPlayer
 
 local pcInputValues = {0, 1, 2, 3, 4, 7, 8}
@@ -36,4 +37,5 @@ end)
 
 UserInputService.LastInputTypeChanged:Connect(function(lastInputType)
     determinePlatform(localPlr, lastInputType)
+    Remotes.Player.PlatformChanged:Fire()
 end)
