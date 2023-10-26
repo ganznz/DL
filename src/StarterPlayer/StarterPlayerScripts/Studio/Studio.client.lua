@@ -137,6 +137,17 @@ Remotes.Studio.KickFromStudio.OnClientEvent:Connect(function()
     end)
 end)
 
+Remotes.Studio.ReplicatePlaceItem.OnClientEvent:Connect(function(itemName: string, itemCategory: string, itemCFrame)
+    -- check that plr is ACTUALLY inside studio
+    if not studioInteriorFolder then return end
+
+    local studioFurnitureFolder = studioInteriorFolder
+
+    local itemModelToPlace = ReplicatedStorage.Assets.Models.StudioFurnishing[itemCategory]:FindFirstChild(itemName):Clone()
+    itemModelToPlace:PivotTo(itemCFrame)
+    itemModelToPlace.Parent = studioFurnitureFolder
+end)
+
 humanoid.Died:Connect(function()
     if inStudio then
         inStudio = false

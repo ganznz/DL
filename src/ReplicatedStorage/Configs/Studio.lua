@@ -96,25 +96,36 @@ end
 function Studio.GetFurnitureAvailableForStudio(plrData)
     local studioIndex = plrData.Studio.ActiveStudio
 
+    -- shallow copy to prevent changes to **actual** data
     local furnitureInInventoryCopy = GeneralUtils.ShallowCopyNested(plrData.Inventory.StudioFurnishing)
+    
     local furniturePlacedInStudio = plrData.Studio.Studios[studioIndex].Furnishings
 
     -- remove from inventory whats already placed in studio
     for furnitureCategory, furnitureItems in furnitureInInventoryCopy do
 
-        for furnitureItemName, furnitureItemInfo in furnitureItems do
+        for furnitureItemName, itemInstances in furnitureItems do
 
-            if furniturePlacedInStudio[furnitureCategory][furnitureItemName] then
-                local amtInInventory = furnitureInInventoryCopy[furnitureCategory][furnitureItemName].Amount
-                local amtInStudio = furniturePlacedInStudio[furnitureCategory][furnitureItemName].Amount
-                local difference = amtInInventory - amtInStudio
-
-                if difference >= 1 then
-                    furnitureInInventoryCopy[furnitureCategory][furnitureItemName].Amount = difference
-                else
-                    furnitureInInventoryCopy[furnitureCategory][furnitureItemName] = nil
+            for i=#itemInstances, 1, -1 do 
+                if not furniturePlacedInStudio[furnitureCategory][furnitureItemName] then continue end
+                
+                local itemUUID = itemInstances[i]
+                if furniturePlacedInStudio[furnitureCategory][furnitureItemName][itemUUID] then
+                    table.remove(furnitureInInventoryCopy[furnitureCategory][furnitureItemName], i)
                 end
             end
+
+            -- if furniturePlacedInStudio[furnitureCategory][furnitureItemName] then
+            --     local amtInInventory = furnitureInInventoryCopy[furnitureCategory][furnitureItemName].Amount
+            --     local amtInStudio = furniturePlacedInStudio[furnitureCategory][furnitureItemName].Amount
+            --     local difference = amtInInventory - amtInStudio
+
+            --     if difference >= 1 then
+            --         furnitureInInventoryCopy[furnitureCategory][furnitureItemName].Amount = difference
+            --     else
+            --         furnitureInInventoryCopy[furnitureCategory][furnitureItemName] = nil
+            --     end
+            -- end
         end
     end
 

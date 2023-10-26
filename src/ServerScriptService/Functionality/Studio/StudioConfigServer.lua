@@ -3,6 +3,8 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio)
+local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
+
 local Remotes = ReplicatedStorage.Remotes
 
 local Studio = {}
@@ -51,8 +53,56 @@ function Studio.PurchaseNextStudio(plr: Player): boolean
     return true
 end
 
-function Studio.ItemAvailableToPlace(plr: Player, itemName: string, itemCategory: string)
-    
+function Studio.HasItem(plr: Player, itemName: string, itemCategory: string, studioIndex): boolean
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local plrData = profile.Data
+
+    local itemInInventory = plrData.Inventory.StudioFurnishing[itemCategory][itemName]
+    if itemInInventory then
+        if not plrData.Studio.Studios[studioIndex] then return false end
+
+        local itemPlacedInStudio = plrData.Studio.Studios[studioIndex].Furnishings[itemCategory][itemName]
+        if not itemPlacedInStudio then
+            return true
+        else
+            local difference = GeneralUtils.LengthOfDict(itemInInventory) - GeneralUtils.LengthOfDict(itemPlacedInStudio)
+            if difference > 0 then return true else return false end
+        end
+    end
+    return false
+end
+
+-- function for saving a placed furniture items data to plr data
+function Studio.StoreFurnitureItemData(plr: Player, itemName: string, itemCFrame: CFrame, itemCategory: string, studioIndex)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local plrData = profile.Data
+
+    local furnitureItemInstancesInInventory = plrData.Inventory.StudioFurnishing[itemCategory][itemName]
+    local furnitureItemInstancesInStudio = plrData.Studio.Studios[studioIndex].Furnishings[itemCategory][itemName]
+
+    local itemData = {}
+    itemData.CFrame = itemCFrame
+
+    for _i, itemUUID in furnitureItemInstancesInInventory do
+        -- check if there aren't any instances of this item already placed in studio
+        -- if not, use current UUID in iteration to store in data
+        if not furnitureItemInstancesInStudio then
+            plrData.Studio.Studios[studioIndex].Furnishings[itemCategory][itemName] = {}
+            plrData.Studio.Studios[studioIndex].Furnishings[itemCategory][itemName][itemUUID] = itemData
+            return
+        end
+
+        if furnitureItemInstancesInStudio[itemUUID] then continue end
+
+        -- found UUID that is not yet stored inside studio placed furniture data
+        -- store this UUID with the item data
+        plrData.Studio.Studios[studioIndex].Furnishings[itemCategory][itemName][itemUUID] = itemData
+        return
+    end
 end
 
 return Studio

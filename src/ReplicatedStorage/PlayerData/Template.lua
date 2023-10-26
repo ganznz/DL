@@ -64,22 +64,70 @@ local Template = {
         StudioFurnishing = {
             -- character need name = { items that fulfill the need }
             Mood = {
-                ["Arcade Machine"] = { Amount = 2 },
-                TV = { Amount = 5 },
+                ["Arcade Machine"] = {
+                    "01",
+                    "02",
+                    "03",
+                    "04",
+                    "05",
+                }
             },
             Energy = {
-                Default = { Amount = 10 },
-                Basic = { Amount = 5 },
+                Default = {
+                    "11",
+                    "12",
+                    "13",
+                },
+                Basic = {
+                    "24",
+                    "25",
+                    "28",
+                    "29",
+                },
             },
             Hunger = {
-                Default = { Amount = 3 },
-                Basic = { Amount = 3 },
+                Default = {
+                    "11",
+                },
+                Basic = {
+                    "24",
+                    "29",
+                },
             },
             Decor = {
-                ["Book Stack"] = { Amount = 1 },
-                ["Pot Plant"] = { Amount = 1 },
-                Crate = { Amount = 1 }
+                ["Book Stack"] = {
+                    "56",
+                    "51",
+                    "57",
+                },
+                ["Pot Plant"] = {
+                    "56",
+                    "51",
+                    "57",
+                },
+                Crate = {
+                    "56",
+                }
             }
+
+            -- Mood = {
+            --     ["Arcade Machine"] = {
+            --         -- UUID,
+            --     }
+            -- },
+            -- Energy = {
+            --     Default = { Amount = 10 },
+            --     Basic = { Amount = 5 },
+            -- },
+            -- Hunger = {
+            --     Default = { Amount = 3 },
+            --     Basic = { Amount = 3 },
+            -- },
+            -- Decor = {
+            --     ["Book Stack"] = { Amount = 1 },
+            --     ["Pot Plant"] = { Amount = 1 },
+            --     Crate = { Amount = 1 }
+            -- }
         }
     },
 
@@ -95,18 +143,41 @@ local Template = {
                 Furnishings = {
                     -- contain information for placed items in this studio
                     Mood = {
-                        ["Arcade Machine"] = { Amount = 1 },
-                        TV = { Amount = 2 },
+                        ["Arcade Machine"] = {
+                            ["01"] = {},
+                            ["04"] = {},
+                            ["05"] = {},
+                        },
                     },
                     Energy = {
-                        Basic = { Amount = 5 },
+                        Basic = {
+                            ["24"] = {},
+                            ["25"] = {},
+                        },
                     },
                     Hunger = {},
                     Decor = {
-                        ["Book Stack"] = { Amount = 0 },
-                        ["Pot Plant"] = { Amount = 0 },
-                        Crate = { Amount = 1 }
+                        ["Book Stack"] = {
+                            ["56"] = {},
+                        },
                     }
+
+
+                    -- Mood = {
+                    --     ["Arcade Machine"] = {
+                    --         -- [UUID] = { data }
+                    --     },
+                    --     TV = { Amount = 2 },
+                    -- },
+                    -- Energy = {
+                    --     Basic = { Amount = 5 },
+                    -- },
+                    -- Hunger = {},
+                    -- Decor = {
+                    --     ["Book Stack"] = { Amount = 0 },
+                    --     ["Pot Plant"] = { Amount = 0 },
+                    --     Crate = { Amount = 1 }
+                    -- }
                 },
             },
         }

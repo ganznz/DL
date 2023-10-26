@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
+local HttpService = game:GetService("HttpService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio)
@@ -107,7 +108,7 @@ local function updateStudioWhitelist(plr: Player): "open" | "closed" | "friends"
     return profile.Data.Studio.StudioStatus
 end
 
-local function canVisitStudio(plr: Player, plrToVisit: Player): false
+local function canVisitStudio(plr: Player, plrToVisit: Player): boolean
     if not plrStudios[plr.UserId] then return end
 
     local whitelistSetting = plrStudios[plrToVisit.UserId].StudioStatus
@@ -142,8 +143,6 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
     end
 end
 
--- calc the furniture available for that specific studio
--- plr can place a furniture item in one studio, but it should still be available to place in another studio
 -- register studio exterior teleports
 for _i, studioFolder in studioExteriorsFolder do
     local studioIndex = tonumber(studioFolder.Name)
@@ -164,6 +163,39 @@ for _i, studioFolder in studioExteriorsFolder do
             -- show studio purchase prompt
         end
     end)
+end
+
+
+
+-- STUDIO BUILD MODE FUNCTIONALITY
+local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, additionalParams): boolean
+    local modelCategoryFolder = ReplicatedStorage.Assets.Models.StudioFurnishing[additionalParams.category]
+    if not modelCategoryFolder then return end
+
+    local plrStudioInfo = plrStudios[plr.UserId]
+    if not plrStudioInfo then return end
+
+    if not StudioConfigServer.HasItem(plr, objectName, additionalParams.category, plrStudioInfo.StudioIndex) then return end
+
+    -- security checks passed. can place item
+    StudioConfigServer.StoreFurnitureItemData(plr, objectName, objectCFrame, additionalParams.category, plrStudioInfo.StudioIndex)
+
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+    local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
+
+    Remotes.Studio.PlaceItem:FireClient(plr, objectName, additionalParams.category, objectCFrame)
+    Remotes.Studio.ExitPlaceMode:FireClient(plr, studioFurnitureInventory)
+
+    -- replicate placed item to all plrs currently in this studio
+    for plrUserId, studioInfo in plrsInStudio do
+        if studioInfo then
+            if studioInfo.PlrVisitingId == plr.UserId then
+                local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
+                Remotes.Studio.ReplicatePlaceItem:FireClient(plrToUpdate, objectName, additionalParams.category, objectCFrame)
+            end
+        end
+    end
 end
 
 Remotes.Studio.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player)
@@ -251,9 +283,13 @@ Remotes.Studio.EnterBuildMode.OnServerEvent:Connect(function(plr: Player)
     end
 end)
 
-Remotes.Studio.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemName: string, itemCategory: string)
-    local profile = PlrDataManager.Profiles[plr]
-    if not profile then return end
-
-    local hasItem: boolean = profile.Data
+Remotes.Studio.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemName: string, itemCategory: "Mood" | "Energy" | "Hunger" | "Decor")
+    if itemCategory == "Mood" or itemCategory == "Energy" or itemCategory == "Hunger" or itemCategory == "Decor" then
+        local hasItem: boolean = StudioConfigServer.HasItem(plr, itemName, itemCategory, plrStudios[plr.UserId].StudioIndex)
+        if hasItem then
+            Remotes.Studio.EnterPlaceMode:FireClient(plr, itemName, itemCategory)
+        end
+    end
 end)
+
+Remotes.Studio.PlaceItem.OnServerEvent:Connect(placeStudioItem)

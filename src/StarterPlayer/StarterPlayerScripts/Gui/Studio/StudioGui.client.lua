@@ -236,14 +236,26 @@ local function updateWhitelistBtn(whitelistSetting: "open" | "closed" | "friends
 end
 
 local function showBuildModeGui()
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+    StudioBuildModeContainer.Visible = true
+
+    local buildModeTween = TweenService:Create(StudioBuildModeContainer, tweenInfo, { Position = studioBuildModeVisiblePos })
+    buildModeTween:Play()
+end
+
+local function hideBuildModeGui()
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+
+    local buildModeTween = TweenService:Create(StudioBuildModeContainer, tweenInfo, { Position = studioBuildModeHiddenPos })
+    buildModeTween:Play()
+end
+
+local function setupBuildModeGui()
     -- hide unrelated gui
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
     local hideLeftGuiTween = TweenService:Create(LeftSideContainer, tweenInfo, { Position = UDim2.fromScale(-leftSideContainerVisibleSize.X.Scale, leftSideContainerVisiblePos.Y.Scale) })
     local hideRightGuiTween = TweenService:Create(RightSideContainer, tweenInfo, { Position = UDim2.fromScale(rightSideContainerVisibleSize.X.Scale + 1, rightSideContainerVisiblePos.Y.Scale) })
     local hidePlrInfoTween = TweenService:Create(PlrInfoContainer, tweenInfo, { Position = UDim2.fromScale(-plrInfoContainerVisibleSize.X.Scale, plrInfoContainerVisiblePos.Y.Scale) })
-    
-    StudioBuildModeContainer.Visible = true
-    local buildModeTween = TweenService:Create(StudioBuildModeContainer, tweenInfo, { Position = studioBuildModeVisiblePos })
     
     hideLeftGuiTween:Play()
     hideLeftGuiTween.Completed:Connect(function(_playbackState) LeftSideContainer.Visible = false end)
@@ -254,20 +266,18 @@ local function showBuildModeGui()
     hidePlrInfoTween:Play()
     hidePlrInfoTween.Completed:Connect(function(_playbackState) PlrInfoContainer.Visible = false end)
     
-    buildModeTween:Play()
+    showBuildModeGui()
     
     BuildModeItemViewport.Visible = false
     SelectCategoryText.Visible = true
 end
 
-local function hideBuildModeGui()
+local function disableBuildModeGui()
     -- show unrelated gui
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
     local showLeftGuiTween = TweenService:Create(LeftSideContainer, tweenInfo, { Position = leftSideContainerVisiblePos })
     local showRightGuiTween = TweenService:Create(RightSideContainer, tweenInfo, { Position = rightSideContainerVisiblePos })
     local showPlrInfoTween = TweenService:Create(PlrInfoContainer, tweenInfo, { Position = plrInfoContainerVisiblePos })
-    
-    local buildModeTween = TweenService:Create(StudioBuildModeContainer, tweenInfo, { Position = studioBuildModeHiddenPos })
     
     LeftSideContainer.Visible = true
     RightSideContainer.Visible = true
@@ -276,9 +286,8 @@ local function hideBuildModeGui()
     showLeftGuiTween:Play()
     showRightGuiTween:Play()
     showPlrInfoTween:Play()
-    
-    buildModeTween:Play()
-    buildModeTween.Completed:Connect(function() StudioBuildModeContainer.Visible = false end)
+
+    hideBuildModeGui()
 end
 
 local function clearBuildModeViewport()
@@ -303,14 +312,14 @@ local function registerBuildModeItemListener(itemBtn, itemCategory)
     return connection
 end
 
-local function createViewportItem(category: "Mood" | "Energy" | "Hunger" | "Decor", itemName: string, itemInfo)
+local function createViewportItem(category: "Mood" | "Energy" | "Hunger" | "Decor", itemName: string, numOfItems: number)
     local template
     if category == "Decor" then template = DecoItemTemplate:Clone() else template = NeedItemTemplate:Clone() end
     template.Name = itemName
     local itemNameText = template:FindFirstChild("ItemName")
     itemNameText.Text = itemName
     local itemAmountText = template:FindFirstChild("ItemAmount")
-    itemAmountText.Text = ITEM_AMOUNT_TEXT_TEMPLATE:gsub("AMT", itemInfo.Amount)
+    itemAmountText.Text = ITEM_AMOUNT_TEXT_TEMPLATE:gsub("AMT", numOfItems)
 
     local itemModel
 
@@ -350,8 +359,11 @@ end
 
 local function populateItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor")
     if studioFurnitureInventory then
-        for itemName, itemInfo in studioFurnitureInventory[category] do
-            local viewportItem = createViewportItem(category, itemName, itemInfo)
+        for itemName, itemInstances in studioFurnitureInventory[category] do
+            local numOfInstances = #itemInstances
+            if numOfInstances <= 0 then continue end
+
+            local viewportItem = createViewportItem(category, itemName, numOfInstances)
             viewportItem.Parent = BuildModeItemViewport
         end
     end
@@ -362,7 +374,6 @@ local function setupItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor"
     populateItemDisplay(category)
     SelectCategoryText.Visible = false
     BuildModeItemViewport.Visible = true
-    print(buildModeItemConnections)
 end
 
 -- switches between the left-side studio btns (visit studio btn & build mode btn)
@@ -399,7 +410,7 @@ local buildModeDebounce = true
 StudioBuildModeBtn.Activated:Connect(function()
     if buildModeDebounce then
         buildModeDebounce = false
-        showBuildModeGui()
+        setupBuildModeGui()
         Remotes.Studio.EnterBuildMode:FireServer()
         
         task.wait(2)
@@ -461,7 +472,7 @@ end)
 
 -- local buildModeExitDebounce = true
 BuildModeExitBtn.Activated:Connect(function()
-    hideBuildModeGui()
+    disableBuildModeGui()
 end)
 
 
@@ -493,4 +504,15 @@ end)
 -- when plr enters build mode, save furniture inventory data to variable
 Remotes.Studio.EnterBuildMode.OnClientEvent:Connect(function(studioInventoryData)
     studioFurnitureInventory = studioInventoryData
+end)
+
+-- when plr enters place mode, hide build mode gui
+Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string)
+    hideBuildModeGui()
+end)
+
+-- show build-mode gui again
+Remotes.Studio.ExitPlaceMode.OnClientEvent:Connect(function(studioInventoryData)
+    studioFurnitureInventory = studioInventoryData
+    setupBuildModeGui()
 end)
