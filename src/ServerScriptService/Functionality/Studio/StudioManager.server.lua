@@ -81,13 +81,13 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
             PlrVisitingId = plr.UserId,
             StudioIndex = studioIndex
         }
-        Remotes.Studio.VisitOwnStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
+        Remotes.Studio.VisitOwnStudio:FireClient(plr, plr.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
     else
         plrsInStudio[plr.UserId] = {
             PlrVisitingId = plrToVisit.UserId,
             StudioIndex = studioIndex
         }
-        Remotes.Studio.VisitOtherStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
+        Remotes.Studio.VisitOtherStudio:FireClient(plr, plrToVisit.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
     end
 end
 

@@ -73,8 +73,6 @@ local function enterStudio(interiorPlrTpPart)
 
     local studioExteriorFolder = StudioExteriorsFolder:FindFirstChild(currentStudioIndex)
     local interiorTpPart = studioExteriorFolder:FindFirstChild("InteriorTeleportPart")
-
-    studioInteriorFolder.Name = plr.UserId
     local studioInteriorModel = studioInteriorFolder:FindFirstChild("Interior")
     
     local yOffset = calculateYOffset(studioInteriorModel)
@@ -115,7 +113,7 @@ local function studioInteriorExitListener()
     end)
 end
 
-Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
+Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
     -- if plr was already in a studio (their own or someone elses)
     if inStudio then
         destroyInterior()
@@ -127,6 +125,7 @@ Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interi
     studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
+    studioInteriorFolder.Name = studioOwnerId
     studioFurnitureFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
     interiorFurnitureData = placedFurnitureData
 
@@ -137,7 +136,7 @@ Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interi
 
 end)
 
-Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
+Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
     -- if plr was already in a studio (their own or someone elses)
     if inStudio then
         destroyInterior()
@@ -149,6 +148,7 @@ Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, inte
     studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
+    studioInteriorFolder.Name = studioOwnerId
     studioFurnitureFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
     interiorFurnitureData = placedFurnitureData
 
