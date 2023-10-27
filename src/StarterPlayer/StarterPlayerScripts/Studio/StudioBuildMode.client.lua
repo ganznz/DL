@@ -28,6 +28,27 @@ local placeItemConnection = nil
 local inBuildMode = false
 local inPlaceMode = false
 
+local function registerModelClickConnection(model)
+    local clickDetector = Instance.new("ClickDetector", model)
+
+    clickDetector.MouseClick:Connect(function(plr: Player)
+        print(model.Name)
+    end)
+end
+
+local function enableAllModelClickConnections()
+    for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
+        registerModelClickConnection(itemModel)
+    end
+end
+
+local function disableAllModelClickConnections()
+    for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
+        local clickDetector = itemModel:FindFirstChild("ClickDetector", true)
+        if clickDetector then clickDetector:Destroy() end
+    end
+end
+
 local function exitPlaceMode()
     placement:Deactivate()
 
@@ -46,24 +67,32 @@ Remotes.Studio.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryDat
 
     placement = PlacementSystem.new(2, studioInteriorPlot, studioFurnitureFolder, false)
     placement:RenderGrid()
+
+    enableAllModelClickConnections()
 end)
 
 Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string)
     inPlaceMode = true
-
+    
     local itemModel = studioFurnitureModelsFolder[itemCategory]:FindFirstChild(itemName):Clone()
     placement:Activate(itemModel)
-
+    
     if plrPlatformProfile.Platform == "pc" then
         placeItemConnection = mouse.Button1Down:Connect(function()
             placement:place(Remotes.Studio.PlaceItem, { category = itemCategory })
         end)
     end
+
+    disableAllModelClickConnections()
 end)
 
 Remotes.Studio.ExitPlaceMode.OnClientEvent:Connect(function(_studioFurnitureInventory)
     exitPlaceMode()
     inPlaceMode = false
+
+    if inBuildMode then
+        enableAllModelClickConnections()
+    end
 end)
 
 
@@ -80,6 +109,9 @@ Remotes.Studio.ExitBuildMode.Event:Connect(function()
     placement:DestroyGrid()
     inBuildMode = false
 end)
+
+-- disable furniture model click connections
+Remotes.Studio.DisableFurnitureItemClickDetectors.Event:Connect(function() disableAllModelClickConnections() end)
 
 humanoid.Died:Connect(function()
     if inBuildMode then

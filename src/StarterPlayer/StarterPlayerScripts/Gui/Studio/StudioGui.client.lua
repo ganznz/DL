@@ -475,6 +475,7 @@ end)
 BuildModeExitBtn.Activated:Connect(function()
     disableBuildModeGui()
     Remotes.Studio.ExitBuildMode:Fire()
+    Remotes.Studio.DisableFurnitureItemClickDetectors:Fire()
     
     -- add cooldown so plr can't enter build mode again instantly
     buildModeDebounce = false
