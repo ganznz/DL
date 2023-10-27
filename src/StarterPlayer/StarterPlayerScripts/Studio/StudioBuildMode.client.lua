@@ -1,6 +1,7 @@
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
 local PlacementSystem = require(ReplicatedStorage.Libs:WaitForChild("PlacementSystem"))
@@ -11,11 +12,15 @@ local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitFor
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local localPlr = Players.LocalPlayer
+local PlayerGui = localPlr.PlayerGui
 local mouse = localPlr:GetMouse()
 
 local plrPlatformProfile = PlrPlatformManager.GetProfile(localPlr)
 
 local studioFurnitureModelsFolder = ReplicatedStorage.Assets.Models.StudioFurnishing
+
+-- INSTANCE VARIABLES
+local furnitureItemSettingsBillboard: BillboardGui = PlayerGui:WaitForChild("BuildMode"):WaitForChild("FurnitureItemSettings")
 
 -- STATE VARIABLES
 local char = localPlr.Character or localPlr.CharacterAdded:Wait()
@@ -28,11 +33,62 @@ local placeItemConnection = nil
 local inBuildMode = false
 local inPlaceMode = false
 
+local function hideFurnitureItemSettings(billboardGui: BillboardGui)
+    local TWEEN_TIME = 0.2
+    local tweenInfo = TweenInfo.new(TWEEN_TIME)
+    for _i, instance in billboardGui:WaitForChild("SettingsContainer"):GetChildren() do
+        if instance:IsA("TextButton") or instance:IsA("ImageButton") then
+            local tween = TweenService:Create(instance, tweenInfo, { Size = UDim2.fromScale(0.3, 0) })
+            tween:Play()
+        end
+    end
+end
+
+local function showFurnitureItemSettings(billboardGui: BillboardGui)
+    billboardGui.Enabled = true
+    local tweenInfo = TweenInfo.new(0.2)
+    for _i, instance in billboardGui:WaitForChild("SettingsContainer"):GetChildren() do
+        if instance:IsA("TextButton") or instance:IsA("ImageButton") then
+            local tween = TweenService:Create(instance, tweenInfo, { Size = UDim2.fromScale(0.3, 1) })
+            tween:Play()
+        end
+    end
+
+    -- hide other furniture model settings if open
+    for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
+        local billboard = itemModel:FindFirstChild("FurnitureItemSettings", true)
+        if billboard then
+            if billboard == billboardGui then continue end
+            
+            if billboard:GetAttribute("isVisible") then
+                hideFurnitureItemSettings(billboard)
+                billboard:SetAttribute("isVisible", false)
+            end
+        end
+    end
+end
+
 local function registerModelClickConnection(model)
     local clickDetector = Instance.new("ClickDetector", model)
 
+    local billboardGui = furnitureItemSettingsBillboard:Clone()
+    billboardGui.SizeOffset = Vector2.new(0, (model.PrimaryPart.Size.Y * 0.5) + 1)
+    
+    -- hide by default
+    billboardGui.Enabled = false
+    hideFurnitureItemSettings(billboardGui)
+    
+    billboardGui.Parent = model
+    billboardGui:SetAttribute("isVisible", false)
+
     clickDetector.MouseClick:Connect(function(plr: Player)
-        print(model.Name)
+        if billboardGui:GetAttribute("isVisible") then
+            hideFurnitureItemSettings(billboardGui)
+            billboardGui:SetAttribute("isVisible", false)
+        else
+            showFurnitureItemSettings(billboardGui)
+            billboardGui:SetAttribute("isVisible", true)
+        end
     end)
 end
 
@@ -46,6 +102,9 @@ local function disableAllModelClickConnections()
     for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
         local clickDetector = itemModel:FindFirstChild("ClickDetector", true)
         if clickDetector then clickDetector:Destroy() end
+        
+        local billboardGui =  itemModel:FindFirstChild("FurnitureItemSettings", true)
+        if billboardGui then billboardGui:Destroy() end
     end
 end
 
