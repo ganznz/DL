@@ -72,19 +72,22 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
     local interiorPlayerTpPart = studioExteriorFolder:FindFirstChild("PlrTeleportToPartInterior")
     local exteriorPlayerTpPart = studioExteriorFolder:FindFirstChild("TeleportToPart")
 
+    local alreadyPlacedFurnitureData = StudioConfigServer.AlreadyPlacedFurnitureData(plrToVisit, studioIndex)
     if plr == plrToVisit then
+        profile.Data.Studio.ActiveStudio = studioIndex
+        plrStudios[plrToVisit.UserId].StudioIndex = profile.Data.Studio.ActiveStudio
+
         plrsInStudio[plr.UserId] = {
             PlrVisitingId = plr.UserId,
             StudioIndex = studioIndex
         }
-        profile.Data.Studio.ActiveStudio = studioIndex
-        Remotes.Studio.VisitOwnStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart)
+        Remotes.Studio.VisitOwnStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
     else
         plrsInStudio[plr.UserId] = {
             PlrVisitingId = plrToVisit.UserId,
             StudioIndex = studioIndex
         }
-        Remotes.Studio.VisitOtherStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart)
+        Remotes.Studio.VisitOtherStudio:FireClient(plr, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
     end
 end
 
@@ -174,25 +177,26 @@ local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, ad
 
     local plrStudioInfo = plrStudios[plr.UserId]
     if not plrStudioInfo then return end
-
+    
     if not StudioConfigServer.HasItem(plr, objectName, additionalParams.category, plrStudioInfo.StudioIndex) then return end
 
     -- security checks passed. can place item
-    StudioConfigServer.StoreFurnitureItemData(plr, objectName, objectCFrame, additionalParams.category, plrStudioInfo.StudioIndex)
+    local itemUUID = StudioConfigServer.StoreFurnitureItemData(plr, objectName, objectCFrame, additionalParams.category, plrStudioInfo.StudioIndex)
 
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
     local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
 
-    Remotes.Studio.PlaceItem:FireClient(plr, objectName, additionalParams.category, objectCFrame)
+    Remotes.Studio.PlaceItem:FireClient(plr, objectName, additionalParams.category, objectCFrame, itemUUID)
     Remotes.Studio.ExitPlaceMode:FireClient(plr, studioFurnitureInventory)
 
     -- replicate placed item to all plrs currently in this studio
     for plrUserId, studioInfo in plrsInStudio do
+        if plrUserId == plr.UserId then continue end
         if studioInfo then
             if studioInfo.PlrVisitingId == plr.UserId then
                 local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
-                Remotes.Studio.ReplicatePlaceItem:FireClient(plrToUpdate, objectName, additionalParams.category, objectCFrame)
+                Remotes.Studio.ReplicatePlaceItem:FireClient(plrToUpdate, objectName, additionalParams.category, objectCFrame, itemUUID)
             end
         end
     end

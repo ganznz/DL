@@ -75,7 +75,7 @@ function Studio.HasItem(plr: Player, itemName: string, itemCategory: string, stu
 end
 
 -- function for saving a placed furniture items data to plr data
-function Studio.StoreFurnitureItemData(plr: Player, itemName: string, itemCFrame: CFrame, itemCategory: string, studioIndex)
+function Studio.StoreFurnitureItemData(plr: Player, itemName: string, itemCFrame: CFrame, itemCategory: string, studioIndex): string
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -93,7 +93,7 @@ function Studio.StoreFurnitureItemData(plr: Player, itemName: string, itemCFrame
         if not furnitureItemInstancesInStudio then
             plrData.Studio.Studios[studioIndex].Furnishings[itemCategory][itemName] = {}
             plrData.Studio.Studios[studioIndex].Furnishings[itemCategory][itemName][itemUUID] = itemData
-            return
+            return itemUUID
         end
 
         if furnitureItemInstancesInStudio[itemUUID] then continue end
@@ -101,8 +101,18 @@ function Studio.StoreFurnitureItemData(plr: Player, itemName: string, itemCFrame
         -- found UUID that is not yet stored inside studio placed furniture data
         -- store this UUID with the item data
         plrData.Studio.Studios[studioIndex].Furnishings[itemCategory][itemName][itemUUID] = itemData
-        return
+        return itemUUID
     end
+end
+
+-- function for getting the data of already placed furniture items
+function Studio.AlreadyPlacedFurnitureData(plr: Player, studioIndex)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local plrData = profile.Data
+
+    return plrData.Studio.Studios[studioIndex].Furnishings
 end
 
 return Studio

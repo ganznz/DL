@@ -58,8 +58,9 @@ end)
 
 
 -- place item in studio
-Remotes.Studio.PlaceItem.OnClientEvent:Connect(function(itemName, itemCategory, itemCFrame)
+Remotes.Studio.PlaceItem.OnClientEvent:Connect(function(itemName, itemCategory, itemCFrame, itemUUID)
     local itemModelToPlace = studioFurnitureModelsFolder[itemCategory]:FindFirstChild(itemName):Clone()
     itemModelToPlace:PivotTo(itemCFrame)
+    itemModelToPlace.Name = itemUUID
     itemModelToPlace.Parent = studioFurnitureFolder
 end)

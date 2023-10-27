@@ -16,8 +16,10 @@ local StudioInteriorsFolder = ReplicatedStorage:WaitForChild("Assets").Models.St
 local inStudio = false
 local currentStudioIndex = nil
 local studioInteriorFolder = nil
+local studioFurnitureFolder = nil
 local studioInteriorExitZone = nil
 local studioExteriorTpPart = nil
+local interiorFurnitureData = nil
 
 -- make a copy of all studio exteriors, so when player leaves a studio and
 -- needs to make the studio exterior visible again, copy it from this table
@@ -41,6 +43,30 @@ local function resetStudioVariables()
     studioExteriorTpPart = nil
 end
 
+local function getFurnitureItemModel(itemName: string, itemCategory: string)
+    return ReplicatedStorage.Assets.Models.StudioFurnishing[itemCategory]:FindFirstChild(itemName):Clone()
+end
+
+local function placeFurnitureItem(model: Model, itemUUID: string, itemCFrame: CFrame)
+    model:PivotTo(itemCFrame)
+    model.Name = itemUUID
+    model.Parent = studioFurnitureFolder
+end
+
+local function loadInteriorFurniture()
+    for itemCategory, itemsInCategory in interiorFurnitureData do
+        for itemName, allItemInstances in itemsInCategory do
+            for itemUUID, itemData in allItemInstances do
+                local itemCFrame = itemData.CFrame
+                local itemModel = getFurnitureItemModel(itemName, itemCategory)
+                if itemModel then
+                    placeFurnitureItem(itemModel, itemUUID, itemCFrame)
+                end
+            end
+        end
+    end
+end
+
 local function enterStudio(interiorPlrTpPart)
     -- tp plr into studio interior
     Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = interiorPlrTpPart })
@@ -55,6 +81,7 @@ local function enterStudio(interiorPlrTpPart)
 
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         studioInteriorModel:PivotTo(interiorTpPart.CFrame * CFrame.new(0, yOffset, 0))
+        loadInteriorFurniture()
         studioExteriorFolder:Destroy() -- hide studio exterior from players view
         studioInteriorFolder.Parent = Workspace.TempAssets.Studios
     end)
@@ -88,7 +115,7 @@ local function studioInteriorExitListener()
     end)
 end
 
-Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
+Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
     -- if plr was already in a studio (their own or someone elses)
     if inStudio then
         destroyInterior()
@@ -100,6 +127,8 @@ Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interi
     studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
+    studioFurnitureFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
+    interiorFurnitureData = placedFurnitureData
 
     enterStudio(interiorPlrTpPart)
 
@@ -108,7 +137,7 @@ Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioIndex, interi
 
 end)
 
-Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart)
+Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
     -- if plr was already in a studio (their own or someone elses)
     if inStudio then
         destroyInterior()
@@ -120,6 +149,8 @@ Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioIndex, inte
     studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
+    studioFurnitureFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
+    interiorFurnitureData = placedFurnitureData
 
     enterStudio(interiorPlrTpPart)
 
@@ -137,15 +168,14 @@ Remotes.Studio.KickFromStudio.OnClientEvent:Connect(function()
     end)
 end)
 
-Remotes.Studio.ReplicatePlaceItem.OnClientEvent:Connect(function(itemName: string, itemCategory: string, itemCFrame)
+Remotes.Studio.ReplicatePlaceItem.OnClientEvent:Connect(function(itemName: string, itemCategory: string, itemCFrame, itemUUID)
     -- check that plr is ACTUALLY inside studio
     if not studioInteriorFolder then return end
 
-    local studioFurnitureFolder = studioInteriorFolder
-
-    local itemModelToPlace = ReplicatedStorage.Assets.Models.StudioFurnishing[itemCategory]:FindFirstChild(itemName):Clone()
-    itemModelToPlace:PivotTo(itemCFrame)
-    itemModelToPlace.Parent = studioFurnitureFolder
+    local itemModelToPlace = getFurnitureItemModel(itemName, itemCategory)
+    if itemModelToPlace then
+        placeFurnitureItem(itemModelToPlace, itemUUID, itemCFrame )
+    end
 end)
 
 humanoid.Died:Connect(function()
