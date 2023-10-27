@@ -17,11 +17,16 @@ local plrPlatformProfile = PlrPlatformManager.GetProfile(localPlr)
 
 local studioFurnitureModelsFolder = ReplicatedStorage.Assets.Models.StudioFurnishing
 
+-- STATE VARIABLES
+local char = localPlr.Character or localPlr.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
 local placement
 local studioInteriorFolder
 local studioFurnitureFolder
 local studioInteriorPlot
 local placeItemConnection = nil
+local inBuildMode = false
+local inPlaceMode = false
 
 local function exitPlaceMode()
     placement:Deactivate()
@@ -33,6 +38,8 @@ local function exitPlaceMode()
 end
 
 Remotes.Studio.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryData)
+    inBuildMode = true
+
     studioInteriorFolder = Workspace.TempAssets.Studios:FindFirstChild(localPlr.UserId)
     studioInteriorPlot = studioInteriorFolder:FindFirstChild("Plot", true)
     studioFurnitureFolder = studioInteriorFolder:FindFirstChild("PlacedObjects", true)
@@ -42,6 +49,8 @@ Remotes.Studio.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryDat
 end)
 
 Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string)
+    inPlaceMode = true
+
     local itemModel = studioFurnitureModelsFolder[itemCategory]:FindFirstChild(itemName):Clone()
     placement:Activate(itemModel)
 
@@ -54,6 +63,7 @@ end)
 
 Remotes.Studio.ExitPlaceMode.OnClientEvent:Connect(function(_studioFurnitureInventory)
     exitPlaceMode()
+    inPlaceMode = false
 end)
 
 
@@ -63,4 +73,38 @@ Remotes.Studio.PlaceItem.OnClientEvent:Connect(function(itemName, itemCategory, 
     itemModelToPlace:PivotTo(itemCFrame)
     itemModelToPlace.Name = itemUUID
     itemModelToPlace.Parent = studioFurnitureFolder
+end)
+
+-- exit place mode
+Remotes.Studio.ExitBuildMode.Event:Connect(function()
+    placement:DestroyGrid()
+    inBuildMode = false
+end)
+
+humanoid.Died:Connect(function()
+    if inBuildMode then
+        placement:DestroyGrid()
+        inBuildMode = false
+    end
+
+    if inPlaceMode then
+        exitPlaceMode()
+        inPlaceMode = false
+    end
+end)
+
+localPlr.CharacterAdded:Connect(function(character: Model)
+    char = character
+    humanoid = char:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        if inBuildMode then
+            placement:DestroyGrid()
+            inBuildMode = false
+        end
+    
+        if inPlaceMode then
+            exitPlaceMode()
+            inPlaceMode = false
+        end
+    end)
 end)

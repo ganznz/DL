@@ -75,9 +75,10 @@ local KICK_PLRS_COOLDOWN = 1 -- seconds
 
 
 -- STATE VARIABLES
+local inBuildMode = false
+local inPlaceMode = false
 local char = localPlr.Character or localPlr.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
-local selectedBuildModeCategory = nil
 local studioFurnitureInventory = nil
 
 -- hide buildmode gui by default
@@ -470,9 +471,15 @@ DecorCategoryBtn.Activated:Connect(function()
     end
 end)
 
--- local buildModeExitDebounce = true
+
 BuildModeExitBtn.Activated:Connect(function()
     disableBuildModeGui()
+    Remotes.Studio.ExitBuildMode:Fire()
+    
+    -- add cooldown so plr can't enter build mode again instantly
+    buildModeDebounce = false
+    task.wait(1)
+    buildModeDebounce = true
 end)
 
 
@@ -488,9 +495,18 @@ Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(_studioIndex, _in
 end)
 
 Remotes.Studio.LeaveStudio.OnClientEvent:Connect(function()
+    print('aa')
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioBuildModeBtn, StudioTeleportBtn)
     end)
+    if inBuildMode then print("YESSIR") disableBuildModeGui() end
+    if inPlaceMode then
+        -- fire to server, which then fires to client to terminate place mode functionality
+        Remotes.Studio.ExitPlaceMode:FireServer()
+    end
+    
+    inPlaceMode = false
+    inBuildMode = false
 end)
 
 Remotes.GUI.Studio.UpdateStudioList.OnClientEvent:Connect(function(userIdToUpdate: number, updateStatus: "add" | "remove" | "update", userStudioInfo)
@@ -503,16 +519,40 @@ end)
 
 -- when plr enters build mode, save furniture inventory data to variable
 Remotes.Studio.EnterBuildMode.OnClientEvent:Connect(function(studioInventoryData)
+    inBuildMode = true
     studioFurnitureInventory = studioInventoryData
 end)
 
 -- when plr enters place mode, hide build mode gui
 Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string)
+    inPlaceMode = true
     hideBuildModeGui()
 end)
 
 -- show build-mode gui again
 Remotes.Studio.ExitPlaceMode.OnClientEvent:Connect(function(studioInventoryData)
-    studioFurnitureInventory = studioInventoryData
-    setupBuildModeGui()
+    if inBuildMode then
+        studioFurnitureInventory = studioInventoryData
+        setupBuildModeGui()
+    end
+end)
+
+humanoid.Died:Connect(function()
+    if inBuildMode then
+        disableBuildModeGui()
+        inBuildMode = false
+        inPlaceMode = false
+    end
+end)
+
+localPlr.CharacterAdded:Connect(function(character: Model)
+    char = character
+    humanoid = char:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        if inBuildMode then
+            disableBuildModeGui()
+            inBuildMode = false
+            inPlaceMode = false
+        end
+    end)
 end)

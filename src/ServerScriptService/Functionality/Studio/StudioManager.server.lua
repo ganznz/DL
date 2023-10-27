@@ -297,3 +297,8 @@ Remotes.Studio.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemNa
 end)
 
 Remotes.Studio.PlaceItem.OnServerEvent:Connect(placeStudioItem)
+
+Remotes.Studio.ExitPlaceMode.OnServerEvent:Connect(function(plr: Player)
+    -- terminate place mode functionality on client
+    Remotes.Studio.ExitPlaceMode:FireClient(plr, nil)
+end)

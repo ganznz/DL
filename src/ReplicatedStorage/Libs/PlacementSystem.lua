@@ -315,7 +315,18 @@ function Placement:RenderGrid()
     texture.Texture = gridTexture
     texture.Face = Enum.NormalId.Top
     texture.Parent = plot
-    TweenService:Create(texture, TweenInfo.new(1), { Transparency = 0 }):Play()
+    TweenService:Create(texture, TweenInfo.new(0.5), { Transparency = 0 }):Play()
+end
+
+function Placement:DestroyGrid()
+    local plotTexture = plot:FindFirstChildOfClass("Texture")
+    if plotTexture then
+        local textureTween = TweenService:Create(plotTexture, TweenInfo.new(0.5), { Transparency = 1 })
+        textureTween:Play()
+        textureTween.Completed:Connect(function(_playbackState)
+            plotTexture:Destroy()
+        end)
+    end
 end
 
 function Placement:Deactivate()
