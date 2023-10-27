@@ -109,25 +109,6 @@ local Template = {
                     "56",
                 }
             }
-
-            -- Mood = {
-            --     ["Arcade Machine"] = {
-            --         -- UUID,
-            --     }
-            -- },
-            -- Energy = {
-            --     Default = { Amount = 10 },
-            --     Basic = { Amount = 5 },
-            -- },
-            -- Hunger = {
-            --     Default = { Amount = 3 },
-            --     Basic = { Amount = 3 },
-            -- },
-            -- Decor = {
-            --     ["Book Stack"] = { Amount = 1 },
-            --     ["Pot Plant"] = { Amount = 1 },
-            --     Crate = { Amount = 1 }
-            -- }
         }
     },
 
@@ -143,41 +124,24 @@ local Template = {
                 Furnishings = {
                     -- contain information for placed items in this studio
                     Mood = {
-                        ["Arcade Machine"] = {
-                            ["01"] = {},
-                            ["04"] = {},
-                            ["05"] = {},
-                        },
+                        -- ["Arcade Machine"] = {
+                        --     -- ["01"] = {},
+                        --     -- ["04"] = {},
+                        --     -- ["05"] = {},
+                        -- },
                     },
                     Energy = {
-                        Basic = {
-                            ["24"] = {},
-                            ["25"] = {},
-                        },
+                        -- Basic = {
+                        --     -- ["24"] = {},
+                        --     -- ["25"] = {},
+                        -- },
                     },
                     Hunger = {},
                     Decor = {
-                        ["Book Stack"] = {
-                            ["56"] = {},
-                        },
+                        -- ["Book Stack"] = {
+                        --     -- ["56"] = {},
+                        -- },
                     }
-
-
-                    -- Mood = {
-                    --     ["Arcade Machine"] = {
-                    --         -- [UUID] = { data }
-                    --     },
-                    --     TV = { Amount = 2 },
-                    -- },
-                    -- Energy = {
-                    --     Basic = { Amount = 5 },
-                    -- },
-                    -- Hunger = {},
-                    -- Decor = {
-                    --     ["Book Stack"] = { Amount = 0 },
-                    --     ["Pot Plant"] = { Amount = 0 },
-                    --     Crate = { Amount = 1 }
-                    -- }
                 },
             },
         }
