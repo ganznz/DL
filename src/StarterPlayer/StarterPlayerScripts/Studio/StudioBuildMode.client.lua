@@ -20,7 +20,9 @@ local plrPlatformProfile = PlrPlatformManager.GetProfile(localPlr)
 local studioFurnitureModelsFolder = ReplicatedStorage.Assets.Models.StudioFurnishing
 
 -- INSTANCE VARIABLES
-local furnitureItemSettingsBillboard: BillboardGui = PlayerGui:WaitForChild("BuildMode"):WaitForChild("FurnitureItemSettings")
+local buildModeScreenGui = PlayerGui:WaitForChild("BuildMode")
+local furnitureItemSettingsBillboard: BillboardGui = buildModeScreenGui:WaitForChild("FurnitureItemSettings")
+local existingItemSettingBillboards = buildModeScreenGui:WaitForChild("ExistingItemSettingBillboards")
 
 -- STATE VARIABLES
 local char = localPlr.Character or localPlr.CharacterAdded:Wait()
@@ -44,6 +46,18 @@ local function hideFurnitureItemSettings(billboardGui: BillboardGui)
     end
 end
 
+local function hideOtherFurnitureItemSettings(billboardToIgnore: BillboardGui)
+    for _i, billboard: BillboardGui in existingItemSettingBillboards:GetChildren() do
+        if billboard == billboardToIgnore then continue end
+        
+        if billboard:GetAttribute("isVisible") then
+            hideFurnitureItemSettings(billboard)
+            billboard:SetAttribute("isVisible", false)
+        end
+    end
+end
+
+
 local function showFurnitureItemSettings(billboardGui: BillboardGui)
     billboardGui.Enabled = true
     local tweenInfo = TweenInfo.new(0.2)
@@ -55,17 +69,26 @@ local function showFurnitureItemSettings(billboardGui: BillboardGui)
     end
 
     -- hide other furniture model settings if open
-    for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
-        local billboard = itemModel:FindFirstChild("FurnitureItemSettings", true)
-        if billboard then
-            if billboard == billboardGui then continue end
-            
-            if billboard:GetAttribute("isVisible") then
-                hideFurnitureItemSettings(billboard)
-                billboard:SetAttribute("isVisible", false)
-            end
-        end
-    end
+    hideOtherFurnitureItemSettings(billboardGui)
+end
+
+local function registerItemSettingButtons(billboard: BillboardGui)
+    local settingsContainer = billboard:FindFirstChild("SettingsContainer")
+    local deleteBtn = settingsContainer:FindFirstChild("DeleteBtn")
+    local moveBtn = settingsContainer:FindFirstChild("MoveBtn")
+    local storeBtn = settingsContainer:FindFirstChild("StoreBtn")
+
+    deleteBtn.Activated:Connect(function()
+        print("delete")
+    end)
+
+    moveBtn.Activated:Connect(function()
+        print("move")
+    end)
+
+    storeBtn.Activated:Connect(function()
+        print("store")
+    end)
 end
 
 local function registerModelClickConnection(model)
@@ -78,7 +101,8 @@ local function registerModelClickConnection(model)
     billboardGui.Enabled = false
     hideFurnitureItemSettings(billboardGui)
     
-    billboardGui.Parent = model
+    billboardGui.Parent = existingItemSettingBillboards
+    billboardGui.Adornee = model
     billboardGui:SetAttribute("isVisible", false)
 
     clickDetector.MouseClick:Connect(function(plr: Player)
@@ -90,6 +114,8 @@ local function registerModelClickConnection(model)
             billboardGui:SetAttribute("isVisible", true)
         end
     end)
+
+    registerItemSettingButtons(billboardGui)
 end
 
 local function enableAllModelClickConnections()
