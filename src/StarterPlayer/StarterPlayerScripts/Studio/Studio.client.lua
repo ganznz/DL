@@ -178,6 +178,11 @@ Remotes.Studio.ReplicatePlaceItem.OnClientEvent:Connect(function(itemName: strin
     end
 end)
 
+Remotes.Studio.RemoveItem.OnClientEvent:Connect(function(itemUUID: string)
+    local furnitureModel = studioFurnitureFolder:FindFirstChild(itemUUID)
+    if furnitureModel then furnitureModel:Destroy() end
+end)
+
 humanoid.Died:Connect(function()
     if inStudio then
         inStudio = false

@@ -207,7 +207,12 @@ local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, ad
         if studioInfo then
             if studioInfo.PlrVisitingId == plr.UserId then
                 local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
+
+                -- if the item got moved, delete the 'old' model before placing the new one in the updated position
+                if additionalParams.action == "move" then Remotes.Studio.RemoveItem:FireClient(plrToUpdate, itemUUID) end
+
                 Remotes.Studio.ReplicatePlaceItem:FireClient(plrToUpdate, objectName, additionalParams.category, objectCFrame, itemUUID)
+
             end
         end
     end
