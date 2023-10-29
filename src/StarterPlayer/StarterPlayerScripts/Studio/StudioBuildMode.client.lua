@@ -57,13 +57,6 @@ local function hideOtherFurnitureItemSettings(billboardToIgnore: BillboardGui | 
     end
 end
 
-local function deleteModelClickConnection(model)
-    local clickDetector = model:FindFirstChild("ClickDetector")
-    local settingsBillboard = existingItemSettingBillboards:FindFirstChild(model.Name)
-    if clickDetector then clickDetector:Destroy() end
-    if settingsBillboard then settingsBillboard:Destroy() end
-end
-
 
 local function showFurnitureItemSettings(billboardGui: BillboardGui)
     billboardGui.Enabled = true
@@ -88,21 +81,6 @@ local function registerItemMoveBtn(billboardGui, moveBtn)
         local itemUUID = itemModel.Name
 
         Remotes.Studio.EnterPlaceMode:FireServer(itemName, itemCategory, true, itemUUID)
-
-
-        -- deleteModelClickConnection(itemModel)
-        -- placement:Activate(itemModel)
-    
-        -- if plrPlatformProfile.Platform == "pc" then
-        --     placeItemConnection = mouse.Button1Down:Connect(function()
-
-        --         placement:place(Remotes.Studio.PlaceItem, itemName,  {
-        --             action = "move",
-        --             uuid = itemModel.Name,
-        --             category = itemModel:GetAttribute("category")
-        --         })
-        --     end)
-        -- end
     end)
 end
 
