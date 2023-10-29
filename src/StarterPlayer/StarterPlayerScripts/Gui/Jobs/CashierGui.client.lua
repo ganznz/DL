@@ -14,7 +14,7 @@ local PlayerGui = localPlr.PlayerGui
 local icecreamStoreFolder = Workspace:WaitForChild("Map").Buildings.IceCreamStore
 local interiorTeleportToPart = icecreamStoreFolder:WaitForChild("IceCreamStoreInterior"):WaitForChild("TeleportToPart")
 
-local jobInfoContainer = PlayerGui:WaitForChild("Jobs").CashierJob:WaitForChild("JobInfoContainer")
+local jobInfoContainer = PlayerGui:WaitForChild("AllGui").Jobs:WaitForChild("CashierJob"):WaitForChild("JobInfoContainer")
 local exitBtn = jobInfoContainer.ExitBtn
 local startBtn = jobInfoContainer.StartBtn
 local rewardText = jobInfoContainer.RewardsContainer.RewardText

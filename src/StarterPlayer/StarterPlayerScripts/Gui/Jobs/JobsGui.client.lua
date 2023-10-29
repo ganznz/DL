@@ -13,7 +13,8 @@ local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
 -- job time remaining gui
-local jobTimeRemainingContainer = PlayerGui:WaitForChild("Jobs").AllJobs:WaitForChild("JobTimeRemaining")
+local allJobsScreenGui = PlayerGui:WaitForChild("AllGui").Jobs:WaitForChild("AllJobs")
+local jobTimeRemainingContainer = allJobsScreenGui:WaitForChild("JobTimeRemaining")
 local jobTimeRemainingText = jobTimeRemainingContainer.TimeRemaining
 
 local jobTimeRemainingContainerVisibleGuiPos = jobTimeRemainingContainer.Position
@@ -23,7 +24,7 @@ local TIME_TEXT_TEMPLATE_2 = "SECs"
 
 
 -- shift results gui
-local jobShiftResultsContainer = PlayerGui:WaitForChild("Jobs").AllJobs:WaitForChild("JobShiftResults")
+local jobShiftResultsContainer = allJobsScreenGui:WaitForChild("JobShiftResults")
 local shiftResultsHeaderText = jobShiftResultsContainer.HeaderText
 local shiftResultsJobIdentifierText = jobShiftResultsContainer.JobLevelHeaderText
 local shiftResultsEnterBtn = jobShiftResultsContainer.EnterBtn

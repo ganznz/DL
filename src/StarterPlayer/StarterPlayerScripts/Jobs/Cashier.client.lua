@@ -23,7 +23,7 @@ local currentEquippedTool
 local currentOrderStatus: 'good' | 'bad'
 
 -- gui
-local customerOrderBillboard = PlayerGui:WaitForChild("Jobs").CashierJob:WaitForChild("CustomerOrderBillboard")
+local customerOrderBillboard = PlayerGui:WaitForChild("AllGui").Jobs:WaitForChild("CashierJob"):WaitForChild("CustomerOrderBillboard")
 
 local ICECREAM_FLAVOURS = {"Chocolate", "Vanilla", "Strawberry"}
 
@@ -43,7 +43,7 @@ local function clearIcecreamTools(plr: Player, backpack: Backpack)
     end
 end
 
-local function clearNpcs(plr: Player)
+local function clearNpcs()
     local npcFolder = Workspace.TempAssets.Jobs.CashierJob[localPlr.UserId].Npcs
     if npcFolder then
         for _, child in npcFolder:GetChildren() do
@@ -113,7 +113,7 @@ end
 
 local function cleanUpJob(plr)
     clearIcecreamTools(plr, plr.Backpack)
-    clearNpcs(plr)
+    clearNpcs()
 end
 
 local function followPath(customerModel: Model, customerInfo, startPos, finishPos)

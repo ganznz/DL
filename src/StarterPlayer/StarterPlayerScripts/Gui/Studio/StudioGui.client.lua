@@ -17,23 +17,26 @@ local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
 -- GUI REFERENCE VARIABLES
-local LeftSideContainer = PlayerGui:WaitForChild("Left"):WaitForChild("LeftBtnContainer")
+local LeftScreenGui = PlayerGui:WaitForChild("AllGui").Hud:WaitForChild("Left")
+local RightScreenGui = PlayerGui:WaitForChild("AllGui").Hud:WaitForChild("Right")
+
+local LeftSideContainer = LeftScreenGui:WaitForChild("LeftBtnContainer")
 local StudioTeleportBtn = LeftSideContainer.StudioTpBtn
 local StudioBuildModeBtn = LeftSideContainer.StudioBuildModeBtn
 
-local PlrInfoContainer = PlayerGui:WaitForChild("Left"):WaitForChild("PlrInfoContainer")
+local PlrInfoContainer = LeftScreenGui:WaitForChild("PlrInfoContainer")
 
-local RightSideContainer = PlayerGui:WaitForChild("Right"):WaitForChild("RightBtnContainer")
+local RightSideContainer = RightScreenGui:WaitForChild("RightBtnContainer")
 local PlrStudiosBtn = RightSideContainer.PlrStudiosBtn
 
-local StudioListContainer = PlayerGui:WaitForChild("Studios"):WaitForChild("StudioListContainer")
+local StudioListContainer = PlayerGui:WaitForChild("AllGui").Studio:WaitForChild("StudioGeneral"):WaitForChild("StudioListContainer")
 local StudioListExitBtn = StudioListContainer.ExitBtn
 local StudioListScrollingFrame = StudioListContainer.ScrollingFrame
 local StudioListScrollingFrameTemplate = StudioListScrollingFrame:WaitForChild("Template")
 local StudioWhitelistBtn = StudioListContainer.StudioSettings.WhitelistBtn
 local StudioKickAllBtn = StudioListContainer.StudioSettings.KickBtn
 
-local StudioBuildModeContainer = PlayerGui:WaitForChild("BuildMode"):WaitForChild("BuildModeContainer")
+local StudioBuildModeContainer = PlayerGui:WaitForChild("AllGui").Studio:WaitForChild("StudioBuildMode"):WaitForChild("BuildModeContainer")
 local BuildModeHeader = StudioBuildModeContainer.Header
 local BuildModeCategoryContainer = BuildModeHeader.CategoryButtons
 local MoodCategoryBtn = BuildModeCategoryContainer:WaitForChild("MoodCategoryBtn")
@@ -133,7 +136,7 @@ end
 
 local function registerStudioVisitBtnListener(visitBtn, userIdOfPlrToVisit)
     local connection = visitBtn.Activated:Connect(function()
-        Remotes.Studio.VisitOtherStudio:FireServer(userIdOfPlrToVisit)
+        Remotes.Studio.General.VisitOtherStudio:FireServer(userIdOfPlrToVisit)
     end)
     return connection
 end
@@ -184,7 +187,7 @@ local function createStudioListItem(userId: number, userStudioInfo)
 end
 
 local function populateStudioList()
-    local studioPlrInfo = Remotes.Studio.GetStudioPlrInfo:InvokeServer()
+    local studioPlrInfo = Remotes.Studio.General.GetStudioPlrInfo:InvokeServer()
 
     for userId, userStudioInfo in studioPlrInfo do
         -- don't show players own studio on the list
@@ -308,7 +311,7 @@ local function registerBuildModeItemListener(itemBtn, itemCategory)
     local connection = itemBtn.Activated:Connect(function()
         -- check that plr actually has item on server
         local itemName = itemBtn.Name
-        Remotes.Studio.EnterPlaceMode:FireServer(itemName, itemCategory, false)
+        Remotes.Studio.BuildMode.EnterPlaceMode:FireServer(itemName, itemCategory, false)
     end)
     return connection
 end
@@ -377,31 +380,22 @@ local function setupItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor"
     BuildModeItemViewport.Visible = true
 end
 
+local function displayDeleteItemPopup(itemName: string, itemCategory: string, itemUUID: string)
+end
+
 -- switches between the left-side studio btns (visit studio btn & build mode btn)
 local function switchStudioBtns(btnToHide, btnToShow)
     btnToHide.Visible = false
     btnToShow.Visible = true
 end
 
-humanoid.Died:Connect(function()
-    localPlr:SetAttribute("IsAlive", false)
-end)
-
-localPlr.CharacterAdded:Connect(function(character: Model)
-    localPlr:SetAttribute("IsAlive", true)
-    char = character
-    humanoid = char:WaitForChild("Humanoid")
-    humanoid.Died:Connect(function()
-        localPlr:SetAttribute("IsAlive", false)
-    end)
-end)
 
 -- BUTTON ACTIVATE EVENTS
 local tpDebounce = true
 StudioTeleportBtn.Activated:Connect(function()
     if tpDebounce and localPlr:GetAttribute("IsAlive") then
         tpDebounce = false
-        Remotes.Studio.VisitOwnStudio:FireServer()
+        Remotes.Studio.General.VisitOwnStudio:FireServer()
         task.wait(1)
         tpDebounce = true
     end
@@ -412,7 +406,7 @@ StudioBuildModeBtn.Activated:Connect(function()
     if buildModeDebounce then
         buildModeDebounce = false
         setupBuildModeGui()
-        Remotes.Studio.EnterBuildMode:FireServer()
+        Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
         
         task.wait(2)
         buildModeDebounce = true
@@ -430,14 +424,14 @@ StudioListExitBtn.Activated:Connect(function()
 end)
 
 StudioWhitelistBtn.Activated:Connect(function()
-    Remotes.Studio.UpdateWhitelist:FireServer()
+    Remotes.Studio.General.UpdateWhitelist:FireServer()
 end)
 
 local kickAllDebounce = true
 StudioKickAllBtn.Activated:Connect(function()
     if kickAllDebounce then
         kickAllDebounce = false
-        Remotes.Studio.KickFromStudio:FireServer()
+        Remotes.Studio.General.KickFromStudio:FireServer()
         StudioKickAllBtn.BackgroundColor3 = GlobalVariables.Gui.InvalidGreyColour
         StudioKickAllBtn.Text = "Wait..."
         task.wait(KICK_PLRS_COOLDOWN)
@@ -474,7 +468,7 @@ end)
 
 BuildModeExitBtn.Activated:Connect(function()
     disableBuildModeGui()
-    Remotes.Studio.ExitBuildMode:Fire()
+    Remotes.Studio.BuildMode.ExitBuildMode:Fire()
     
     -- add cooldown so plr can't enter build mode again instantly
     buildModeDebounce = false
@@ -484,24 +478,24 @@ end)
 
 
 -- REMOTE EVENTS
-Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart, _placedFurnitureData)
+Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart, _placedFurnitureData)
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioTeleportBtn, StudioBuildModeBtn)
     end)
 end)
 
-Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(_studioIndex, _interiorPlrTpPart, _exteriorPlrTpPart)
+Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(_studioIndex, _interiorPlrTpPart, _exteriorPlrTpPart)
     GuiServices.HideGuiStandard(StudioListContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
 end)
 
-Remotes.Studio.LeaveStudio.OnClientEvent:Connect(function()
+Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function()
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioBuildModeBtn, StudioTeleportBtn)
     end)
     if inBuildMode then disableBuildModeGui() end
     if inPlaceMode then
         -- fire to server, which then fires to client to terminate place mode functionality
-        Remotes.Studio.ExitPlaceMode:FireServer()
+        Remotes.Studio.BuildMode.ExitPlaceMode:FireServer()
     end
     
     inPlaceMode = false
@@ -512,29 +506,32 @@ Remotes.GUI.Studio.UpdateStudioList.OnClientEvent:Connect(function(userIdToUpdat
     updateStudioListItem(userIdToUpdate, updateStatus, userStudioInfo)
 end)
 
-Remotes.Studio.UpdateWhitelist.OnClientEvent:Connect(function(newWhitelistSetting)
+Remotes.Studio.General.UpdateWhitelist.OnClientEvent:Connect(function(newWhitelistSetting)
     updateWhitelistBtn(newWhitelistSetting)
 end)
 
 -- when plr enters build mode, save furniture inventory data to variable
-Remotes.Studio.EnterBuildMode.OnClientEvent:Connect(function(studioInventoryData)
+Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(studioInventoryData)
     inBuildMode = true
     studioFurnitureInventory = studioInventoryData
 end)
 
 -- when plr enters place mode, hide build mode gui
-Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string)
+Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string)
     inPlaceMode = true
     hideBuildModeGui()
 end)
 
 -- show build-mode gui again
-Remotes.Studio.ExitPlaceMode.OnClientEvent:Connect(function(studioInventoryData)
+Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(studioInventoryData)
     if inBuildMode then
         studioFurnitureInventory = studioInventoryData
         setupBuildModeGui()
     end
 end)
+
+-- show furniture item delete popup
+Remotes.GUI.Studio.DeleteFurniturePopup.Event:Connect(displayDeleteItemPopup)
 
 humanoid.Died:Connect(function()
     if inBuildMode then

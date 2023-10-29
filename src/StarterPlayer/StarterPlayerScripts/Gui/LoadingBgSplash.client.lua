@@ -10,8 +10,7 @@ local localPlr = Players.LocalPlayer
 local PlayerControls = require(localPlr.PlayerScripts.PlayerModule):GetControls()
 local PlayerGui = localPlr.PlayerGui
 
-local LoadingBgSplashScreenGui = PlayerGui:WaitForChild("LoadingBgSplash")
-local LoadingBgSplash = LoadingBgSplashScreenGui.LoadingBgSplash
+local LoadingBgSplash = PlayerGui:WaitForChild("AllGui").Misc:WaitForChild("LoadingBgSplash")
 
 local tweenInfo = TweenInfo.new(GlobalVariables.Gui.LoadingBgTweenTime, Enum.EasingStyle.Exponential)
 local loadingScreenPositionDisabled = UDim2.fromScale(0.5, -1)

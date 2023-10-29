@@ -20,7 +20,7 @@ local plrPlatformProfile = PlrPlatformManager.GetProfile(localPlr)
 local studioFurnitureModelsFolder = ReplicatedStorage.Assets.Models.StudioFurnishing
 
 -- INSTANCE VARIABLES
-local buildModeScreenGui = PlayerGui:WaitForChild("BuildMode")
+local buildModeScreenGui = PlayerGui:WaitForChild("AllGui").Studio:WaitForChild("StudioBuildMode")
 local furnitureItemSettingsBillboard: BillboardGui = buildModeScreenGui:WaitForChild("FurnitureItemSettings")
 local existingItemSettingBillboards = buildModeScreenGui:WaitForChild("ExistingItemSettingBillboards")
 
@@ -74,14 +74,28 @@ end
 
 local function registerItemMoveBtn(billboardGui, moveBtn)
     moveBtn.Activated:Connect(function()
-        print("move")
         local itemModel = billboardGui.Adornee
         local itemName = itemModel:GetAttribute("Name")
         local itemCategory = itemModel:GetAttribute("Category")
         local itemUUID = itemModel.Name
 
-        Remotes.Studio.EnterPlaceMode:FireServer(itemName, itemCategory, true, itemUUID)
+        Remotes.Studio.BuildMode.EnterPlaceMode:FireServer(itemName, itemCategory, true, itemUUID)
     end)
+end
+
+local function registerItemDeleteBtn(billboardGui, deleteBtn)
+    deleteBtn.Activated:Connect(function()
+        local itemModel = billboardGui.Adornee
+        local itemName = itemModel:GetAttribute("Name")
+        local itemCategory = itemModel:GetAttribute("Category")
+        local itemUUID = itemModel.Name
+
+        -- prompt UI
+        Remotes.GUI.Studio.DeleteFurniturePopup:Fire(itemName, itemCategory, itemUUID)
+    end)
+end
+
+local function registerItemStoreBtn(billboardGui, storeBtn)
 end
 
 local function registerItemSettingButtons(billboard: BillboardGui)
@@ -92,9 +106,7 @@ local function registerItemSettingButtons(billboard: BillboardGui)
 
     registerItemMoveBtn(billboard, moveBtn)
 
-    deleteBtn.Activated:Connect(function()
-        print("delete")
-    end)
+    registerItemDeleteBtn(billboard, deleteBtn)
 
     storeBtn.Activated:Connect(function()
         print("store")
@@ -157,7 +169,7 @@ local function exitPlaceMode()
     end
 end
 
-Remotes.Studio.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryData)
+Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryData)
     inBuildMode = true
 
     studioInteriorFolder = Workspace.TempAssets.Studios:FindFirstChild(localPlr.UserId)
@@ -170,7 +182,7 @@ Remotes.Studio.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryDat
     enableAllModelClickConnections()
 end)    
 
-Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string, movingItem: boolean, itemUUID: string | nil)
+Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string, movingItem: boolean, itemUUID: string | nil)
     inPlaceMode = true
     
     local itemModel
@@ -188,7 +200,7 @@ Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, i
 
     if plrPlatformProfile.Platform == "pc" then
         placeItemConnection = mouse.Button1Down:Connect(function()
-            placement:place(Remotes.Studio.PlaceItem, itemName, {
+            placement:place(Remotes.Studio.BuildMode.PlaceItem, itemName, {
                 action = actionType,
                 category = itemCategory,
                 uuid = itemUUID,
@@ -200,21 +212,21 @@ Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, i
     hideOtherFurnitureItemSettings()
 end)
 
-Remotes.Studio.ExitPlaceMode.OnClientEvent:Connect(function(_studioFurnitureInventory)
+Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(_studioFurnitureInventory)
     exitPlaceMode()
     inPlaceMode = false
 
     if inBuildMode then
         -- clear all connections to prevent duplicating
         disableAllModelClickConnections()
-        
+
         enableAllModelClickConnections()
     end
 end)
 
 
 -- place item in studio
-Remotes.Studio.PlaceItem.OnClientEvent:Connect(function(itemName, itemCategory, itemCFrame, itemUUID)
+Remotes.Studio.BuildMode.PlaceItem.OnClientEvent:Connect(function(itemName, itemCategory, itemCFrame, itemUUID)
     local itemModelToPlace = studioFurnitureModelsFolder[itemCategory]:FindFirstChild(itemName):Clone()
     itemModelToPlace:PivotTo(itemCFrame)
     itemModelToPlace.Name = itemUUID
@@ -222,7 +234,7 @@ Remotes.Studio.PlaceItem.OnClientEvent:Connect(function(itemName, itemCategory, 
 end)
 
 -- exit place mode
-Remotes.Studio.ExitBuildMode.Event:Connect(function()
+Remotes.Studio.BuildMode.ExitBuildMode.Event:Connect(function()
     placement:DestroyGrid()
     disableAllModelClickConnections()
     inBuildMode = false

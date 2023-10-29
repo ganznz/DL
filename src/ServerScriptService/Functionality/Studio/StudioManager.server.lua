@@ -81,13 +81,13 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
             PlrVisitingId = plr.UserId,
             StudioIndex = studioIndex
         }
-        Remotes.Studio.VisitOwnStudio:FireClient(plr, plr.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
+        Remotes.Studio.General.VisitOwnStudio:FireClient(plr, plr.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
     else
         plrsInStudio[plr.UserId] = {
             PlrVisitingId = plrToVisit.UserId,
             StudioIndex = studioIndex
         }
-        Remotes.Studio.VisitOtherStudio:FireClient(plr, plrToVisit.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
+        Remotes.Studio.General.VisitOtherStudio:FireClient(plr, plrToVisit.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
     end
 end
 
@@ -139,7 +139,7 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
                     if ignoreFriends and plrToKick:IsFriendsWith(plrWhosStudioToClear.UserId) then continue end
 
                     plrsInStudio[plrToKick.UserId] = false
-                    Remotes.Studio.KickFromStudio:FireClient(plrToKick)
+                    Remotes.Studio.General.KickFromStudio:FireClient(plrToKick)
                 end
             end
         end
@@ -197,8 +197,8 @@ local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, ad
     -- data that gets sent to client to populate build mode gui with
     local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
 
-    Remotes.Studio.PlaceItem:FireClient(plr, objectName, additionalParams.category, objectCFrame, itemUUID)
-    Remotes.Studio.ExitPlaceMode:FireClient(plr, studioFurnitureInventory)
+    Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, objectName, additionalParams.category, objectCFrame, itemUUID)
+    Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr, studioFurnitureInventory)
 
     -- replicate placed item to all plrs currently in this studio
     for plrUserId, studioInfo in plrsInStudio do
@@ -209,16 +209,16 @@ local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, ad
                 local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
 
                 -- if the item got moved, delete the 'old' model before placing the new one in the updated position
-                if additionalParams.action == "move" then Remotes.Studio.RemoveItem:FireClient(plrToUpdate, itemUUID) end
+                if additionalParams.action == "move" then Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, itemUUID) end
 
-                Remotes.Studio.ReplicatePlaceItem:FireClient(plrToUpdate, objectName, additionalParams.category, objectCFrame, itemUUID)
+                Remotes.Studio.BuildMode.ReplicatePlaceItem:FireClient(plrToUpdate, objectName, additionalParams.category, objectCFrame, itemUUID)
 
             end
         end
     end
 end
 
-Remotes.Studio.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player)
+Remotes.Studio.General.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -227,7 +227,7 @@ Remotes.Studio.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player)
     visitStudio(plr, plr, studioIndex)
 end)
 
-Remotes.Studio.VisitOtherStudio.OnServerEvent:Connect(function(plr: Player, userIdOfPlrToVisit: number)
+Remotes.Studio.General.VisitOtherStudio.OnServerEvent:Connect(function(plr: Player, userIdOfPlrToVisit: number)
     if not plrStudios[plr.UserId] then return end
 
     local plrToVisit: Player = Players:GetPlayerByUserId(userIdOfPlrToVisit)
@@ -242,14 +242,14 @@ Remotes.Studio.VisitOtherStudio.OnServerEvent:Connect(function(plr: Player, user
     end
 end)
 
-Remotes.Studio.LeaveStudio.OnServerEvent:Connect(function(plr: Player)
+Remotes.Studio.General.LeaveStudio.OnServerEvent:Connect(function(plr: Player)
     plrsInStudio[plr.UserId] = false
 
     -- switch left-side gui btn from build-mode to tp btn
-    Remotes.Studio.LeaveStudio:FireClient(plr)
+    Remotes.Studio.General.LeaveStudio:FireClient(plr)
 end)
 
-Remotes.Studio.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
+Remotes.Studio.General.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -260,11 +260,11 @@ Remotes.Studio.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
     end
 end)
 
-Remotes.Studio.GetStudioPlrInfo.OnServerInvoke = function()
+Remotes.Studio.General.GetStudioPlrInfo.OnServerInvoke = function()
     return plrStudios
 end
 
-Remotes.Studio.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)
+Remotes.Studio.General.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)
     local newWhitelistSetting = updateStudioWhitelist(plr)
     
     
@@ -275,17 +275,17 @@ Remotes.Studio.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)
     end
 
     -- update new whitelist setting visually for plr
-    Remotes.Studio.UpdateWhitelist:FireClient(plr, newWhitelistSetting)
+    Remotes.Studio.General.UpdateWhitelist:FireClient(plr, newWhitelistSetting)
 
     -- update new whitelist setting on all client Studio Lists
     Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "update", plrStudios[plr.UserId])
 end)
 
-Remotes.Studio.KickFromStudio.OnServerEvent:Connect(function(plr: Player)
+Remotes.Studio.General.KickFromStudio.OnServerEvent:Connect(function(plr: Player)
     kickAllPlrsFromStudio(plr, false)
 end)
 
-Remotes.Studio.EnterBuildMode.OnServerEvent:Connect(function(plr: Player)
+Remotes.Studio.BuildMode.EnterBuildMode.OnServerEvent:Connect(function(plr: Player)
     -- check if plr is in their own studio, in cases where exploiters might fire remote when not in their studio
     local plrStudioInfo = plrsInStudio[plr.UserId]
     if plrStudioInfo then
@@ -298,28 +298,28 @@ Remotes.Studio.EnterBuildMode.OnServerEvent:Connect(function(plr: Player)
             -- 2) enable build-mode functionality
             local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
 
-            Remotes.Studio.EnterBuildMode:FireClient(plr, studioFurnitureInventory)
+            Remotes.Studio.BuildMode.EnterBuildMode:FireClient(plr, studioFurnitureInventory)
         end
     end
 end)
 
-Remotes.Studio.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemName: string, itemCategory: "Mood" | "Energy" | "Hunger" | "Decor", movingItem: boolean, itemUUID: string | nil)
+Remotes.Studio.BuildMode.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemName: string, itemCategory: "Mood" | "Energy" | "Hunger" | "Decor", movingItem: boolean, itemUUID: string | nil)
     if itemCategory == "Mood" or itemCategory == "Energy" or itemCategory == "Hunger" or itemCategory == "Decor" then
 
         if movingItem then
             -- moving an item which is already in the studio, so no need to check if plr already owns it
-            Remotes.Studio.EnterPlaceMode:FireClient(plr, itemName, itemCategory, true, itemUUID)
+            Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemName, itemCategory, true, itemUUID)
 
         else
             local hasItem: boolean = StudioConfigServer.HasItem(plr, itemName, itemCategory, plrStudios[plr.UserId].StudioIndex)
-            if hasItem then Remotes.Studio.EnterPlaceMode:FireClient(plr, itemName, itemCategory, false, nil) end
+            if hasItem then Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemName, itemCategory, false, nil) end
         end
     end
 end)
 
-Remotes.Studio.PlaceItem.OnServerEvent:Connect(placeStudioItem)
+Remotes.Studio.BuildMode.PlaceItem.OnServerEvent:Connect(placeStudioItem)
 
-Remotes.Studio.ExitPlaceMode.OnServerEvent:Connect(function(plr: Player)
+Remotes.Studio.BuildMode.ExitPlaceMode.OnServerEvent:Connect(function(plr: Player)
     -- terminate place mode functionality on client
-    Remotes.Studio.ExitPlaceMode:FireClient(plr, nil)
+    Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr, nil)
 end)

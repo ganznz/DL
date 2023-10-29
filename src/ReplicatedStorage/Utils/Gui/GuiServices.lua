@@ -8,7 +8,9 @@ local GuiTransparency = require(ReplicatedStorage.Libs:WaitForChild("GUITranspar
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
-local GuiBackdropFrame = PlayerGui:WaitForChild("GuiBackdrop"):WaitForChild("GuiBackdrop")
+local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
+
+local GuiBackdropFrame = AllGuiScreenGui.Misc:WaitForChild("GuiBackdrop")
 
 local GuiBlur = Lighting:WaitForChild("GuiBlur")
 
@@ -18,7 +20,7 @@ local GuiServices = {}
 
 function GuiServices.EnableUnrelatedButtons(guiInstanceToIgnore)
     for _i, instance in PlayerGui:GetDescendants() do
-        if (instance:IsA("ImageButton") or instance:IsA("TextButton")) and not instance:IsDescendantOf(guiInstanceToIgnore)  then
+        if (instance:IsA("ImageButton") or instance:IsA("TextButton")) and not instance:IsDescendantOf(guiInstanceToIgnore) then
             instance.Active = true
         end
     end

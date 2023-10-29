@@ -102,7 +102,7 @@ local function studioInteriorExitListener()
     studioInteriorExitZone = Zone.new(studioInteriorExitHitbox)
     studioInteriorExitZone.localPlayerEntered:Connect(function(_plr: Player)
         Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
-        Remotes.Studio.LeaveStudio:FireServer()
+        Remotes.Studio.General.LeaveStudio:FireServer()
         inStudio = false
 
         task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
@@ -113,7 +113,7 @@ local function studioInteriorExitListener()
     end)
 end
 
-Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
+Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
     -- if plr was already in a studio (their own or someone elses)
     if inStudio then
         destroyInterior()
@@ -136,7 +136,7 @@ Remotes.Studio.VisitOwnStudio.OnClientEvent:Connect(function(studioOwnerId, stud
 
 end)
 
-Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
+Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
     -- if plr was already in a studio (their own or someone elses)
     if inStudio then
         destroyInterior()
@@ -158,7 +158,7 @@ Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(studioOwnerId, st
     studioInteriorExitListener()
 end)
 
-Remotes.Studio.KickFromStudio.OnClientEvent:Connect(function()
+Remotes.Studio.General.KickFromStudio.OnClientEvent:Connect(function()
     inStudio = false
     Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
@@ -168,7 +168,7 @@ Remotes.Studio.KickFromStudio.OnClientEvent:Connect(function()
     end)
 end)
 
-Remotes.Studio.ReplicatePlaceItem.OnClientEvent:Connect(function(itemName: string, itemCategory: string, itemCFrame, itemUUID)
+Remotes.Studio.BuildMode.ReplicatePlaceItem.OnClientEvent:Connect(function(itemName: string, itemCategory: string, itemCFrame, itemUUID)
     -- check that plr is ACTUALLY inside studio
     if not studioInteriorFolder then return end
 
@@ -178,7 +178,7 @@ Remotes.Studio.ReplicatePlaceItem.OnClientEvent:Connect(function(itemName: strin
     end
 end)
 
-Remotes.Studio.RemoveItem.OnClientEvent:Connect(function(itemUUID: string)
+Remotes.Studio.BuildMode.RemoveItem.OnClientEvent:Connect(function(itemUUID: string)
     local furnitureModel = studioFurnitureFolder:FindFirstChild(itemUUID)
     if furnitureModel then furnitureModel:Destroy() end
 end)
@@ -189,7 +189,7 @@ humanoid.Died:Connect(function()
         destroyInterior()
         regenerateExterior()
         resetStudioVariables()
-        Remotes.Studio.LeaveStudio:FireServer()
+        Remotes.Studio.General.LeaveStudio:FireServer()
     end
 end)
 
@@ -201,7 +201,7 @@ plr.CharacterAdded:Connect(function(character: Model)
             destroyInterior()
             regenerateExterior()
             resetStudioVariables()
-            Remotes.Studio.LeaveStudio:FireServer()
+            Remotes.Studio.General.LeaveStudio:FireServer()
         end
     end)
 end)
@@ -209,7 +209,7 @@ end)
 
 local PlayerGui = plr.PlayerGui
 
-local aaaa = PlayerGui:WaitForChild("BuildMode"):WaitForChild("TextButton")
+local aaaa = PlayerGui:WaitForChild("AllGui").Studio:WaitForChild("StudioBuildMode"):WaitForChild("TextButton")
 aaaa.Activated:Connect(function()
-    Remotes.Studio.PurchaseNextStudio:FireServer()
+    Remotes.Studio.General.PurchaseNextStudio:FireServer()
 end)

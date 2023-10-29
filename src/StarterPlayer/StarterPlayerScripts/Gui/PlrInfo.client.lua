@@ -10,8 +10,8 @@ local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
 -- GUI OBJECTS
-local LeftScreenGui = PlayerGui:WaitForChild("Left")
-local PlrInfoContainer = LeftScreenGui.PlrInfoContainer
+local LeftHudFolder = PlayerGui:WaitForChild("AllGui").Hud.Left
+local PlrInfoContainer = LeftHudFolder:WaitForChild("PlrInfoContainer")
 
 local CameraViewport = PlrInfoContainer.PlrCameraViewport
 

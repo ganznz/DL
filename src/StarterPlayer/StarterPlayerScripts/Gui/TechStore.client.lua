@@ -13,7 +13,7 @@ local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
 -- item shop gui
-local itemShopContainer = PlayerGui:WaitForChild("TechStore"):WaitForChild("ItemShopContainer")
+local itemShopContainer = PlayerGui:WaitForChild("AllGui").Stores.TechStore:WaitForChild("ItemShopContainer")
 local itemShopHeader = itemShopContainer.HeaderText
 local itemShopExitBtn = itemShopContainer.ExitBtn
 local itemShopScrollingFrame = itemShopContainer.ScrollingFrame
