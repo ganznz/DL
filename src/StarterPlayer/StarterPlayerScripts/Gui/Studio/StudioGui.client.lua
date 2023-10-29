@@ -308,7 +308,7 @@ local function registerBuildModeItemListener(itemBtn, itemCategory)
     local connection = itemBtn.Activated:Connect(function()
         -- check that plr actually has item on server
         local itemName = itemBtn.Name
-        Remotes.Studio.EnterPlaceMode:FireServer(itemName, itemCategory)
+        Remotes.Studio.EnterPlaceMode:FireServer(itemName, itemCategory, false)
     end)
     return connection
 end
@@ -475,7 +475,6 @@ end)
 BuildModeExitBtn.Activated:Connect(function()
     disableBuildModeGui()
     Remotes.Studio.ExitBuildMode:Fire()
-    Remotes.Studio.DisableFurnitureItemClickDetectors:Fire()
     
     -- add cooldown so plr can't enter build mode again instantly
     buildModeDebounce = false
@@ -496,11 +495,10 @@ Remotes.Studio.VisitOtherStudio.OnClientEvent:Connect(function(_studioIndex, _in
 end)
 
 Remotes.Studio.LeaveStudio.OnClientEvent:Connect(function()
-    print('aa')
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioBuildModeBtn, StudioTeleportBtn)
     end)
-    if inBuildMode then print("YESSIR") disableBuildModeGui() end
+    if inBuildMode then disableBuildModeGui() end
     if inPlaceMode then
         -- fire to server, which then fires to client to terminate place mode functionality
         Remotes.Studio.ExitPlaceMode:FireServer()

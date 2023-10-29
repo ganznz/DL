@@ -204,12 +204,12 @@ local function getInstantCFrame()
     return calculateItemPosition()
 end
 
-function Placement:place(remote: RemoteFunction, additionalParams: {})
+function Placement:place(remote: RemoteFunction, objectName, additionalParams: {})
     if not collided and object then
         local placementCFrame = getInstantCFrame()
 
         -- additionalParams contain info you want to send to the server that are exclusive to your games functionality (e.g. an items rarity)
-        return remote:FireServer(object.Name, placementCFrame, additionalParams)
+        return remote:FireServer(objectName, placementCFrame, additionalParams)
     end
 end
 

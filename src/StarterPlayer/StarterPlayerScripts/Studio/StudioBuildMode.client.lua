@@ -46,15 +46,22 @@ local function hideFurnitureItemSettings(billboardGui: BillboardGui)
     end
 end
 
-local function hideOtherFurnitureItemSettings(billboardToIgnore: BillboardGui)
+local function hideOtherFurnitureItemSettings(billboardToIgnore: BillboardGui | nil)
     for _i, billboard: BillboardGui in existingItemSettingBillboards:GetChildren() do
-        if billboard == billboardToIgnore then continue end
+        if billboardToIgnore and billboard == billboardToIgnore then continue end
         
         if billboard:GetAttribute("isVisible") then
             hideFurnitureItemSettings(billboard)
             billboard:SetAttribute("isVisible", false)
         end
     end
+end
+
+local function deleteModelClickConnection(model)
+    local clickDetector = model:FindFirstChild("ClickDetector")
+    local settingsBillboard = existingItemSettingBillboards:FindFirstChild(model.Name)
+    if clickDetector then clickDetector:Destroy() end
+    if settingsBillboard then settingsBillboard:Destroy() end
 end
 
 
@@ -72,18 +79,43 @@ local function showFurnitureItemSettings(billboardGui: BillboardGui)
     hideOtherFurnitureItemSettings(billboardGui)
 end
 
+local function registerItemMoveBtn(billboardGui, moveBtn)
+    moveBtn.Activated:Connect(function()
+        print("move")
+        local itemModel = billboardGui.Adornee
+        local itemName = itemModel:GetAttribute("Name")
+        local itemCategory = itemModel:GetAttribute("Category")
+        local itemUUID = itemModel.Name
+
+        Remotes.Studio.EnterPlaceMode:FireServer(itemName, itemCategory, true, itemUUID)
+
+
+        -- deleteModelClickConnection(itemModel)
+        -- placement:Activate(itemModel)
+    
+        -- if plrPlatformProfile.Platform == "pc" then
+        --     placeItemConnection = mouse.Button1Down:Connect(function()
+
+        --         placement:place(Remotes.Studio.PlaceItem, itemName,  {
+        --             action = "move",
+        --             uuid = itemModel.Name,
+        --             category = itemModel:GetAttribute("category")
+        --         })
+        --     end)
+        -- end
+    end)
+end
+
 local function registerItemSettingButtons(billboard: BillboardGui)
     local settingsContainer = billboard:FindFirstChild("SettingsContainer")
     local deleteBtn = settingsContainer:FindFirstChild("DeleteBtn")
     local moveBtn = settingsContainer:FindFirstChild("MoveBtn")
     local storeBtn = settingsContainer:FindFirstChild("StoreBtn")
 
+    registerItemMoveBtn(billboard, moveBtn)
+
     deleteBtn.Activated:Connect(function()
         print("delete")
-    end)
-
-    moveBtn.Activated:Connect(function()
-        print("move")
     end)
 
     storeBtn.Activated:Connect(function()
@@ -95,6 +127,7 @@ local function registerModelClickConnection(model)
     local clickDetector = Instance.new("ClickDetector", model)
 
     local billboardGui = furnitureItemSettingsBillboard:Clone()
+    billboardGui.Name = model.Name
     billboardGui.SizeOffset = Vector2.new(0, (model.PrimaryPart.Size.Y * 0.5) + 1)
     
     -- hide by default
@@ -125,12 +158,15 @@ local function enableAllModelClickConnections()
 end
 
 local function disableAllModelClickConnections()
+    -- disable click connections
     for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
         local clickDetector = itemModel:FindFirstChild("ClickDetector", true)
         if clickDetector then clickDetector:Destroy() end
-        
-        local billboardGui =  itemModel:FindFirstChild("FurnitureItemSettings", true)
-        if billboardGui then billboardGui:Destroy() end
+    end
+
+    -- delete item settings billboards
+    for _i, billboard in existingItemSettingBillboards:GetChildren() do
+        billboard:Destroy()
     end
 end
 
@@ -154,21 +190,36 @@ Remotes.Studio.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryDat
     placement:RenderGrid()
 
     enableAllModelClickConnections()
-end)
+end)    
 
-Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string)
+Remotes.Studio.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string, movingItem: boolean, itemUUID: string | nil)
     inPlaceMode = true
     
-    local itemModel = studioFurnitureModelsFolder[itemCategory]:FindFirstChild(itemName):Clone()
+    local itemModel
+    local actionType: "newItem" | "move"
+    if movingItem then
+        itemModel = studioFurnitureFolder:FindFirstChild(itemUUID)
+        actionType = "move"
+        
+    else
+        itemModel = studioFurnitureModelsFolder[itemCategory]:FindFirstChild(itemName):Clone()
+        actionType = "newItem"
+    end
+
     placement:Activate(itemModel)
-    
+
     if plrPlatformProfile.Platform == "pc" then
         placeItemConnection = mouse.Button1Down:Connect(function()
-            placement:place(Remotes.Studio.PlaceItem, { category = itemCategory })
+            placement:place(Remotes.Studio.PlaceItem, itemName, {
+                action = actionType,
+                category = itemCategory,
+                uuid = itemUUID,
+            })
         end)
     end
 
     disableAllModelClickConnections()
+    hideOtherFurnitureItemSettings()
 end)
 
 Remotes.Studio.ExitPlaceMode.OnClientEvent:Connect(function(_studioFurnitureInventory)
@@ -176,6 +227,9 @@ Remotes.Studio.ExitPlaceMode.OnClientEvent:Connect(function(_studioFurnitureInve
     inPlaceMode = false
 
     if inBuildMode then
+        -- clear all connections to prevent duplicating
+        disableAllModelClickConnections()
+        
         enableAllModelClickConnections()
     end
 end)
@@ -192,16 +246,15 @@ end)
 -- exit place mode
 Remotes.Studio.ExitBuildMode.Event:Connect(function()
     placement:DestroyGrid()
+    disableAllModelClickConnections()
     inBuildMode = false
 end)
-
--- disable furniture model click connections
-Remotes.Studio.DisableFurnitureItemClickDetectors.Event:Connect(function() disableAllModelClickConnections() end)
 
 humanoid.Died:Connect(function()
     if inBuildMode then
         placement:DestroyGrid()
         inBuildMode = false
+        disableAllModelClickConnections()
     end
 
     if inPlaceMode then
@@ -217,6 +270,7 @@ localPlr.CharacterAdded:Connect(function(character: Model)
         if inBuildMode then
             placement:DestroyGrid()
             inBuildMode = false
+            disableAllModelClickConnections()
         end
     
         if inPlaceMode then
