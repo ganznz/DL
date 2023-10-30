@@ -140,6 +140,7 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
 
                     plrsInStudio[plrToKick.UserId] = false
                     Remotes.Studio.General.KickFromStudio:FireClient(plrToKick)
+                    Remotes.GUI.DisplayNotification:FireClient(plrToKick, "general", string.format("%s has removed you from their studio", plrWhosStudioToClear.Name))
                 end
             end
         end
