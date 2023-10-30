@@ -4,17 +4,21 @@ local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 
 local GuiTransparency = require(ReplicatedStorage.Libs:WaitForChild("GUITransparency"))
+local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
-
 local GuiBackdropFrame = AllGuiScreenGui.Misc:WaitForChild("GuiBackdrop")
+local NotificationPanelFrame = AllGuiScreenGui.Misc.Notification:WaitForChild("NotificationPanel")
 
 local GuiBlur = Lighting:WaitForChild("GuiBlur")
 
 local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
+local OFFSET_PER_NOTI = 0.27
+local NOTI_VISIBLE_X_POS = 0.5 -- scale value
+local NOTI_HIDDEN_X_POS = 2 -- scale value
 
 local GuiServices = {}
 
@@ -142,6 +146,78 @@ function GuiServices.DisplayClickIcon(adornee)
         Size = UDim2.fromScale(1.3, 1.3)
     })
     tween:Play()
+end
+
+local function updateVisibleNotifications(notiToIgnore, action: "moveDown" | "moveUp")
+    local tweenInfo = TweenInfo.new(0.2)
+
+    for _i, noti in NotificationPanelFrame:GetChildren() do
+        if noti == notiToIgnore then continue end
+
+        -- move notification
+        local tween
+        local currentYpos = noti.Position.Y.Scale
+        if action == "moveDown" then
+            tween = TweenService:Create(noti, tweenInfo, { Position = UDim2.fromScale(NOTI_VISIBLE_X_POS, currentYpos + OFFSET_PER_NOTI)  })
+            
+        elseif action == "moveUp" then
+            tween = TweenService:Create(noti, tweenInfo, { Position = UDim2.fromScale(NOTI_VISIBLE_X_POS, currentYpos - OFFSET_PER_NOTI)  })
+        end
+        tween:Play()
+    end
+end
+
+local function setNotificiationDetails(noti, msg: string, type: "standard" | "good" | "warning")
+    local msgText = noti:FindFirstChild("NotificationText")
+    local indicatorIcon = noti:FindFirstChild("Indicator")
+    local progBar = noti:FindFirstChild("ProgressBar")
+
+    msgText.Text = msg
+
+    if type == "standard" then
+        indicatorIcon.TextColor3 = GlobalVariables.Gui.NotificationStandard
+        progBar.BackgroundColor3 = GlobalVariables.Gui.NotificationStandard
+    elseif type == "good" then
+        indicatorIcon.TextColor3 = GlobalVariables.Gui.NotificationGood
+        progBar.BackgroundColor3 = GlobalVariables.Gui.NotificationGood
+    elseif type == "warning" then
+        indicatorIcon.TextColor3 = GlobalVariables.Gui.NotificationWarning
+        progBar.BackgroundColor3 = GlobalVariables.Gui.NotificationWarning
+    end
+end
+
+function GuiServices.CreateNotification(msg: string, type: "standard" | "good" | "warning")
+    local template = NotificationPanelFrame:FindFirstChild("Template"):Clone()
+    template.Parent = NotificationPanelFrame
+    local progBar = template:FindFirstChild("ProgressBar")
+
+    template.Visible = true
+    template.Position = UDim2.fromScale(NOTI_HIDDEN_X_POS, 0)
+    progBar.Size = UDim2.fromScale(0, 0.1)
+
+    setNotificiationDetails(template, msg, type)
+    updateVisibleNotifications(template, "moveDown")
+
+    local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Elastic)
+    local tweenShow = TweenService:Create(template, tweenInfo, { Position = UDim2.fromScale(NOTI_VISIBLE_X_POS, 0) })
+    local progBarTweenInfo = TweenInfo.new(5, Enum.EasingStyle.Linear)
+    local progBarTween = TweenService:Create(progBar, progBarTweenInfo, { Size = UDim2.fromScale(1, 0.1) })
+    
+    tweenShow:Play()
+
+    -- start prog bar tween
+    tweenShow.Completed:Connect(function(_playbackState) progBarTween:Play() end)
+
+    -- hide noti
+    progBarTween.Completed:Connect(function(_playbackState)
+        local currentYpos = template.Position.Y.Scale
+        local tweenHide = TweenService:Create(template, tweenInfo, { Position = UDim2.fromScale(NOTI_HIDDEN_X_POS, currentYpos) })
+        tweenHide:Play()
+
+        -- destroy noti
+        tweenHide.Completed:Connect(function(_playbackState) template:destroy() end)
+    end)
+
 end
 
 function GuiServices.GenerateViewportFrame(vpf: ViewportFrame, vpc: Camera, model, posOffset: Vector3)

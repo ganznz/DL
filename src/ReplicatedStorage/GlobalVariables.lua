@@ -11,4 +11,8 @@ GlobalVariables.Gui.InvalidRedColour = Color3.fromRGB(255, 106, 108)
 GlobalVariables.Gui.GuiBackdropColourDefault = Color3.fromRGB(0, 0, 0)
 GlobalVariables.Gui.GuiBackdropColourGreen = Color3.fromRGB(18, 111, 11)
 
+GlobalVariables.Gui.NotificationStandard = Color3.fromRGB(130, 186, 255)
+GlobalVariables.Gui.NotificationGood = Color3.fromRGB(130, 229, 115)
+GlobalVariables.Gui.NotificationWarning = Color3.fromRGB(255, 106, 108)
+
 return GlobalVariables
