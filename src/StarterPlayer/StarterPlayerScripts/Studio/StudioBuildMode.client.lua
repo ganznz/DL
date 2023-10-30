@@ -91,7 +91,8 @@ local function registerItemDeleteBtn(billboardGui, deleteBtn)
         local itemUUID = itemModel.Name
 
         -- prompt UI
-        Remotes.GUI.Studio.DeleteFurniturePopup:Fire(itemName, itemCategory, itemUUID)
+        local itemToDelete = { Category = itemCategory, Name = itemName, UUID = itemUUID }
+        Remotes.GUI.Studio.DeleteFurniturePopup:Fire(true, itemToDelete)
     end)
 end
 

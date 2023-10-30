@@ -17,8 +17,9 @@ local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
 -- GUI REFERENCE VARIABLES
-local LeftScreenGui = PlayerGui:WaitForChild("AllGui").Hud:WaitForChild("Left")
-local RightScreenGui = PlayerGui:WaitForChild("AllGui").Hud:WaitForChild("Right")
+local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
+local LeftScreenGui = AllGuiScreenGui.Hud:WaitForChild("Left")
+local RightScreenGui = AllGuiScreenGui.Hud:WaitForChild("Right")
 
 local LeftSideContainer = LeftScreenGui:WaitForChild("LeftBtnContainer")
 local StudioTeleportBtn = LeftSideContainer.StudioTpBtn
@@ -29,14 +30,14 @@ local PlrInfoContainer = LeftScreenGui:WaitForChild("PlrInfoContainer")
 local RightSideContainer = RightScreenGui:WaitForChild("RightBtnContainer")
 local PlrStudiosBtn = RightSideContainer.PlrStudiosBtn
 
-local StudioListContainer = PlayerGui:WaitForChild("AllGui").Studio:WaitForChild("StudioGeneral"):WaitForChild("StudioListContainer")
+local StudioListContainer = AllGuiScreenGui.Studio:WaitForChild("StudioGeneral"):WaitForChild("StudioListContainer")
 local StudioListExitBtn = StudioListContainer.ExitBtn
 local StudioListScrollingFrame = StudioListContainer.ScrollingFrame
 local StudioListScrollingFrameTemplate = StudioListScrollingFrame:WaitForChild("Template")
 local StudioWhitelistBtn = StudioListContainer.StudioSettings.WhitelistBtn
 local StudioKickAllBtn = StudioListContainer.StudioSettings.KickBtn
 
-local StudioBuildModeContainer = PlayerGui:WaitForChild("AllGui").Studio:WaitForChild("StudioBuildMode"):WaitForChild("BuildModeContainer")
+local StudioBuildModeContainer = AllGuiScreenGui.Studio:WaitForChild("StudioBuildMode"):WaitForChild("BuildModeContainer")
 local BuildModeHeader = StudioBuildModeContainer.Header
 local BuildModeCategoryContainer = BuildModeHeader.CategoryButtons
 local MoodCategoryBtn = BuildModeCategoryContainer:WaitForChild("MoodCategoryBtn")
@@ -51,6 +52,13 @@ local BuildModeItemViewport = StudioBuildModeContainer.ItemDisplay.ItemDisplayVi
 local NeedItemTemplate = BuildModeItemViewport:WaitForChild("NeedItemTemplate")
 local DecoItemTemplate = BuildModeItemViewport:WaitForChild("DecoItemTemplate")
 local SelectCategoryText = StudioBuildModeContainer.ItemDisplay:WaitForChild("SelectCategory")
+
+local DeleteItemsPopup = AllGuiScreenGui.Studio.StudioBuildMode:WaitForChild("DeleteItemsPopup")
+local DeleteItemsScrollingFrame = DeleteItemsPopup:WaitForChild("ScrollingFrame")
+local DeleteItemsTemplate = DeleteItemsScrollingFrame:FindFirstChild("Template")
+local DeleteItemsYesBtn = DeleteItemsPopup:FindFirstChild("YesBtn")
+local DeleteItemsNoBtn = DeleteItemsPopup:FindFirstChild("NoBtn")
+local DeleteItemsTotalRefundText = DeleteItemsPopup:FindFirstChild("TotalRefund")
 
 
 -- GUI PROPERTY VARIABLES
@@ -69,11 +77,16 @@ local plrInfoContainerVisibleSize: UDim2 = PlrInfoContainer.Size
 local studioBuildModeVisiblePos: UDim2 = StudioBuildModeContainer.Position
 local studioBuildModeHiddenPos: UDim2 = UDim2.fromScale(0.5, 1.25)
 
+local deleteItemsPopupVisiblePos: UDim2 = DeleteItemsPopup.Position
+local deleteItemsPopupVisibleSize: UDim2 = DeleteItemsPopup.Size
+
 
 -- STATIC VARIABLES
 local WHITELIST_BTN_TEXT_TEMPLATE = "Studio: SETTING"
 local ITEM_STAT_TEXT_TEMPLATE = "+AMT/sec"
 local ITEM_AMOUNT_TEXT_TEMPLATE = "xAMT"
+local DELETE_ITEM_CARD_NAME_TEMPLATE = "ITEM_NAME (xAMT)"
+local DELETE_ITEM_CARD_REFUND_TEMPLATE = "+ AMT CURRENCY_TYPE"
 local KICK_PLRS_COOLDOWN = 1 -- seconds
 
 
@@ -97,6 +110,7 @@ local visitBtnConnections = {}
 local buildModeItemConnections = {}
 
 GuiServices.DefaultMainGuiStyling(StudioListContainer, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
+GuiServices.DefaultMainGuiStyling(DeleteItemsPopup, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
 
 local function getPlrNameFromUserId(userId: number)
     local username = nil
@@ -380,7 +394,76 @@ local function setupItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor"
     BuildModeItemViewport.Visible = true
 end
 
-local function displayDeleteItemPopup(itemName: string, itemCategory: string, itemUUID: string)
+-- local DeleteItemsPopup = AllGuiScreenGui.Studio.StudioBuildMode:WaitForChild("DeleteItemsPopup")
+-- local DeleteItemsScrollingFrame = DeleteItemsPopup:WaitForChild("ScrollingFrame")
+-- local DeleteItemsTemplate = DeleteItemsScrollingFrame:FindFirstChild("Template")
+-- local DeleteItemsYesBtn = DeleteItemsPopup:FindFirstChild("YesBtn")
+-- local DeleteItemsNoBtn = DeleteItemsPopup:FindFirstChild("NoBtn")
+-- local DeleteItemsTotalRefundText = DeleteItemsPopup:FindFirstChild("TotalRefund")
+
+local function clearDeleteItemsPopup()
+    for _i, instance in DeleteItemsScrollingFrame:GetChildren() do
+        if instance.Name == "UIListLayout" or instance.Name == "UIPadding" or instance.Name == "Template" then continue end
+
+        instance:Destroy()
+    end
+end
+
+local function createDeleteItemCard(itemCategory: string, itemName: string, amtOfItem: number, itemUUID: string)
+    local template = DeleteItemsTemplate:Clone()
+    local itemImage = template:FindFirstChild("ItemImage")
+    local itemNameText = template:FindFirstChild("ItemName")
+    local itemRefundText = template:FindFirstChild("ItemRefund")
+    local removeBtn = template:FindFirstChild("RemoveBtn")
+
+    -- add attributes to template
+    template:SetAttribute("category", itemCategory)
+    template:SetAttribute("name", itemName)
+    template:SetAttribute("UUID", itemUUID)
+    template:SetAttribute("amtToDelete", amtOfItem)
+
+    local config
+    if itemCategory == "Mood" then
+        config = MoodFurnitureConfig
+    elseif itemCategory == "Energy" then
+        config = EnergyFurnitureConfig
+    elseif itemCategory == "Hunger" then
+        config = HungerFurnitureConfig
+    elseif itemCategory == "Decor" then
+        config = DecorFurnitureConfig
+    end
+
+    local itemConfig = config.GetConfig(itemName)
+
+    itemNameText.Text = DELETE_ITEM_CARD_NAME_TEMPLATE:gsub("ITEM_NAME", itemName):gsub("AMT", tostring(amtOfItem))
+    itemRefundText.Text = DELETE_ITEM_CARD_REFUND_TEMPLATE:gsub("AMT", tostring(itemConfig.Price)):gsub("CURRENCY_TYPE", itemConfig.Currency)
+
+    removeBtn.Activated:Connect(function()
+        local amtToDelete = template:GetAttribute("amtToDelete")
+        local newAmt = amtToDelete - 1
+        if newAmt <= 0 then template:Destroy() end
+
+        template:SetAttribute("amtToDelete", newAmt)
+        itemNameText.Text = DELETE_ITEM_CARD_NAME_TEMPLATE:gsub("ITEM_NAME", itemName):gsub("AMT", tostring(newAmt))
+    end)
+
+    template.Visible = true
+    return template
+end
+
+-- show furniture item delete popup
+-- single item:    { category = string, itemName = string, itemUUID = string }
+-- multiple items: { [category] = { [itemName] = { amount = number } } }
+
+local function displayDeleteItemPopup(itemToDelete)
+    clearDeleteItemsPopup()
+
+    local template = createDeleteItemCard(itemToDelete.Category, itemToDelete.Name, 1, itemToDelete.UUID)
+    template.Parent = DeleteItemsScrollingFrame
+end
+
+local function displayDeleteMultipleItemsPopup(itemsToDelete)
+    clearDeleteItemsPopup()
 end
 
 -- switches between the left-side studio btns (visit studio btn & build mode btn)
@@ -531,7 +614,18 @@ Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(studioInve
 end)
 
 -- show furniture item delete popup
-Remotes.GUI.Studio.DeleteFurniturePopup.Event:Connect(displayDeleteItemPopup)
+-- single item:    { category = string, itemName = string, itemUUID = string }
+-- multiple items: { [category] = { [itemName] = { amount = number } } }
+Remotes.GUI.Studio.DeleteFurniturePopup.Event:Connect(function(singleItem: boolean, itemsToDelete)
+    if singleItem then
+        displayDeleteItemPopup(itemsToDelete)
+    else
+        -- display potentially multiple items to delete
+        displayDeleteMultipleItemsPopup()
+    end
+
+    GuiServices.ShowGuiStandard(DeleteItemsPopup, deleteItemsPopupVisiblePos, deleteItemsPopupVisibleSize, GlobalVariables.Gui.GuiBackdropColourDefault)
+end)
 
 humanoid.Died:Connect(function()
     if inBuildMode then
