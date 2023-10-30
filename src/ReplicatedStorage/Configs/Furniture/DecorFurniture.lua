@@ -5,9 +5,24 @@ local modelFolder = ReplicatedStorage.Assets.Models.StudioFurnishing.Decor
 local DecorFurniture = {}
 
 type DecorFurnitureConfig = {
+    Price: number;
+    Currency: string,
+    ImageUrl: string
 }
 
 local Config: { [string]: DecorFurnitureConfig } = {
+    ["Book Stack"] = {
+        Price = 99,
+        Currency = "Cash"
+    },
+    ["Crate"] = {
+        Price = 99,
+        Currency = "Cash"
+    },
+    ["Pot Plant"] = {
+        Price = 99,
+        Currency = "Cash"
+    },
 }
 
 DecorFurniture.Config = Config

@@ -5,51 +5,82 @@ local modelFolder = ReplicatedStorage.Assets.Models.StudioFurnishing.Energy
 local EnergyFurniture = {}
 
 type EnergyFurnitureConfig = {
-    EnergyPerSec: number
+    EnergyPerSec: number,
+    Price: number;
+    Currency: string,
+    ImageUrl: string
 }
 
 local Config: { [string]: EnergyFurnitureConfig } = {
     Default = {
-        EnergyPerSec = 1
+        EnergyPerSec = 1,
+        Price = 99,
+        Currency = "Cash"
     },
     Basic = {
-        EnergyPerSec = 2
+        EnergyPerSec = 2,
+        Price = 99,
+        Currency = "Cash"
     },
     Modern = {
-        EnergyPerSec = 3
+        EnergyPerSec = 3,
+        Price = 99,
+        Currency = "Cash"
     },
     Rustic = {
-        EnergyPerSec = 5
+        EnergyPerSec = 5,
+        Price = 99,
+        Currency = "Cash"
     },
     Fancy = {
-        EnergyPerSec = 7
+        EnergyPerSec = 7,
+        Price = 99,
+        Currency = "Cash"
     },
     Futuristic = {
-        EnergyPerSec = 9
+        EnergyPerSec = 9,
+        Price = 99,
+        Currency = "Cash"
     },
     Greek = {
-        EnergyPerSec = 12
+        EnergyPerSec = 12,
+        Price = 99,
+        Currency = "Cash"
     },
     Steampunk = {
-        EnergyPerSec = 15
+        EnergyPerSec = 15,
+        Price = 99,
+        Currency = "Cash"
     },
     Tropical = {
-        EnergyPerSec = 18
+        EnergyPerSec = 18,
+        Price = 99,
+        Currency = "Cash"
     },
     Space = {
-        EnergyPerSec = 22
+        EnergyPerSec = 22,
+        Price = 99,
+        Currency = "Cash"
     },
     Retro = {
-        EnergyPerSec = 26
+        EnergyPerSec = 26,
+        Price = 99,
+        Currency = "Cash"
     },
     Rgb = {
-        EnergyPerSec = 30
+        EnergyPerSec = 30,
+        Price = 99,
+        Currency = "Cash"
     },
     Prehistoric = {
-        EnergyPerSec = 35
+        EnergyPerSec = 35,
+        Price = 99,
+        Currency = "Cash"
     },
     Crystal = {
-        EnergyPerSec = 40
+        EnergyPerSec = 40,
+        Price = 99,
+        Currency = "Cash"
     },
 }
 

@@ -7,51 +7,80 @@ local HungerFurniture = {}
 type HungerFurnitureConfig = {
     HungerPerSec: number;
     Price: number;
-    ImageUrl: string -- model render image (ADD TO CONFIG BELOW)
+    Currency: string,
+    ImageUrl: string
 }
 
 local Config: { [string]: HungerFurnitureConfig } = {
     Default = {
-        HungerPerSec = 1
+        HungerPerSec = 1,
+        Price = 99,
+        Currency = "Cash"
     },
     Basic = {
-        HungerPerSec = 2
+        HungerPerSec = 2,
+        Price = 99,
+        Currency = "Cash"
     },
     Modern = {
-        HungerPerSec = 3
+        HungerPerSec = 3,
+        Price = 99,
+        Currency = "Cash"
     },
     Rustic = {
-        HungerPerSec = 5
+        HungerPerSec = 5,
+        Price = 99,
+        Currency = "Cash"
     },
     Fancy = {
-        HungerPerSec = 7
+        HungerPerSec = 7,
+        Price = 99,
+        Currency = "Cash"
     },
     Futuristic = {
-        HungerPerSec = 9
+        HungerPerSec = 9,
+        Price = 99,
+        Currency = "Cash"
     },
     Greek = {
-        HungerPerSec = 12
+        HungerPerSec = 12,
+        Price = 99,
+        Currency = "Cash"
     },
     Steampunk = {
-        HungerPerSec = 15
+        HungerPerSec = 15,
+        Price = 99,
+        Currency = "Cash"
     },
     Tropical = {
-        HungerPerSec = 18
+        HungerPerSec = 18,
+        Price = 99,
+        Currency = "Cash"
     },
     Space = {
-        HungerPerSec = 22
+        HungerPerSec = 22,
+        Price = 99,
+        Currency = "Cash"
     },
     Retro = {
-        HungerPerSec = 26
+        HungerPerSec = 26,
+        Price = 99,
+        Currency = "Cash"
     },
     Rgb = {
-        HungerPerSec = 30
+        HungerPerSec = 30,
+        Price = 99,
+        Currency = "Cash"
     },
     Prehistoric = {
-        HungerPerSec = 35
+        HungerPerSec = 35,
+        Price = 99,
+        Currency = "Cash"
     },
     Crystal = {
-        HungerPerSec = 40
+        HungerPerSec = 40,
+        Price = 99,
+        Currency = "Cash"
     },
 }
 
