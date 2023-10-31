@@ -128,4 +128,40 @@ function Studio.AlreadyPlacedFurnitureData(plr: Player, studioIndex)
     return plrData.Studio.Studios[studioIndex].Furnishings
 end
 
+function Studio.DeleteSingleItem(plr: Player, itemCategory: string, itemName: string, itemUUID: string): string | nil
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local uuidToDelete = nil
+
+    -- if plr is deleting using itemUUID, then that item is placed in one of their studios
+    -- loop through studios until item is found
+    for _studios, studioData in profile.Data.Studio.Studios do
+        local instancesOfItemInStudio = studioData.Furnishings[itemCategory][itemName]
+        
+        if instancesOfItemInStudio then
+            local item = instancesOfItemInStudio[itemUUID]
+            -- item to delete not placed in this studio, check next studio
+            if not item then continue end
+
+            uuidToDelete = itemUUID
+            -- delete item
+            instancesOfItemInStudio[itemUUID] = nil
+        end
+    end
+
+    -- check to ensure item WAS in studio for deletion
+    if uuidToDelete then
+        -- delete from plr furniture inventory also
+        local itemIndex = table.find(profile.Data.Inventory.StudioFurnishing[itemCategory][itemName], itemUUID)
+        table.remove(profile.Data.Inventory.StudioFurnishing[itemCategory][itemName], itemIndex)
+    end
+    
+    return uuidToDelete
+end
+
+function Studio.DeleteMultipleItems(plr: Player, itemsToDelete)
+
+end
+
 return Studio

@@ -72,6 +72,19 @@ local function showFurnitureItemSettings(billboardGui: BillboardGui)
     hideOtherFurnitureItemSettings(billboardGui)
 end
 
+local function disableAllModelClickConnections()
+    -- disable click connections
+    for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
+        local clickDetector = itemModel:FindFirstChild("ClickDetector", true)
+        if clickDetector then clickDetector:Destroy() end
+    end
+
+    -- delete item settings billboards
+    for _i, billboard in existingItemSettingBillboards:GetChildren() do
+        billboard:Destroy()
+    end
+end
+
 local function registerItemMoveBtn(billboardGui, moveBtn)
     moveBtn.Activated:Connect(function()
         local itemModel = billboardGui.Adornee
@@ -90,8 +103,17 @@ local function registerItemDeleteBtn(billboardGui, deleteBtn)
         local itemCategory = itemModel:GetAttribute("Category")
         local itemUUID = itemModel.Name
 
+        if inBuildMode then
+            placement:DestroyGrid()
+            inBuildMode = false
+            disableAllModelClickConnections()
+        end
+
         -- prompt UI
-        local itemToDelete = { Category = itemCategory, Name = itemName, UUID = itemUUID }
+        local itemToDelete = {}
+        itemToDelete[itemCategory] = {}
+        itemToDelete[itemCategory][itemName] = { Amount = 1, ItemUUID = itemUUID }
+
         Remotes.GUI.Studio.DeleteFurniturePopup:Fire(true, itemToDelete)
     end)
 end
@@ -148,19 +170,6 @@ local function enableAllModelClickConnections()
     end
 end
 
-local function disableAllModelClickConnections()
-    -- disable click connections
-    for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
-        local clickDetector = itemModel:FindFirstChild("ClickDetector", true)
-        if clickDetector then clickDetector:Destroy() end
-    end
-
-    -- delete item settings billboards
-    for _i, billboard in existingItemSettingBillboards:GetChildren() do
-        billboard:Destroy()
-    end
-end
-
 local function exitPlaceMode()
     placement:Deactivate()
 
@@ -181,7 +190,7 @@ Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioIn
     placement:RenderGrid()
 
     enableAllModelClickConnections()
-end)    
+end)
 
 Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string, movingItem: boolean, itemUUID: string | nil)
     inPlaceMode = true

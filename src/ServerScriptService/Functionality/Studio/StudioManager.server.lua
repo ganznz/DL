@@ -219,6 +219,32 @@ local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, ad
     end
 end
 
+local function deleteStudioItems(plr: Player, itemsToDelete)
+    for category, itemsInCategory in itemsToDelete do
+        for itemName, itemInfo in itemsInCategory do
+            
+            -- only 1 item to delete
+            if itemInfo["ItemUUID"] then
+                local uuidToDelete = StudioConfigServer.DeleteSingleItem(plr, category, itemName, itemInfo.ItemUUID)
+                
+                -- remove item for all plrs in studio
+                if uuidToDelete then
+                    for plrUserId, studioInfo in plrsInStudio do
+                        if studioInfo then
+                            if studioInfo.PlrVisitingId == plr.UserId then
+                                local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
+                                Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, uuidToDelete)
+                            end
+                        end
+                    end
+                end
+            end
+
+            -- potentially delete multiple items
+        end
+    end
+end
+
 Remotes.Studio.General.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
@@ -324,3 +350,5 @@ Remotes.Studio.BuildMode.ExitPlaceMode.OnServerEvent:Connect(function(plr: Playe
     -- terminate place mode functionality on client
     Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr, nil)
 end)
+
+Remotes.Studio.BuildMode.DeleteItems.OnServerEvent:Connect(deleteStudioItems)

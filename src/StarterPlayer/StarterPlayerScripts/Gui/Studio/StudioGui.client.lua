@@ -96,6 +96,7 @@ local inPlaceMode = false
 local char = localPlr.Character or localPlr.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
 local studioFurnitureInventory = nil
+local currentItemsToDelete = nil -- keeps track of what items have been added/removed when the delete items popup is visible
 
 -- hide buildmode gui by default
 StudioBuildModeContainer.Visible = false
@@ -403,8 +404,8 @@ end
 
 local function clearDeleteItemsPopup()
     for _i, instance in DeleteItemsScrollingFrame:GetChildren() do
+        print(instance)
         if instance.Name == "UIListLayout" or instance.Name == "UIPadding" or instance.Name == "Template" then continue end
-
         instance:Destroy()
     end
 end
@@ -416,11 +417,7 @@ local function createDeleteItemCard(itemCategory: string, itemName: string, amtO
     local itemRefundText = template:FindFirstChild("ItemRefund")
     local removeBtn = template:FindFirstChild("RemoveBtn")
 
-    -- add attributes to template
-    template:SetAttribute("category", itemCategory)
-    template:SetAttribute("name", itemName)
-    template:SetAttribute("UUID", itemUUID)
-    template:SetAttribute("amtToDelete", amtOfItem)
+    template.Name = "DeleteItemCard"
 
     local config
     if itemCategory == "Mood" then
@@ -439,11 +436,15 @@ local function createDeleteItemCard(itemCategory: string, itemName: string, amtO
     itemRefundText.Text = DELETE_ITEM_CARD_REFUND_TEMPLATE:gsub("AMT", tostring(itemConfig.Price)):gsub("CURRENCY_TYPE", itemConfig.Currency)
 
     removeBtn.Activated:Connect(function()
-        local amtToDelete = template:GetAttribute("amtToDelete")
-        local newAmt = amtToDelete - 1
-        if newAmt <= 0 then template:Destroy() end
+        currentItemsToDelete[itemCategory][itemName].Amount -= 1
+        local newAmt = currentItemsToDelete[itemCategory][itemName].Amount
+        
+        if newAmt <= 0 then
+            -- remove item from currentItemsToDelete table
+            currentItemsToDelete[itemCategory][itemName] = nil
+            template:Destroy()
+        end
 
-        template:SetAttribute("amtToDelete", newAmt)
         itemNameText.Text = DELETE_ITEM_CARD_NAME_TEMPLATE:gsub("ITEM_NAME", itemName):gsub("AMT", tostring(newAmt))
     end)
 
@@ -452,18 +453,30 @@ local function createDeleteItemCard(itemCategory: string, itemName: string, amtO
 end
 
 -- show furniture item delete popup
--- single item:    { category = string, itemName = string, itemUUID = string }
+-- single item:    { [category] = { [itemName] = { amount = number } } }
 -- multiple items: { [category] = { [itemName] = { amount = number } } }
 
 local function displayDeleteItemPopup(itemToDelete)
     clearDeleteItemsPopup()
 
-    local template = createDeleteItemCard(itemToDelete.Category, itemToDelete.Name, 1, itemToDelete.UUID)
-    template.Parent = DeleteItemsScrollingFrame
+    for itemCategory, itemsInCategory in itemToDelete do
+        for itemName, itemInfo in itemsInCategory do
+            local template = createDeleteItemCard(itemCategory, itemName, itemInfo.Amount, itemInfo.ItemUUID)
+            template.Parent = DeleteItemsScrollingFrame
+        end
+    end
+
 end
 
-local function displayDeleteMultipleItemsPopup(itemsToDelete)
+local function displayDeleteMultipleItemsPopup()
     clearDeleteItemsPopup()
+
+    for category, furnitureItems in currentItemsToDelete do
+        for itemName, itemDetails in furnitureItems do
+            local template = createDeleteItemCard(category, itemName, itemDetails.Amount, nil)
+            template.Parent = DeleteItemsScrollingFrame
+        end
+    end
 end
 
 -- switches between the left-side studio btns (visit studio btn & build mode btn)
@@ -559,6 +572,24 @@ BuildModeExitBtn.Activated:Connect(function()
     buildModeDebounce = true
 end)
 
+DeleteItemsYesBtn.Activated:Connect(function()
+    GuiServices.HideGuiStandard(DeleteItemsPopup, UDim2.fromScale(deleteItemsPopupVisiblePos.X.Scale, deleteItemsPopupVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(deleteItemsPopupVisibleSize.X.Scale, deleteItemsPopupVisibleSize.Y.Scale - 0.2))
+    
+    Remotes.Studio.BuildMode.DeleteItems:FireServer(currentItemsToDelete)
+
+    setupBuildModeGui()
+    Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
+end)
+
+DeleteItemsNoBtn.Activated:Connect(function()
+    currentItemsToDelete = nil
+
+    GuiServices.HideGuiStandard(DeleteItemsPopup, UDim2.fromScale(deleteItemsPopupVisiblePos.X.Scale, deleteItemsPopupVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(deleteItemsPopupVisibleSize.X.Scale, deleteItemsPopupVisibleSize.Y.Scale - 0.2))
+    
+    setupBuildModeGui()
+    Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
+end)
+
 
 -- REMOTE EVENTS
 Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart, _placedFurnitureData)
@@ -614,14 +645,22 @@ Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(studioInve
 end)
 
 -- show furniture item delete popup
--- single item:    { category = string, itemName = string, itemUUID = string }
+-- single item:    { [category] = { [itemName] = { amount = number } } }
 -- multiple items: { [category] = { [itemName] = { amount = number } } }
 Remotes.GUI.Studio.DeleteFurniturePopup.Event:Connect(function(singleItem: boolean, itemsToDelete)
+    currentItemsToDelete = itemsToDelete
+
+    if inBuildMode then
+        disableBuildModeGui()
+        inBuildMode = false
+        inPlaceMode = false
+    end
+
     if singleItem then
-        displayDeleteItemPopup(itemsToDelete)
+        displayDeleteItemPopup(currentItemsToDelete)
     else
         -- display potentially multiple items to delete
-        displayDeleteMultipleItemsPopup()
+        displayDeleteMultipleItemsPopup(currentItemsToDelete)
     end
 
     GuiServices.ShowGuiStandard(DeleteItemsPopup, deleteItemsPopupVisiblePos, deleteItemsPopupVisibleSize, GlobalVariables.Gui.GuiBackdropColourDefault)
