@@ -14,7 +14,6 @@ local mouse: Mouse = plr:GetMouse()
 -- bools
 local interpolation = true
 local moveByGrid = true
-local buildModePlacement = true
 
 -- integers
 local rotationStep = 90 --degrees
@@ -30,20 +29,14 @@ local Placement = {}
 
 Placement.__index = Placement
 
--- placement instance data
-local PLACEMENT_INSTANCE_DATA = nil
-
 -- Constructor variables
 local GRID_SIZE -- size of each tile on plot, in studs
-local ROTATE_KEY
-local TERMINATE_KEY
 
 -- Activation variables
 local object
 local placedObjects
 local plot
 local isStackable
-
 
 -- Variables used in calculations
 local posX
@@ -109,27 +102,6 @@ local function calculateYPosition(toPos, toSize, objSize)
     return (toPos + toSize * 0.5) + objSize * 0.5
 end
 
-local function rotate(_actionName, inputState, _inputObj)
-    if inputState == Enum.UserInputState.Begin then
-        rotation += rotationStep
-        rotationVal = not rotationVal
-    end
-end
-
-local function cancelOnTermination(_actionName, inputState, _inputObj)
-    if inputState == Enum.UserInputState.Begin then
-        object:Destroy()
-        local texture = plot:FindFirstChild("Texture")
-        local textureTween = TweenService:Create(texture, TweenInfo.new(0.2), { Transparency = 0 })
-        textureTween:Play()
-        textureTween.Completed:Connect(function()
-            plot:FindFirstChild("Texture"):Destroy()
-        end)
-
-        mouse.TargetFilter = nil
-    end
-end
-
 -- snap selected object to grid tile
 local function snap(cframe: CFrame)
     local newX = math.round(cframe.X / GRID_SIZE) * GRID_SIZE
@@ -175,11 +147,6 @@ local function calculateItemPosition()
         CFrame.new(finalCFrame.X, posY, finalCFrame.Z), offsetX, offsetZ)
 
     return finalCFrame * CFrame.Angles(0, math.rad(rotation), 0)
-end
-
-local function bindInputs()
-    ContextActionService:BindAction("Rotate", rotate, false, ROTATE_KEY)
-    ContextActionService:BindAction("Cancel", cancelOnTermination, false, TERMINATE_KEY)
 end
 
 local function unbindInputs()
@@ -236,21 +203,17 @@ local function approvePlacement()
 end
 
 -- Constructor function
-function Placement.new(gridSize, plt, placedObjs, stackable: boolean, rotateKey, terminateKey)
+function Placement.new(gridSize, plt, placedObjs, stackable: boolean)
     local data = {}
     local metadata = setmetatable(data, Placement)
 
     GRID_SIZE = gridSize
-    ROTATE_KEY = rotateKey or Enum.KeyCode.R
-    TERMINATE_KEY = terminateKey or Enum.KeyCode.X
 
     plot = plt
     placedObjects = placedObjs
     isStackable = stackable
 
     data.grid = GRID_SIZE
-    data.rotateKey = ROTATE_KEY or Enum.KeyCode.R
-    data.terminateKey = TERMINATE_KEY or Enum.KeyCode.X
 
     return data
 end
@@ -296,7 +259,6 @@ function Placement:Activate(obj: Model)
 
     task.wait()
 
-    bindInputs()
     speed = tempSpeed
 
     RunService:BindToRenderStep("Input", Enum.RenderPriority.Input.Value, translateObj)
@@ -316,6 +278,11 @@ function Placement:RenderGrid()
     texture.Face = Enum.NormalId.Top
     texture.Parent = plot
     TweenService:Create(texture, TweenInfo.new(0.5), { Transparency = 0 }):Play()
+end
+
+function Placement:Rotate()
+    rotation += rotationStep
+    rotationVal = not rotationVal
 end
 
 function Placement:DestroyGrid()

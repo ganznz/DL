@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
 local StudioConfig = require(ReplicatedStorage.Configs:WaitForChild("Studio"))
@@ -15,6 +16,7 @@ local furnitureModelFolder = ReplicatedStorage.Assets.Models.StudioFurnishing
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
+local plrPlatformProfile = PlrPlatformManager.GetProfile(localPlr)
 
 -- GUI REFERENCE VARIABLES
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
@@ -53,6 +55,14 @@ local NeedItemTemplate = BuildModeItemViewport:WaitForChild("NeedItemTemplate")
 local DecoItemTemplate = BuildModeItemViewport:WaitForChild("DecoItemTemplate")
 local SelectCategoryText = StudioBuildModeContainer.ItemDisplay:WaitForChild("SelectCategory")
 
+local ItemInteractionButtons = AllGuiScreenGui.Studio:WaitForChild("StudioBuildMode"):WaitForChild("ItemInteractionBtns")
+local ItemInteractionBtnsPc = ItemInteractionButtons:WaitForChild("PcPlatform")
+local ItemRotateBtnPc = ItemInteractionBtnsPc:WaitForChild("RotateBtn")
+local ItemCancelBtnPc = ItemInteractionBtnsPc:WaitForChild("CancelBtn")
+local ItemInteractionBtnsMobile = ItemInteractionButtons:WaitForChild("MobilePlatform")
+local ItemRotateBtnMobile = ItemInteractionBtnsMobile:WaitForChild("RotateBtn")
+local ItemCancelBtnMobile = ItemInteractionBtnsMobile:WaitForChild("CancelBtn")
+
 local DeleteItemsPopup = AllGuiScreenGui.Studio.StudioBuildMode:WaitForChild("DeleteItemsPopup")
 local DeleteItemsScrollingFrame = DeleteItemsPopup:WaitForChild("ScrollingFrame")
 local DeleteItemsTemplate = DeleteItemsScrollingFrame:FindFirstChild("Template")
@@ -80,6 +90,10 @@ local studioBuildModeHiddenPos: UDim2 = UDim2.fromScale(0.5, 1.25)
 local deleteItemsPopupVisiblePos: UDim2 = DeleteItemsPopup.Position
 local deleteItemsPopupVisibleSize: UDim2 = DeleteItemsPopup.Size
 
+local itemInteractionBtnContainerVisiblePos: UDim2 = ItemInteractionButtons.Position
+local itemInteractionBtnContainerHiddenPos: UDim2 = UDim2.fromScale(0.5, 1.2)
+local itemInteractionBtnContainerSize: UDim2 = ItemInteractionButtons.Size
+
 
 -- STATIC VARIABLES
 local WHITELIST_BTN_TEXT_TEMPLATE = "Studio: SETTING"
@@ -97,6 +111,14 @@ local char = localPlr.Character or localPlr.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
 local studioFurnitureInventory = nil
 local currentItemsToDelete = nil -- keeps track of what items have been added/removed when the delete items popup is visible
+
+-- set what item interaction btns are visible by default
+ItemInteractionBtnsPc.Visible = plrPlatformProfile.Platform == "pc" and true or false
+ItemInteractionBtnsMobile.Visible = plrPlatformProfile.Platform == "mobile" and true or false
+
+-- hide item interaction btns by default
+ItemInteractionButtons.Position = itemInteractionBtnContainerHiddenPos
+ItemInteractionButtons.Visible = false
 
 -- hide buildmode gui by default
 StudioBuildModeContainer.Visible = false
@@ -395,16 +417,8 @@ local function setupItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor"
     BuildModeItemViewport.Visible = true
 end
 
--- local DeleteItemsPopup = AllGuiScreenGui.Studio.StudioBuildMode:WaitForChild("DeleteItemsPopup")
--- local DeleteItemsScrollingFrame = DeleteItemsPopup:WaitForChild("ScrollingFrame")
--- local DeleteItemsTemplate = DeleteItemsScrollingFrame:FindFirstChild("Template")
--- local DeleteItemsYesBtn = DeleteItemsPopup:FindFirstChild("YesBtn")
--- local DeleteItemsNoBtn = DeleteItemsPopup:FindFirstChild("NoBtn")
--- local DeleteItemsTotalRefundText = DeleteItemsPopup:FindFirstChild("TotalRefund")
-
 local function clearDeleteItemsPopup()
     for _i, instance in DeleteItemsScrollingFrame:GetChildren() do
-        print(instance)
         if instance.Name == "UIListLayout" or instance.Name == "UIPadding" or instance.Name == "Template" then continue end
         instance:Destroy()
     end
@@ -452,10 +466,6 @@ local function createDeleteItemCard(itemCategory: string, itemName: string, amtO
     return template
 end
 
--- show furniture item delete popup
--- single item:    { [category] = { [itemName] = { amount = number } } }
--- multiple items: { [category] = { [itemName] = { amount = number } } }
-
 local function displayDeleteItemPopup(itemToDelete)
     clearDeleteItemsPopup()
 
@@ -477,6 +487,25 @@ local function displayDeleteMultipleItemsPopup()
             template.Parent = DeleteItemsScrollingFrame
         end
     end
+end
+
+-- when a user switches platform (e.g. attaches controller on PC), this function changes the item interaction buttons visually
+local function changeItemInteractionBtnsPlatform(platform: "pc" | "mobile" | "console")
+end
+
+local function showItemInteractionBtns()
+    ItemInteractionButtons.Visible = true
+
+    local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Elastic)
+    local tween = TweenService:Create(ItemInteractionButtons, tweenInfo, { Position = itemInteractionBtnContainerVisiblePos })
+    tween:Play()
+end
+
+local function hideItemInteractionBtns()
+    local tweenInfo = TweenInfo.new(0.3)
+    local tween = TweenService:Create(ItemInteractionButtons, tweenInfo, { Position = itemInteractionBtnContainerHiddenPos })
+    tween:Play()
+    tween.Completed:Connect(function(_playbackState) ItemInteractionButtons.Visible = false end)
 end
 
 -- switches between the left-side studio btns (visit studio btn & build mode btn)
@@ -564,12 +593,27 @@ end)
 
 BuildModeExitBtn.Activated:Connect(function()
     disableBuildModeGui()
-    Remotes.Studio.BuildMode.ExitBuildMode:Fire()
+    Remotes.Studio.BuildMode.ExitBuildModeBindable:Fire()
     
     -- add cooldown so plr can't enter build mode again instantly
     buildModeDebounce = false
     task.wait(1)
     buildModeDebounce = true
+end)
+
+ItemRotateBtnPc.Activated:Connect(function()
+    Remotes.Studio.BuildMode.FurnitureItemRotate:Fire()
+end)
+
+local cancelItemDebounce = true
+ItemCancelBtnPc.Activated:Connect(function()
+    if cancelItemDebounce then
+        cancelItemDebounce = false
+        Remotes.Studio.BuildMode.FurnitureItemCancel:Fire()
+
+        task.wait(1)
+        cancelItemDebounce = true
+    end
 end)
 
 DeleteItemsYesBtn.Activated:Connect(function()
@@ -634,19 +678,18 @@ end)
 Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string)
     inPlaceMode = true
     hideBuildModeGui()
+    showItemInteractionBtns()
 end)
 
 -- show build-mode gui again
 Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(studioInventoryData)
+    hideItemInteractionBtns()
     if inBuildMode then
         studioFurnitureInventory = studioInventoryData
         setupBuildModeGui()
     end
 end)
 
--- show furniture item delete popup
--- single item:    { [category] = { [itemName] = { amount = number } } }
--- multiple items: { [category] = { [itemName] = { amount = number } } }
 Remotes.GUI.Studio.DeleteFurniturePopup.Event:Connect(function(singleItem: boolean, itemsToDelete)
     currentItemsToDelete = itemsToDelete
 
@@ -666,11 +709,24 @@ Remotes.GUI.Studio.DeleteFurniturePopup.Event:Connect(function(singleItem: boole
     GuiServices.ShowGuiStandard(DeleteItemsPopup, deleteItemsPopupVisiblePos, deleteItemsPopupVisibleSize, GlobalVariables.Gui.GuiBackdropColourDefault)
 end)
 
+
+-- reopen build mode gui & related functionality
+Remotes.Studio.BuildMode.ExitPlaceModeBindable.Event:Connect(function()
+    hideItemInteractionBtns()
+    if inBuildMode then
+        setupBuildModeGui()
+    end
+end)
+
 humanoid.Died:Connect(function()
+    if inPlaceMode then
+        hideItemInteractionBtns()
+        inPlaceMode = false
+    end
+
     if inBuildMode then
         disableBuildModeGui()
         inBuildMode = false
-        inPlaceMode = false
     end
 end)
 
@@ -678,10 +734,14 @@ localPlr.CharacterAdded:Connect(function(character: Model)
     char = character
     humanoid = char:WaitForChild("Humanoid")
     humanoid.Died:Connect(function()
+        if inPlaceMode then
+            hideItemInteractionBtns()
+            inPlaceMode = false
+        end
+
         if inBuildMode then
             disableBuildModeGui()
             inBuildMode = false
-            inPlaceMode = false
         end
     end)
 end)

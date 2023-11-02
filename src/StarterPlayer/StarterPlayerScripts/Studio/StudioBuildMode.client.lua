@@ -2,6 +2,7 @@ local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local ContextActionService = game:GetService("ContextActionService")
 
 local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
 local PlacementSystem = require(ReplicatedStorage.Libs:WaitForChild("PlacementSystem"))
@@ -34,6 +35,21 @@ local studioInteriorPlot
 local placeItemConnection = nil
 local inBuildMode = false
 local inPlaceMode = false
+
+local function unbindInputs()
+    ContextActionService:UnbindAction("Rotate")
+    ContextActionService:UnbindAction("Cancel")
+end
+
+local function exitPlaceMode()
+    placement:Deactivate()
+    unbindInputs()
+
+    if placeItemConnection then
+        placeItemConnection:Disconnect()
+        placeItemConnection = nil
+    end
+end
 
 local function hideFurnitureItemSettings(billboardGui: BillboardGui)
     local TWEEN_TIME = 0.2
@@ -170,15 +186,6 @@ local function enableAllModelClickConnections()
     end
 end
 
-local function exitPlaceMode()
-    placement:Deactivate()
-
-    if placeItemConnection then
-        placeItemConnection:Disconnect()
-        placeItemConnection = nil
-    end
-end
-
 Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryData)
     inBuildMode = true
 
@@ -191,6 +198,48 @@ Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioIn
 
     enableAllModelClickConnections()
 end)
+
+local function rotateItem(_actionName, inputState, _inputObj)
+    if placement then
+        -- if user on PC
+        -- ensures item only rotates once (on key down, not on key up too)
+        if inputState and inputState == Enum.UserInputState.Begin then
+            placement:Rotate()
+
+        elseif not inputState then
+            -- user is on other platform
+            placement:Rotate()
+        end
+    end
+end
+
+local function cancelOnTermination(_actionName, inputState, inputObj)
+    -- if user on PC
+    -- ensures cancel only occurs once (on key down, not on key up too)
+    if inputState and inputState == Enum.UserInputState.Begin then
+        exitPlaceMode()
+        inPlaceMode = false
+
+    elseif not inputState then
+        -- user is on other platform
+        exitPlaceMode()
+        inPlaceMode = false
+    end
+    
+    -- reopen build-mode gui & related build-mode functionality declared in other files
+    Remotes.Studio.BuildMode.ExitPlaceModeBindable:Fire()
+
+    if inBuildMode then
+        -- clear all connections to prevent duplicating
+        disableAllModelClickConnections()
+        enableAllModelClickConnections()
+    end
+end
+
+local function bindInputs()
+    ContextActionService:BindAction("Rotate", rotateItem, false, Enum.KeyCode.R)
+    ContextActionService:BindAction("Cancel", cancelOnTermination, false, Enum.KeyCode.X)
+end
 
 Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string, movingItem: boolean, itemUUID: string | nil)
     inPlaceMode = true
@@ -209,6 +258,8 @@ Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemName:
     placement:Activate(itemModel)
 
     if plrPlatformProfile.Platform == "pc" then
+        bindInputs()
+
         placeItemConnection = mouse.Button1Down:Connect(function()
             placement:place(Remotes.Studio.BuildMode.PlaceItem, itemName, {
                 action = actionType,
@@ -244,10 +295,18 @@ Remotes.Studio.BuildMode.PlaceItem.OnClientEvent:Connect(function(itemName, item
 end)
 
 -- exit place mode
-Remotes.Studio.BuildMode.ExitBuildMode.Event:Connect(function()
+Remotes.Studio.BuildMode.ExitBuildModeBindable.Event:Connect(function()
     placement:DestroyGrid()
     disableAllModelClickConnections()
     inBuildMode = false
+end)
+
+Remotes.Studio.BuildMode.FurnitureItemRotate.Event:Connect(function()
+    rotateItem(nil, nil, nil)
+end)
+
+Remotes.Studio.BuildMode.FurnitureItemCancel.Event:Connect(function()
+    cancelOnTermination(nil, nil, nil)
 end)
 
 humanoid.Died:Connect(function()
