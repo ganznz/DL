@@ -180,7 +180,7 @@ end
 
 local function removeStudioListItem(userId: number)
     local instance = StudioListScrollingFrame:FindFirstChild(tostring(userId))
-    instance:Destroy()
+    if instance then instance:Destroy() end
 
     -- disconnect and remove connection if any
     local visitBtnConnection = visitBtnConnections[userId]
