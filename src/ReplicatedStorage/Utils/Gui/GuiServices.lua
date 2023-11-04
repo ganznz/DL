@@ -152,6 +152,7 @@ local function updateVisibleNotifications(notiToIgnore, action: "moveDown" | "mo
     local tweenInfo = TweenInfo.new(0.2)
 
     for _i, noti in NotificationPanelFrame:GetChildren() do
+        if noti.Name == "Template" or noti.Name == "UIAspectRatioConstraint" then continue end
         if noti == notiToIgnore then continue end
 
         -- move notification
@@ -188,6 +189,7 @@ end
 
 function GuiServices.CreateNotification(msg: string, type: "standard" | "good" | "warning")
     local template = NotificationPanelFrame:FindFirstChild("Template"):Clone()
+    template.Name = msg
     template.Parent = NotificationPanelFrame
     local progBar = template:FindFirstChild("ProgressBar")
 
