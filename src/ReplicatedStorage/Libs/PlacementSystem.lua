@@ -143,8 +143,7 @@ local function calculateItemPosition()
         finalCFrame = CFrame.new(mouse.Hit.X, posY, mouse.Hit.Z)
     end
 
-    finalCFrame = bounds(
-        CFrame.new(finalCFrame.X, posY, finalCFrame.Z), offsetX, offsetZ)
+    finalCFrame = bounds(CFrame.new(finalCFrame.X, posY, finalCFrame.Z), offsetX, offsetZ)
 
     return finalCFrame * CFrame.Angles(0, math.rad(rotation), 0)
 end
@@ -157,7 +156,6 @@ end
 -- set object position based on pivot
 local function translateObj()
     if placedObjects and object.Parent == placedObjects then
-        -- calculateItemPosition()
         handleCollisions()
         changeHitboxColour()
 
@@ -175,8 +173,12 @@ function Placement:place(remote: RemoteFunction, objectName, additionalParams: {
     if not collided and object then
         local placementCFrame = getInstantCFrame()
 
+        -- relativeOffset is what gets saved to datastore. This CFrame when loading items onto plot upon joining studio is then converted to worldspace
+        -- saved to DS as object-space in case interior plot position gets moved in future updates
+        local relativeOffset = plot.CFrame:ToObjectSpace(placementCFrame)
+
         -- additionalParams contain info you want to send to the server that are exclusive to your games functionality (e.g. an items rarity)
-        return remote:FireServer(objectName, placementCFrame, additionalParams)
+        return remote:FireServer(objectName, placementCFrame, relativeOffset, additionalParams)
     end
 end
 
@@ -205,7 +207,7 @@ end
 -- Constructor function
 function Placement.new(gridSize, plt, placedObjs, stackable: boolean)
     local data = {}
-    local metadata = setmetatable(data, Placement)
+    setmetatable(data, Placement)
 
     GRID_SIZE = gridSize
 

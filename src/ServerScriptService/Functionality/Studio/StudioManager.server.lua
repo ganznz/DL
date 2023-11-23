@@ -11,9 +11,6 @@ local StudioConfigServer = require(script.Parent.StudioConfigServer)
 local Zone = require(ReplicatedStorage.Libs.Zone)
 
 local Remotes = ReplicatedStorage.Remotes
-
-local numOfStudios = #(StudioConfig.Config)
-repeat task.wait() until #(CollectionService:GetTagged("Studio")) == numOfStudios
 local studioExteriorsFolder = CollectionService:GetTagged("Studio")
 
 -- table keeps track of all players in the server and their respective studio information
@@ -24,11 +21,15 @@ local plrStudios = {}
 -- { [plr.UserId] = { PlrVisitingId: number, studioIndex: number } | false }
 local plrsInStudio = {}
 
+
 Players.PlayerAdded:Connect(function(plr: Player)
     repeat task.wait() until PlrDataManager.Profiles[plr]
 
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
+
+    -- if it's players first time joining the game, establish first studio data
+    StudioConfigServer.InitializeStudioData(plr, "Standard", 1)
 
     plrStudios[plr.UserId] = {
         StudioIndex = profile.Data.Studio.ActiveStudio,
@@ -172,8 +173,8 @@ end
 
 
 -- STUDIO BUILD MODE FUNCTIONALITY
-local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, additionalParams): boolean
-    local modelCategoryFolder = ReplicatedStorage.Assets.Models.StudioFurnishing[additionalParams.category]
+local function placeStudioItem(plr: Player, objectName, placementCFrame: CFrame, relativeOffset: CFrame, additionalParams): boolean
+    local modelCategoryFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing[additionalParams.category]
     if not modelCategoryFolder then return end
 
     local plrStudioInfo = plrStudios[plr.UserId]
@@ -184,12 +185,12 @@ local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, ad
     -- place and store item data as a new item
     if additionalParams.action == "newItem" then
         if not StudioConfigServer.HasItem(plr, objectName, additionalParams.category, plrStudioInfo.StudioIndex) then return end
-        itemUUID = StudioConfigServer.StoreFurnitureItemData(plr, objectName, objectCFrame, additionalParams.category, plrStudioInfo.StudioIndex)
+        itemUUID = StudioConfigServer.StoreFurnitureItemData(plr, objectName, relativeOffset, additionalParams.category, plrStudioInfo.StudioIndex)
 
     elseif additionalParams.action == "move" then
         -- item was previously placed, only update item data
         itemUUID = additionalParams.uuid
-        StudioConfigServer.UpdateFurnitureItemData(plr, objectName, itemUUID, objectCFrame, additionalParams.category, plrStudioInfo.StudioIndex)
+        StudioConfigServer.UpdateFurnitureItemData(plr, objectName, itemUUID, relativeOffset, additionalParams.category, plrStudioInfo.StudioIndex)
     end
 
     local profile = PlrDataManager.Profiles[plr]
@@ -198,7 +199,7 @@ local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, ad
     -- data that gets sent to client to populate build mode gui with
     local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
 
-    Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, objectName, additionalParams.category, objectCFrame, itemUUID)
+    Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, objectName, additionalParams.category, placementCFrame, itemUUID)
     Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr, studioFurnitureInventory)
 
     -- replicate placed item to all plrs currently in this studio
@@ -212,7 +213,7 @@ local function placeStudioItem(plr: Player, objectName, objectCFrame: CFrame, ad
                 -- if the item got moved, delete the 'old' model before placing the new one in the updated position
                 if additionalParams.action == "move" then Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, itemUUID) end
 
-                Remotes.Studio.BuildMode.ReplicatePlaceItem:FireClient(plrToUpdate, objectName, additionalParams.category, objectCFrame, itemUUID)
+                Remotes.Studio.BuildMode.ReplicatePlaceItem:FireClient(plrToUpdate, objectName, additionalParams.category, placementCFrame, itemUUID)
 
             end
         end
@@ -250,7 +251,6 @@ Remotes.Studio.General.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player
     if not profile then return end
 
     local studioIndex = profile.Data.Studio.ActiveStudio
-
     visitStudio(plr, plr, studioIndex)
 end)
 
