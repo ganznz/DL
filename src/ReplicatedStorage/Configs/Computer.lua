@@ -2,47 +2,45 @@ local ReplicatedFirst = game:GetService("ReplicatedFirst")
 
 local Computer = {}
 
+type ComputerUpgradeConfig = {
+    StatIncrease: "design" | "graphics" | "sound" | "cash",
+    StatIncreaseAmt: number -- e.g. 20 (+20% for respective stat)
+}
+
 export type ComputerConfig = {
     Name: string,
-    AddOns: number,
-    Price: number,
+    Upgrades: {
+        [string]: ComputerUpgradeConfig
+    }
 }
 
 local Config: { [number]: ComputerConfig } = {
     [1] = {
-        Name = "1",
-        AddOns = 2,
-        Price = 0
+        Name = "Computer 1",
+        Upgrades = {
+            ["Design I"] = { StatIncrease = "design", StatIncreaseAmt = 10 },
+            ["Graphics I"] = { StatIncrease = "graphics", StatIncreaseAmt = 10 },
+            ["Sound I"] = { StatIncrease = "sound", StatIncreaseAmt = 10 },
+            ["Cash I"] = { StatIncrease = "cash", StatIncreaseAmt = 10 },
+        }
     },
-    [2]  = {
-        Name = "2",
-        AddOns = 3,
-        Price = 999,
+    [2] = {
+        Name = "Computer 2",
+        Upgrades = {
+            ["Design II"] = { StatIncrease = "design", StatIncreaseAmt = 15 },
+            ["Graphics II"] = { StatIncrease = "graphics", StatIncreaseAmt = 15 },
+            ["Sound II"] = { StatIncrease = "sound", StatIncreaseAmt = 15 },
+            ["Cash II"] = { StatIncrease = "cash", StatIncreaseAmt = 10 },
+        }
     },
-    [3]  = {
-        Name = "3",
-        AddOns = 4,
-        Price = 999,
-    },
-    [4]  = {
-        Name = "4",
-        AddOns = 5,
-        Price = 999,
-    },
-    [5]  = {
-        Name = "5",
-        AddOns = 6,
-        Price = 999,
-    },
-    [6]  = {
-        Name = "6",
-        AddOns = 7,
-        Price = 999,
-    },
-    [7]  = {
-        Name = "7",
-        AddOns = 8,
-        Price = 999,
+    [3] = {
+        Name = "Computer 3",
+        Upgrades = {
+            ["Design III"] = { StatIncrease = "design", StatIncreaseAmt = 15 },
+            ["Graphics III"] = { StatIncrease = "graphics", StatIncreaseAmt = 15 },
+            ["Sound III"] = { StatIncrease = "sound", StatIncreaseAmt = 15 },
+            ["Cash III"] = { StatIncrease = "cash", StatIncreaseAmt = 10 },
+        }
     },
 }
 
