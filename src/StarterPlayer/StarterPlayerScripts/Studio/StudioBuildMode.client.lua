@@ -18,7 +18,7 @@ local mouse = localPlr:GetMouse()
 
 local plrPlatformProfile = PlrPlatformManager.GetProfile(localPlr)
 
-local studioFurnitureModelsFolder = ReplicatedStorage.Assets.Models.StudioFurnishing
+local studioFurnitureModelsFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing
 
 -- INSTANCE VARIABLES
 local buildModeScreenGui = PlayerGui:WaitForChild("AllGui").Studio:WaitForChild("StudioBuildMode")

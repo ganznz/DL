@@ -1,6 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local modelFolder = ReplicatedStorage.Assets.Models.StudioFurnishing.Hunger
+local modelFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing.Hunger
 
 local HungerFurniture = {}
 
