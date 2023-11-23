@@ -5,37 +5,60 @@ local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"
 local Studio = {}
 
 export type StudioConfig = {
+    StudioType: "Standard" | "Premium",
     Name: string,
     Price: number,
-    FurnishingCapacity: number,
-    NewEmployee: boolean
+    Currency: "Cash" | "Robux",
+    FurnishingCapacity: number | nil,
+    Previous: "string" | nil,
 }
 
-local Config: { [number]: StudioConfig } = {
+local Config: { [string]: StudioConfig } = {
     [1] = {
-        Name = "1",
+        StudioType = "Standard",
+        Name = "Studio 1",
         Price = 0,
+        Currency = "Cash",
         FurnishingCapacity = 5,
-        NewEmployee = false,
     },
     [2]  = {
-        Name = "2",
+        StudioType = "Standard",
+        Name = "Studio 2",
         Price = 50000,
+        Currency = "Cash",
         FurnishingCapacity = 10,
-        NewEmployee = false,
+        Previous = "Studio 1"
     },
     [3]  = {
-        Name = "3",
+        StudioType = "Standard",
+        Name = "Studio 3",
         Price = 250000,
+        Currency = "Cash",
         FurnishingCapacity = 15,
-        NewEmployee = true,
+        Previous = "Studio 2"
     },
     [4]  = {
-        Name = "4",
+        StudioType = "Standard",
+        Name = "Studio 4",
         Price = 1000000,
+        Currency = "Cash",
         FurnishingCapacity = 20,
-        NewEmployee = false,
-    }
+        Previous = "Studio 3"
+    },
+
+    -- gamepass studios
+    [5] = {
+        StudioType = "Premium",
+        Name = "Rocket Ship",
+        Price = 299, -- robux
+        Currency = "Robux",
+    },
+    [6] = {
+        StudioType = "Premium",
+        Name = "Penthouse",
+        Price = 799, -- robux
+        Currency = "Robux",
+    },
 }
 
 Studio.Config = Config
@@ -49,20 +72,20 @@ function Studio.GetStudioPrice(studioIndex: number): number
 end
 
 function Studio.GetPlrStudioLevel(plrData)
-    return #(plrData.Studio.Studios)
+    return #(plrData.Studio.Studios.Standard)
 end
 
 function Studio.OwnsStudio(plrData, studioIndex: number): boolean
-    local numberOfStudiosOwned = #(plrData.Studio.Studios)
+    local numberOfStudiosOwned = #(plrData.Studio.Studios.Standard)
     return numberOfStudiosOwned >= studioIndex
 end
 
 function Studio.HasLastStudio(plrData): boolean
-    return #(plrData.Studio.Studios) == #(Studio.Config)
+    return #(plrData.Studio.Studios.Standard) == #(Studio.Config)
 end
 
 function Studio.CurrentFurnishingAmount(plrData, studioIndex: number): number
-    local studioData = plrData.Studio.Studios[studioIndex]
+    local studioData = plrData.Studio.Studios.Standard[studioIndex]
     if not studioData then
         return 0
     else
@@ -76,7 +99,7 @@ function Studio.FurnishingCapacity(studioIndex: number): number
 end
 
 function Studio.ReachedFurnishingCapacity(plrData, studioIndex: number): number
-    local studioData = plrData.Studio.Studios[studioIndex]
+    local studioData = plrData.Studio.Studios.Standard[studioIndex]
     if not studioData then
         return false
     else
@@ -85,7 +108,7 @@ function Studio.ReachedFurnishingCapacity(plrData, studioIndex: number): number
 end
 
 function Studio.CanPurchaseNextStudio(plrData): boolean
-    local currentStudioLevel = #(plrData.Studio.Studios)
+    local currentStudioLevel = #(plrData.Studio.Studios.Standard)
     if Studio.HasLastStudio(plrData) then return false end
 
     local nextStudioConfig = Studio.GetConfig(currentStudioLevel + 1)
@@ -95,11 +118,12 @@ end
 
 function Studio.GetFurnitureAvailableForStudio(plrData)
     local studioIndex = plrData.Studio.ActiveStudio
+    local studioType = Studio.GetConfig(studioIndex).StudioType
 
     -- shallow copy to prevent changes to **actual** data
     local furnitureInInventoryCopy = GeneralUtils.ShallowCopyNested(plrData.Inventory.StudioFurnishing)
     
-    local furniturePlacedInStudio = plrData.Studio.Studios[studioIndex].Furnishings
+    local furniturePlacedInStudio = plrData.Studio.Studios[studioType][studioIndex].Furnishings
 
     -- remove from inventory whats already placed in studio
     for furnitureCategory, furnitureItems in furnitureInInventoryCopy do
@@ -114,18 +138,6 @@ function Studio.GetFurnitureAvailableForStudio(plrData)
                     table.remove(furnitureInInventoryCopy[furnitureCategory][furnitureItemName], i)
                 end
             end
-
-            -- if furniturePlacedInStudio[furnitureCategory][furnitureItemName] then
-            --     local amtInInventory = furnitureInInventoryCopy[furnitureCategory][furnitureItemName].Amount
-            --     local amtInStudio = furniturePlacedInStudio[furnitureCategory][furnitureItemName].Amount
-            --     local difference = amtInInventory - amtInStudio
-
-            --     if difference >= 1 then
-            --         furnitureInInventoryCopy[furnitureCategory][furnitureItemName].Amount = difference
-            --     else
-            --         furnitureInInventoryCopy[furnitureCategory][furnitureItemName] = nil
-            --     end
-            -- end
         end
     end
 

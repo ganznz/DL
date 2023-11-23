@@ -2,8 +2,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GenreConfig = require(ReplicatedStorage.Configs:WaitForChild("Genre"))
 local TopicConfig = require(ReplicatedStorage.Configs:WaitForChild("Topic"))
-local CashierConfig = require(ReplicatedStorage.Configs.Jobs:WaitForChild("Cashier"))
-local ComputerConfig = require(ReplicatedStorage.Configs.Jobs:WaitForChild("Cashier"))
 local TeleportAreas = require(ReplicatedStorage.Configs:WaitForChild("TeleportAreas"))
 
 local DEFAULT_UNLOCKABLE_AREAS = {}
@@ -36,28 +34,21 @@ local Template = {
 
     GameDev = {
         Computer = 1, -- computer level
-        Router = 1, -- router level
         Sizes = {
             Small = true;
         },
         Genres = {
-            Action = GenreConfig.new('Action'),
-            Casual = GenreConfig.new('Casual'),
-            Strategy = GenreConfig.new('Strategy'),
+            -- GenreName = { Level: number | nil, XP: number | nil, CompatibleWith: string | nil, IncompatibleWith: string | nil }
+            Action = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
+            Strategy = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
+            Casual = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
         },
         Topics = {
-            Modern = TopicConfig.new("Modern"),
-            Medieval = TopicConfig.new("Medieval"),
-            SciFi = TopicConfig.new("SciFi"),
+            -- TopicName = { Level: number | nil, XP: number | nil, CompatibleWith: string | nil, IncompatibleWith: string | nil }
+            Medieval = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
+            Zombies = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
+            Fantasy = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
         }
-    },
-
-    Jobs = {
-        Cashier = {
-            CashierInstance = CashierConfig.new(),
-            ShiftCooldown = os.time()
-        }
-        -- add other jobs
     },
 
     Inventory = {
@@ -108,42 +99,51 @@ local Template = {
                 Crate = {
                     "56",
                 }
-            }
+            },
         }
     },
 
     Studio = {
-        -- the studio that the player is currently using
+        -- index of studio that the player is currently using
         ActiveStudio = 1,
+
         StudioStatus = "open", -- "open" | "closed"| "friends"
 
-        -- the tables in this Studios table holds info for the players unlocked studio, in order of unlockable studios in-game
+        -- the tables in this Studios table holds data for the players unlocked studio
         Studios = {
-            -- by default player owns the first studio
-            {
-                Furnishings = {
-                    -- contain information for placed items in this studio
-                    Mood = {
-                        -- ["Arcade Machine"] = {
-                        --     -- ["01"] = {},
-                        --     -- ["04"] = {},
-                        --     -- ["05"] = {},
-                        -- },
+            Standard = {
+                -- by default player owns the first studio
+                [1] = {
+                    Furnishings = {
+                        -- contain information for placed items in this studio
+                        Mood = {
+                            -- ["Arcade Machine"] = {
+                            --     -- ["01"] = {},
+                            --     -- ["04"] = {},
+                            --     -- ["05"] = {},
+                            -- },
+                        },
+                        Energy = {
+                            -- Basic = {
+                            --     -- ["24"] = {},
+                            --     -- ["25"] = {},
+                            -- },
+                        },
+                        Hunger = {},
+                        Decor = {
+                            -- ["Book Stack"] = {
+                            --     -- ["56"] = {},
+                            -- },
+                        }
                     },
-                    Energy = {
-                        -- Basic = {
-                        --     -- ["24"] = {},
-                        --     -- ["25"] = {},
-                        -- },
-                    },
-                    Hunger = {},
-                    Decor = {
-                        -- ["Book Stack"] = {
-                        --     -- ["56"] = {},
-                        -- },
+                    StudioEssentials = {
+                        Computer = {},
+                        Shelf = {}
                     }
                 },
             },
+            -- Gamepass studios
+            Premium = {}
         }
     },
 
