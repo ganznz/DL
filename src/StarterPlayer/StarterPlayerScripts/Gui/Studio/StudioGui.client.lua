@@ -1,22 +1,29 @@
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
 local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
+local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
+local CameraControls = require(ReplicatedStorage.Libs:WaitForChild("CameraControls"))
 local StudioConfig = require(ReplicatedStorage.Configs:WaitForChild("Studio"))
 local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("HungerFurniture"))
 local EnergyFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("EnergyFurniture"))
 local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
 local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("DecorFurniture"))
+local GenreConfig = require(ReplicatedStorage.Configs:WaitForChild("Genre"))
+local TopicConfig = require(ReplicatedStorage.Configs:WaitForChild("Topic"))
 
 local Remotes = ReplicatedStorage.Remotes
-local furnitureModelFolder = ReplicatedStorage.Assets.Models.StudioFurnishing
+local furnitureModelFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 local plrPlatformProfile = PlrPlatformManager.GetProfile(localPlr)
+local camera = Workspace:WaitForChild("Camera")
 
 -- GUI REFERENCE VARIABLES
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
@@ -70,6 +77,24 @@ local DeleteItemsYesBtn = DeleteItemsPopup:FindFirstChild("YesBtn")
 local DeleteItemsNoBtn = DeleteItemsPopup:FindFirstChild("NoBtn")
 local DeleteItemsTotalRefundText = DeleteItemsPopup:FindFirstChild("TotalRefund")
 
+local GenreTopicViewContainer = AllGuiScreenGui.Studio.StudioGeneral:WaitForChild("GenreTopicView")
+local AllGenresTopicsContainer = GenreTopicViewContainer:WaitForChild("AllGenresTopics")
+local GenresScrollingFrame = AllGenresTopicsContainer:WaitForChild("GenresContainer")
+local TopicsScrollingFrame = AllGenresTopicsContainer:WaitForChild("TopicsContainer")
+local GenreTopicTemplate = GenresScrollingFrame:WaitForChild("Template")
+local GenreTopicViewExitBtn = AllGenresTopicsContainer:WaitForChild("ExitBtn")
+
+local GenreTopicInfoDisplay = GenreTopicViewContainer:WaitForChild("GenreTopicInfoDisplay")
+local GenreTopicInfoHeaderText = GenreTopicInfoDisplay:WaitForChild("HeaderText")
+local GenreTopicInfoNoPerksText = GenreTopicInfoDisplay:WaitForChild("NoPerksPlaceholder")
+local GenreTopicInfoLevelBarProg = GenreTopicInfoDisplay.LevelContainer.LevelBar:WaitForChild("LevelProg")
+local GenreTopicInfoLevelText = GenreTopicInfoDisplay.LevelContainer:WaitForChild("LevelText")
+local GenreTopicInfoLevelXp = GenreTopicInfoDisplay.LevelContainer:WaitForChild("LevelXp")
+local GenreTopicInfoCompatibleText = GenreTopicInfoDisplay.CompatibilityInfo:WaitForChild("CompatibleText")
+local GenreTopicInfoIncompatibleText = GenreTopicInfoDisplay.CompatibilityInfo:WaitForChild("IncompatibleText")
+local GenreTopicInfoPerksContainer = GenreTopicInfoDisplay:WaitForChild("PerksContainer")
+local GenreTopicInfoPerkTemplate = GenreTopicInfoPerksContainer:WaitForChild("Template")
+local GenreTopicInfoBackBtn = GenreTopicViewContainer:WaitForChild("BackBtn")
 
 -- GUI PROPERTY VARIABLES
 local visibleGuiPos: UDim2 = StudioListContainer.Position
@@ -94,6 +119,9 @@ local itemInteractionBtnContainerVisiblePos: UDim2 = ItemInteractionButtons.Posi
 local itemInteractionBtnContainerHiddenPos: UDim2 = UDim2.fromScale(0.5, 1.2)
 local itemInteractionBtnContainerSize: UDim2 = ItemInteractionButtons.Size
 
+local genreTopicViewVisiblePos: UDim2 = GenreTopicViewContainer.Position
+local genreTopicViewVisibleSize: UDim2 = GenreTopicViewContainer.Size
+
 
 -- STATIC VARIABLES
 local WHITELIST_BTN_TEXT_TEMPLATE = "Studio: SETTING"
@@ -105,12 +133,16 @@ local KICK_PLRS_COOLDOWN = 1 -- seconds
 
 
 -- STATE VARIABLES
+local plrData = Remotes.Data.GetAllData:InvokeServer()
 local inBuildMode = false
 local inPlaceMode = false
+local viewingShelf = false
 local char = localPlr.Character or localPlr.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
+local studioInteriorModel = nil
 local studioFurnitureInventory = nil
 local currentItemsToDelete = nil -- keeps track of what items have been added/removed when the delete items popup is visible
+local currentViewedBook = nil -- when plr is viewing bookshelf, this holds cframe info for what book is 'pulled' from the shelf at a given time
 
 -- set what item interaction btns are visible by default
 ItemInteractionBtnsPc.Visible = plrPlatformProfile.Platform == "pc" and true or false
@@ -134,22 +166,7 @@ local buildModeItemConnections = {}
 
 GuiServices.DefaultMainGuiStyling(StudioListContainer, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
 GuiServices.DefaultMainGuiStyling(DeleteItemsPopup, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
-
-local function getPlrNameFromUserId(userId: number)
-    local username = nil
-    local success, errorMsg = pcall(function()
-        username = Players:GetNameFromUserIdAsync(userId)
-    end)
-    return username
-end
-
-local function getPlrIconImage(userId: number, thumbType: Enum.ThumbnailType, thumbSize: Enum.ThumbnailSize)
-    local iconImg = nil
-    local success, errorMsg = pcall(function()
-        iconImg = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
-    end)
-    return iconImg
-end
+GuiServices.CustomMainGuiStyling(GenreTopicViewContainer, 0.65, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
 
 local function getPlrStudioName(studioIndex: number)
     local studioConfig = StudioConfig.GetConfig(studioIndex)
@@ -208,8 +225,8 @@ local function createStudioListItem(userId: number, userStudioInfo)
     template.Name = tostring(userId)
     studioNameText.Text = getPlrStudioName(userStudioInfo.StudioIndex)
     
-    local plrName = getPlrNameFromUserId(userId)
-    local plrIcon = getPlrIconImage(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+    local plrName = PlayerServices.GetPlrNameFromUserId(userId)
+    local plrIcon = PlayerServices.GetPlrIconImage(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
     if not plrName or not plrIcon then
         return
     end
@@ -514,6 +531,136 @@ local function switchStudioBtns(btnToHide, btnToShow)
     btnToShow.Visible = true
 end
 
+local function resetGenreTopicGuiView()
+    AllGenresTopicsContainer.Visible = true
+    GenreTopicViewExitBtn.Visible = true
+    
+    GenreTopicInfoDisplay.Visible = false
+    GenreTopicInfoBackBtn.Visible = false
+end
+
+local function clearShelfGui()
+    for _i, instance in GenresScrollingFrame:GetChildren() do
+        if instance.Name == 'UIListLayout' or instance.Name == 'UIPadding' or instance.Name == 'Template' then continue end
+        instance:Destroy()
+    end
+    
+    for _i, instance in TopicsScrollingFrame:GetChildren() do
+        if instance.Name == 'UIListLayout' or instance.Name == 'UIPadding' or instance.Name == 'Template' then continue end
+        instance:Destroy()
+    end
+end
+
+local function showGenreTopicInfo(type: "genre" | "topic", object)
+    GenreTopicInfoHeaderText.Text = (type == "genre" and "Genre" or "Topic") .. " - " .. object.Name
+
+    GenreTopicInfoLevelText.Text = tostring(object.Level)
+    GenreTopicInfoCompatibleText.Text = "Compatible with: " .. (object.CompatibleWith or "-")
+    GenreTopicInfoIncompatibleText.Text = "Incompatible with: " .. (object.IncompatibleWith or "-")
+
+    AllGenresTopicsContainer.Visible = false
+    GenreTopicViewExitBtn.Visible = false
+
+    GenreTopicInfoDisplay.Visible = true
+    GenreTopicInfoBackBtn.Visible = true
+end
+
+local function pullBookModelOut(name: string)
+    local bookshelf = studioInteriorModel:FindFirstChild("Shelf", true)
+    local bookModel = bookshelf:FindFirstChild(name, true)
+    if not bookModel then return end
+
+    local x, y, z = bookModel.PrimaryPart.CFrame:ToEulerAnglesXYZ()
+    currentViewedBook = {
+        Name = name,
+        OriginalPos = bookModel.PrimaryPart.Position,
+        OriginalRot = { X = x, Y = y, Z = z }
+    }
+
+    local lookAtPart = bookshelf:FindFirstChild("CameraPositionPart")
+
+    local posTween = TweenService:Create(bookModel.PrimaryPart, TweenInfo.new(0.5), { CFrame = bookModel.PrimaryPart.CFrame + (-bookModel.PrimaryPart.CFrame.rightVector * 2.5) })
+    
+    posTween:Play()
+    posTween.Completed:Connect(function()
+        local lookAtTween = TweenService:Create(bookModel.PrimaryPart, TweenInfo.new(0.5), { CFrame = CFrame.lookAt(bookModel.PrimaryPart.CFrame.Position, lookAtPart.Position) * CFrame.Angles(0, math.pi, 0)})
+        lookAtTween:Play()
+    end)
+end
+
+local function putBookModelBack()
+    local bookModel = studioInteriorModel:FindFirstChild(currentViewedBook.Name, true)
+    if not bookModel then return end
+
+    local x, y, z = currentViewedBook.OriginalRot.X, currentViewedBook.OriginalRot.Y, currentViewedBook.OriginalRot.Z
+
+    local rotationTween = TweenService:Create(bookModel.PrimaryPart, TweenInfo.new(0.35), { CFrame = CFrame.new(bookModel.PrimaryPart.Position) * CFrame.Angles(x, y, z) })
+    local posTween = TweenService:Create(bookModel.PrimaryPart, TweenInfo.new(0.35), { CFrame = CFrame.new(currentViewedBook.OriginalPos) * CFrame.Angles(x, y, z) })
+
+    rotationTween:Play()
+    rotationTween.Completed:Connect(function() posTween:Play() end)
+
+    -- reset currentViewedBook
+    currentViewedBook = nil
+end
+
+local bookViewDebounce = true
+local function registerGenreTopicViewBtn(name: string, type: "genre" | "topic", viewBtn, object)
+    viewBtn.Activated:Connect(function()
+        if bookViewDebounce then
+            print("view "..name)
+            bookViewDebounce = false
+
+            -- move book back to original position on shelf before pulling out new one
+            if currentViewedBook then putBookModelBack() end
+
+            pullBookModelOut(name)
+
+            -- change gui
+            showGenreTopicInfo(type, object)
+        end
+    end)
+end
+
+local function createShelfGuiTemplate(name: string, info, type: "genre" | "topic")
+    local object = type == "genre" and GenreConfig.new(name, info.Level, info.XP, info.CompatibleWith, info.IncompatibleWith)
+                                   or TopicConfig.new(name, info.Level, info.XP, info.CompatibleWith, info.IncompatibleWith)
+
+    local template = GenreTopicTemplate:Clone()
+    template.Name = name
+
+    local templateImage = template:FindFirstChild("Icon")
+    templateImage.Image = type == "genre" and GenreConfig.GetImage(name) or TopicConfig.GetImage(name)
+
+    local levelText = template:FindFirstChild("Level")
+    levelText.Text = tostring(object.Level)
+
+    local viewBtn = template:FindFirstChild("ViewBtn")
+    registerGenreTopicViewBtn(name, type, viewBtn, object)
+
+    template.Visible = true
+
+    return template
+end
+
+local function populateShelfGui()
+    plrData = Remotes.Data.GetAllData:InvokeServer()
+    local plrGenres = plrData.GameDev.Genres
+    local plrTopics = plrData.GameDev.Topics
+
+    clearShelfGui()
+
+    -- populate with genre & topic cards
+    for genreName, genreInfo in plrGenres do
+        local template = createShelfGuiTemplate(genreName, genreInfo, "genre")
+        template.Parent = GenresScrollingFrame
+    end
+
+    for topicName, topicInfo in plrTopics do
+        local template = createShelfGuiTemplate(topicName, topicInfo, "topic")
+        template.Parent = TopicsScrollingFrame
+    end
+end
 
 -- BUTTON ACTIVATE EVENTS
 local tpDebounce = true
@@ -634,12 +781,30 @@ DeleteItemsNoBtn.Activated:Connect(function()
     Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
 end)
 
+GenreTopicViewExitBtn.Activated:Connect(function()
+    GuiServices.HideGuiStandard(GenreTopicViewContainer, UDim2.fromScale(genreTopicViewVisiblePos.X.Scale, genreTopicViewVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(genreTopicViewVisibleSize.X.Scale, genreTopicViewVisibleSize.Y.Scale - 0.2))
+    
+    -- stop viewing shelf
+    Remotes.GUI.Studio.StopViewingShelf:Fire()
+    viewingShelf = false
+end)
+
+GenreTopicInfoBackBtn.Activated:Connect(function()
+    resetGenreTopicGuiView()
+
+    putBookModelBack()
+
+    -- apply cooldown before next book can be pulled out/viewed
+    task.wait(1)
+    bookViewDebounce = true
+end)
 
 -- REMOTE EVENTS
 Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart, _placedFurnitureData)
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioTeleportBtn, StudioBuildModeBtn)
     end)
+    studioInteriorModel = Workspace.TempAssets.Studios:WaitForChild(localPlr.UserId):WaitForChild("Interior")
 end)
 
 Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(_studioIndex, _interiorPlrTpPart, _exteriorPlrTpPart)
@@ -658,6 +823,7 @@ Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function()
     
     inPlaceMode = false
     inBuildMode = false
+    currentViewedBook = nil
 end)
 
 Remotes.GUI.Studio.UpdateStudioList.OnClientEvent:Connect(function(userIdToUpdate: number, updateStatus: "add" | "remove" | "update", userStudioInfo)
@@ -718,6 +884,13 @@ Remotes.Studio.BuildMode.ExitPlaceModeBindable.Event:Connect(function()
     end
 end)
 
+-- view shelf
+Remotes.GUI.Studio.ViewShelf.Event:Connect(function()
+    viewingShelf = true
+    populateShelfGui()
+    GuiServices.ShowGuiStandard(GenreTopicViewContainer, genreTopicViewVisiblePos, genreTopicViewVisibleSize)
+end)
+
 humanoid.Died:Connect(function()
     if inPlaceMode then
         hideItemInteractionBtns()
@@ -727,6 +900,13 @@ humanoid.Died:Connect(function()
     if inBuildMode then
         disableBuildModeGui()
         inBuildMode = false
+    end
+
+    if viewingShelf then
+        GuiServices.HideGuiStandard(GenreTopicViewContainer, UDim2.fromScale(genreTopicViewVisiblePos.X.Scale, genreTopicViewVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(genreTopicViewVisibleSize.X.Scale, genreTopicViewVisibleSize.Y.Scale - 0.2))
+        resetGenreTopicGuiView()
+        bookViewDebounce = true
+        CameraControls.SetDefault(localPlr, camera, true)
     end
 end)
 
@@ -742,6 +922,13 @@ localPlr.CharacterAdded:Connect(function(character: Model)
         if inBuildMode then
             disableBuildModeGui()
             inBuildMode = false
+        end
+
+        if viewingShelf then
+            GuiServices.HideGuiStandard(GenreTopicViewContainer, UDim2.fromScale(genreTopicViewVisiblePos.X.Scale, genreTopicViewVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(genreTopicViewVisibleSize.X.Scale, genreTopicViewVisibleSize.Y.Scale - 0.2))
+            resetGenreTopicGuiView()
+            bookViewDebounce = true
+            CameraControls.SetDefault(localPlr, camera, true)
         end
     end)
 end)
