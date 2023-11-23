@@ -43,6 +43,15 @@ function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number
     guiInstance.Visible = false
 end
 
+-- same functionality as DefaultMainGuiStyling, except x-coord can be specified.
+-- for GUI that typically isn't centered horizontally on-screen.
+function GuiServices.CustomMainGuiStyling(guiInstance: Frame, xPosScale, yPosOffset: number)
+    guiInstance.Position = UDim2.fromScale(xPosScale, guiInstance.Position.Y.Scale + yPosOffset)
+    guiInstance.Visible = false
+end
+
+
+
 function GuiServices.ShowGuiStandard(guiInstance, goalPos, goalSize, backdropColour: Color3)
     guiInstance.Visible = true
     
