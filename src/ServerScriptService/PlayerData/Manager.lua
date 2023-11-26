@@ -83,6 +83,7 @@ end
 local function GetAllData(plr: Player)
     repeat task.wait() until Manager.Profiles[plr] ~= nil
 
+    
     local profile = Manager.Profiles[plr]
     return profile.Data
 end

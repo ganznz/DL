@@ -6,6 +6,7 @@ local ContextActionService = game:GetService("ContextActionService")
 
 local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
 local PlacementSystem = require(ReplicatedStorage.Libs:WaitForChild("PlacementSystem"))
+local StudioConfig = require(ReplicatedStorage.Configs:WaitForChild("Studio"))
 local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
 local EnergyFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("EnergyFurniture"))
 local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("HungerFurniture"))
@@ -288,10 +289,8 @@ end)
 
 -- place item in studio
 Remotes.Studio.BuildMode.PlaceItem.OnClientEvent:Connect(function(itemName, itemCategory, itemCFrame, itemUUID)
-    local itemModelToPlace = studioFurnitureModelsFolder[itemCategory]:FindFirstChild(itemName):Clone()
-    itemModelToPlace:PivotTo(itemCFrame)
-    itemModelToPlace.Name = itemUUID
-    itemModelToPlace.Parent = studioFurnitureFolder
+    local itemModelToPlace = StudioConfig.GetFurnitureItemModel(itemName, itemCategory)
+    StudioConfig.PlaceOnPlot(itemModelToPlace, itemUUID, itemCFrame, studioFurnitureFolder)
 end)
 
 -- exit place mode
