@@ -8,6 +8,7 @@ local Zone = require(ReplicatedStorage.Libs:WaitForChild("Zone"))
 local StudioConfig = require(ReplicatedStorage.Configs:WaitForChild("Studio"))
 local CameraControls = require(ReplicatedStorage.Libs:WaitForChild("CameraControls"))
 local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
+local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
 
 local Remotes = ReplicatedStorage.Remotes
 local plr = Players.LocalPlayer
@@ -42,7 +43,7 @@ local ComputerShelfInteractionBtnConnection = nil -- connection used for interac
 -- and put it back into the workspace 'StudioExteriorsFolder'
 local studioExteriorsCopy = {}
 for _i, studioExteriorFolder in StudioExteriorsFolder:GetChildren() do
-    studioExteriorsCopy[tonumber(studioExteriorFolder.Name)] = studioExteriorFolder:Clone()
+    studioExteriorsCopy[studioExteriorFolder.Name] = studioExteriorFolder:Clone()
 end
 
 local function calculateYOffset(model: Model): number
@@ -59,10 +60,6 @@ local function resetStudioVariables()
     studioExteriorTpPart = nil
 end
 
-local function getFurnitureItemModel(itemName: string, itemCategory: string)
-    return ReplicatedStorage.Assets.Models.Studio.StudioFurnishing[itemCategory]:FindFirstChild(itemName):Clone()
-end
-
 local function placeFurnitureItem(model: Model, itemUUID: string, itemOffsetCFrame: CFrame)
     -- convert CFrame from objectspace that is relative to plot, to worldspace.
     local placementCFrame = studioInteriorPlot.CFrame:ToWorldSpace(itemOffsetCFrame)
@@ -77,28 +74,14 @@ local function loadInteriorFurniture()
     for itemCategory, itemsInCategory in interiorFurnitureData do
         for itemName, allItemInstances in itemsInCategory do
             for itemUUID, itemData in allItemInstances do
-                local itemCFrame = itemData.CFrame
-                local itemModel = getFurnitureItemModel(itemName, itemCategory)
-                if itemModel then
-                    placeFurnitureItem(itemModel, itemUUID, itemCFrame)
-                end
+                local itemCFrame = DatastoreUtils.TableToCFrame(itemData.CFrame)
+                local itemModel = StudioConfig.GetFurnitureItemModel(itemName, itemCategory)
+
+                placeFurnitureItem(itemModel, itemUUID, itemCFrame)
             end
         end
     end
 end
-
--- local function disableShelfInteractionBtns()
---     -- disable click connections
---     for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
---         local clickDetector = itemModel:FindFirstChild("ClickDetector", true)
---         if clickDetector then clickDetector:Destroy() end
---     end
-
---     -- delete item settings billboards
---     for _i, billboard in existingItemSettingBillboards:GetChildren() do
---         billboard:Destroy()
---     end
--- end
 
 local function disableInteractionBtns()
     if ComputerShelfInteractionBtnConnection then ComputerShelfInteractionBtnConnection:Disconnect() end
@@ -173,6 +156,7 @@ local function replaceShelfModel(plrData, studioType: "Standard" | "Premium"): M
     
     -- convert CFrame from objectspace that is relative to plot, to worldspace.
     local itemOffsetCFrame = plrData.Studio.Studios[studioType][currentStudioIndex].StudioEssentials.Shelf.CFrame
+    itemOffsetCFrame = DatastoreUtils.TableToCFrame(itemOffsetCFrame)
     local placementCFrame = studioInteriorPlot.CFrame:ToWorldSpace(itemOffsetCFrame)
     newShelfModel:PivotTo(placementCFrame)
     
@@ -183,8 +167,7 @@ local function replaceShelfModel(plrData, studioType: "Standard" | "Premium"): M
 end
 
 
-local function loadShelfModel(player: Player, studioType: "Standard" | "Premium")
-    local plrData = Remotes.Data.GetAllData:InvokeServer(player)
+local function loadShelfModel(plrData, studioType: "Standard" | "Premium")
     local unlockedGenres = plrData.GameDev.Genres
     local unlockedTopics = plrData.GameDev.Topics
 
@@ -230,9 +213,9 @@ local function replaceComputerModel(plrData, studioType: "Standard" | "Premium")
 
     local placeholderComputerModel = studioInteriorModel:FindFirstChild("Computer")
     local newComputerModel = ReplicatedStorage.Assets.Models.Studio.Computers:FindFirstChild(plrComputerLevel):Clone()
-    
-    -- convert CFrame from objectspace that is relative to plot, to worldspace.
+
     local itemOffsetCFrame = plrData.Studio.Studios[studioType][currentStudioIndex].StudioEssentials.Computer.CFrame
+    itemOffsetCFrame = DatastoreUtils.TableToCFrame(itemOffsetCFrame)
     local placementCFrame = studioInteriorPlot.CFrame:ToWorldSpace(itemOffsetCFrame)
     newComputerModel:PivotTo(placementCFrame)
     
@@ -244,12 +227,13 @@ local function replaceComputerModel(plrData, studioType: "Standard" | "Premium")
     return newComputerModel
 end
 
-local function loadComputerModel(player: Player, studioType: "Standard" | "Premium")
-    local plrData = Remotes.Data.GetAllData:InvokeServer(player)
+local function loadComputerModel(plrData, studioType: "Standard" | "Premium")
     computerModel = replaceComputerModel(plrData, studioType)
 end
 
 local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
+    local plrToVisitData = Remotes.Data.GetAllData:InvokeServer(plrToVisit)
+
     -- tp plr into studio interior
     Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = interiorPlrTpPart })
 
@@ -264,9 +248,8 @@ local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
 
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         studioInteriorModel:PivotTo(interiorTpPart.CFrame * CFrame.new(0, yOffset, 0))
-        loadComputerModel(plrToVisit, studioType)
-        print('b')
-        loadShelfModel(plrToVisit, studioType)
+        loadComputerModel(plrToVisitData, studioType)
+        loadShelfModel(plrToVisitData, studioType)
         loadInteriorFurniture()
 
         studioExteriorFolder:Destroy() -- hide studio exterior from players view
@@ -372,10 +355,8 @@ Remotes.Studio.BuildMode.ReplicatePlaceItem.OnClientEvent:Connect(function(itemN
     -- check that plr is ACTUALLY inside studio
     if not studioInteriorFolder then return end
 
-    local itemModelToPlace = getFurnitureItemModel(itemName, itemCategory)
-    if itemModelToPlace then
-        placeFurnitureItem(itemModelToPlace, itemUUID, itemCFrame )
-    end
+    local itemModelToPlace = StudioConfig.GetFurnitureItemModel(itemName, itemCategory)
+    StudioConfig.PlaceOnPlot(itemModelToPlace, itemUUID, itemCFrame, studioFurnitureFolder)
 end)
 
 Remotes.Studio.BuildMode.RemoveItem.OnClientEvent:Connect(function(itemUUID: string)
