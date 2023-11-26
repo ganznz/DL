@@ -4,12 +4,13 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio)
 local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
+local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
 
 local Remotes = ReplicatedStorage.Remotes
 
 local Studio = {}
 
-function Studio.InitializeStudioData(plr: Player, studioType: "Standard" | "Premium", studioIndex: number)
+function Studio.InitializeStudioData(plr: Player, studioType: "Standard" | "Premium", studioIndex: string)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -31,8 +32,8 @@ function Studio.InitializeStudioData(plr: Player, studioType: "Standard" | "Prem
 
         -- initialize computer & shelf cframe data relative to plot in datastore
         StudioEssentials = {
-            Computer = { CFrame = plotCFrame:ToObjectSpace(computerCFrame) },
-            Shelf = { CFrame = plotCFrame:ToObjectSpace(shelfCFrame) }
+            Computer = { CFrame = DatastoreUtils.CFrameToTable(plotCFrame:ToObjectSpace(computerCFrame)) },
+            Shelf = { CFrame = DatastoreUtils.CFrameToTable(plotCFrame:ToObjectSpace(shelfCFrame)) }
         }
     }
 end
@@ -45,11 +46,10 @@ function Studio.PurchaseNextStudio(plr: Player): boolean
     local plrData = profile.Data
 
     local currentPlrStudioLevel = StudioConfig.GetPlrStudioLevel(plrData)
-
     -- check if plr already has every studio unlocked
     if StudioConfig.HasLastStudio(plrData) then return false end
 
-    local newStudioIndex = currentPlrStudioLevel + 1
+    local newStudioIndex = tostring(currentPlrStudioLevel + 1)
     local nextStudioConfig = StudioConfig.GetConfig(newStudioIndex)
 
     -- attempt to purchase studio
@@ -110,7 +110,7 @@ function Studio.UpdateFurnitureItemData(plr: Player, itemName: string, itemUUID:
     local furnitureItemInstance = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName][itemUUID]
     if furnitureItemInstance then
         -- update data
-        plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName][itemUUID].CFrame = itemCFrame
+        plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName][itemUUID].CFrame = DatastoreUtils.CFrameToTable(itemCFrame)
     end
 end
 
@@ -130,7 +130,7 @@ function Studio.StoreFurnitureItemData(plr: Player, itemName: string, itemCFrame
     local furnitureItemInstancesInStudio = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName]
 
     local itemData = {}
-    itemData.CFrame = itemCFrame
+    itemData.CFrame = DatastoreUtils.CFrameToTable(itemCFrame)
 
     for _i, itemUUID in furnitureItemInstancesInInventory do
         -- check if there aren't any instances of this item already placed in studio

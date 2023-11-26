@@ -14,11 +14,11 @@ local Remotes = ReplicatedStorage.Remotes
 local studioExteriorsFolder = CollectionService:GetTagged("Studio")
 
 -- table keeps track of all players in the server and their respective studio information
--- { [plr.UserId] = { studioIndex: number, studioStatus: "open" | "closed" | "friends" } }
+-- { [plr.UserId] = { studioIndex: string, studioStatus: "open" | "closed" | "friends" } }
 local plrStudios = {}
 
 -- table keeps track of players who are in a studio
--- { [plr.UserId] = { PlrVisitingId: number, studioIndex: number } | false }
+-- { [plr.UserId] = { PlrVisitingId: number, studioIndex: string } | false }
 local plrsInStudio = {}
 
 
@@ -29,7 +29,7 @@ Players.PlayerAdded:Connect(function(plr: Player)
     if not profile then return end
 
     -- if it's players first time joining the game, establish first studio data
-    StudioConfigServer.InitializeStudioData(plr, "Standard", 1)
+    StudioConfigServer.InitializeStudioData(plr, "Standard", "1")
 
     plrStudios[plr.UserId] = {
         StudioIndex = profile.Data.Studio.ActiveStudio,
@@ -65,7 +65,7 @@ for _i, exteriorStudioFolder in studioExteriorsFolder do
     tpPart:SetAttribute("AreaName", "Studio"..exteriorStudioFolder.Name)
 end
 
-local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: number)
+local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: string)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -150,7 +150,7 @@ end
 
 -- register studio exterior teleports
 for _i, studioFolder in studioExteriorsFolder do
-    local studioIndex = tonumber(studioFolder.Name)
+    local studioIndex = studioFolder.Name
     
     local teleportHitbox: Model = studioFolder:FindFirstChild("TeleportHitboxZone", true)
     local zone = Zone.new(teleportHitbox)
@@ -214,7 +214,6 @@ local function placeStudioItem(plr: Player, objectName, placementCFrame: CFrame,
                 if additionalParams.action == "move" then Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, itemUUID) end
 
                 Remotes.Studio.BuildMode.ReplicatePlaceItem:FireClient(plrToUpdate, objectName, additionalParams.category, placementCFrame, itemUUID)
-
             end
         end
     end

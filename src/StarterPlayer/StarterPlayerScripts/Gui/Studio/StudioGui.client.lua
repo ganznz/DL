@@ -168,7 +168,7 @@ GuiServices.DefaultMainGuiStyling(StudioListContainer, GlobalVariables.Gui.MainG
 GuiServices.DefaultMainGuiStyling(DeleteItemsPopup, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
 GuiServices.CustomMainGuiStyling(GenreTopicViewContainer, 0.65, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
 
-local function getPlrStudioName(studioIndex: number)
+local function getPlrStudioName(studioIndex: string)
     local studioConfig = StudioConfig.GetConfig(studioIndex)
     return studioConfig.Name
 end
@@ -608,7 +608,6 @@ local bookViewDebounce = true
 local function registerGenreTopicViewBtn(name: string, type: "genre" | "topic", viewBtn, object)
     viewBtn.Activated:Connect(function()
         if bookViewDebounce then
-            print("view "..name)
             bookViewDebounce = false
 
             -- move book back to original position on shelf before pulling out new one

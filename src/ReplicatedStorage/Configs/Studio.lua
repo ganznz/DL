@@ -14,14 +14,14 @@ export type StudioConfig = {
 }
 
 local Config: { [string]: StudioConfig } = {
-    [1] = {
+    ["1"] = {
         StudioType = "Standard",
         Name = "Studio 1",
         Price = 0,
         Currency = "Cash",
         FurnishingCapacity = 5,
     },
-    [2]  = {
+    ["2"]  = {
         StudioType = "Standard",
         Name = "Studio 2",
         Price = 50000,
@@ -29,7 +29,7 @@ local Config: { [string]: StudioConfig } = {
         FurnishingCapacity = 10,
         Previous = "Studio 1"
     },
-    [3]  = {
+    ["3"]  = {
         StudioType = "Standard",
         Name = "Studio 3",
         Price = 250000,
@@ -37,7 +37,7 @@ local Config: { [string]: StudioConfig } = {
         FurnishingCapacity = 15,
         Previous = "Studio 2"
     },
-    [4]  = {
+    ["4"]  = {
         StudioType = "Standard",
         Name = "Studio 4",
         Price = 1000000,
@@ -47,13 +47,13 @@ local Config: { [string]: StudioConfig } = {
     },
 
     -- gamepass studios
-    [5] = {
+    ["5"] = {
         StudioType = "Premium",
         Name = "Rocket Ship",
         Price = 299, -- robux
         Currency = "Robux",
     },
-    [6] = {
+    ["6"] = {
         StudioType = "Premium",
         Name = "Penthouse",
         Price = 799, -- robux
@@ -63,42 +63,47 @@ local Config: { [string]: StudioConfig } = {
 
 Studio.Config = Config
 
-function Studio.GetConfig(studioIndex: number): StudioConfig
+function Studio.GetConfig(studioIndex: string): StudioConfig
     return Studio.Config[studioIndex]
 end
 
-function Studio.GetStudioPrice(studioIndex: number): number
+function Studio.GetStudioPrice(studioIndex: string): number
     return Studio.GetConfig(studioIndex).Price
 end
 
 function Studio.GetPlrStudioLevel(plrData)
-    return #(plrData.Studio.Studios.Standard)
+    return GeneralUtils.LengthOfDict(plrData.Studio.Studios.Standard)
 end
 
-function Studio.OwnsStudio(plrData, studioIndex: number): boolean
-    local numberOfStudiosOwned = #(plrData.Studio.Studios.Standard)
-    return numberOfStudiosOwned >= studioIndex
+function Studio.OwnsStudio(plrData, studioIndex: string): boolean
+    local numberOfStudiosOwned = GeneralUtils.LengthOfDict(plrData.Studio.Studios.Standard)
+    return numberOfStudiosOwned >= tonumber(studioIndex)
 end
 
 function Studio.HasLastStudio(plrData): boolean
-    return #(plrData.Studio.Studios.Standard) == #(Studio.Config)
+    local numOfStandardStudios = 0
+    for _studioIndex, studioInfo in Studio.Config do
+        if studioInfo.StudioType == "Standard" then numOfStandardStudios += 1 end
+    end
+
+    return GeneralUtils.LengthOfDict(plrData.Studio.Studios.Standard) == numOfStandardStudios
 end
 
-function Studio.CurrentFurnishingAmount(plrData, studioIndex: number): number
+function Studio.CurrentFurnishingAmount(plrData, studioIndex: string): number
     local studioData = plrData.Studio.Studios.Standard[studioIndex]
     if not studioData then
         return 0
     else
-        return #(studioData.Furnishings)
+        return GeneralUtils.LengthOfDict(studioData.Furnishings)
     end
 end
 
-function Studio.FurnishingCapacity(studioIndex: number): number
+function Studio.FurnishingCapacity(studioIndex: string): number
     local config = Studio.GetConfig(studioIndex)
     return config.FurnishingCapacity
 end
 
-function Studio.ReachedFurnishingCapacity(plrData, studioIndex: number): number
+function Studio.ReachedFurnishingCapacity(plrData, studioIndex: string): number
     local studioData = plrData.Studio.Studios.Standard[studioIndex]
     if not studioData then
         return false
@@ -108,12 +113,17 @@ function Studio.ReachedFurnishingCapacity(plrData, studioIndex: number): number
 end
 
 function Studio.CanPurchaseNextStudio(plrData): boolean
-    local currentStudioLevel = #(plrData.Studio.Studios.Standard)
+    local currentStudioLevel = GeneralUtils.LengthOfDict(plrData.Studio.Studios.Standard)
     if Studio.HasLastStudio(plrData) then return false end
 
-    local nextStudioConfig = Studio.GetConfig(currentStudioLevel + 1)
-    local plrCash = plrData.Cash
-    return plrCash >= nextStudioConfig.Price
+    local nextStudioConfig = Studio.GetConfig(tostring(currentStudioLevel + 1))
+
+    if nextStudioConfig.Currency == "Cash" then
+        local plrCash = plrData.Cash
+        return plrCash >= nextStudioConfig.Price
+    end
+
+    return false
 end
 
 function Studio.GetFurnitureAvailableForStudio(plrData)
@@ -130,7 +140,7 @@ function Studio.GetFurnitureAvailableForStudio(plrData)
 
         for furnitureItemName, itemInstances in furnitureItems do
 
-            for i=#itemInstances, 1, -1 do 
+            for i=#itemInstances, 1, -1 do
                 if not furniturePlacedInStudio[furnitureCategory][furnitureItemName] then continue end
                 
                 local itemUUID = itemInstances[i]
@@ -142,6 +152,17 @@ function Studio.GetFurnitureAvailableForStudio(plrData)
     end
 
     return furnitureInInventoryCopy
+end
+
+-- place item on plot
+function Studio.PlaceOnPlot(itemModel: Model, itemUUID: string, cf: CFrame, parentFolder: Folder)
+    itemModel:PivotTo(cf)
+    itemModel.Name = itemUUID
+    itemModel.Parent = parentFolder
+end
+
+function Studio.GetFurnitureItemModel(itemName: string, itemCategory: string)
+    return ReplicatedStorage.Assets.Models.Studio.StudioFurnishing[itemCategory]:FindFirstChild(itemName):Clone()
 end
 
 

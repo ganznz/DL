@@ -105,7 +105,7 @@ local Template = {
 
     Studio = {
         -- index of studio that the player is currently using
-        ActiveStudio = 1,
+        ActiveStudio = "1",
 
         StudioStatus = "open", -- "open" | "closed"| "friends"
 
@@ -113,7 +113,7 @@ local Template = {
         Studios = {
             Standard = {
                 -- by default player owns the first studio
-                [1] = {
+                ["1"] = {
                     Furnishings = {
                         -- contain information for placed items in this studio
                         Mood = {
