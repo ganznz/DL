@@ -37,19 +37,22 @@ local function LoadProfile(plr: Player)
         return
     end
 
-    local profile = ProfileStore:LoadProfileAsync("Player_"..plr.UserId)
-    profile:AddUserId(plr.UserId)
-    profile:Reconcile()
-    profile:ListenToRelease(function()
+    -- local profile = ProfileStore:LoadProfileAsync("Player_"..plr.UserId)
+
+    local MockProfile = ProfileStore.Mock:LoadProfileAsync("Player_"..plr.UserId)
+
+    MockProfile:AddUserId(plr.UserId)
+    MockProfile:Reconcile()
+    MockProfile:ListenToRelease(function()
         Manager.Profiles[plr] = nil
         plr:Kick(KICK_MSG)
     end)
 
     if plr:IsDescendantOf(Players) then
-        Manager.Profiles[plr] = profile
+        Manager.Profiles[plr] = MockProfile
         CreateLeaderstats(plr)
     else
-        profile:Release()
+        MockProfile:Release()
     end
 end
 
@@ -63,6 +66,7 @@ Players.PlayerRemoving:Connect(function(plr)
     local profile = Manager.Profiles[plr]
     if profile then
         profile:Release()
+        -- ProfileStore:WipeProfileAsync("Player_"..plr.UserId)
+        ProfileStore.Mock:WipeProfileAsync("Player_"..plr.UserId)
     end
-    ProfileStore:WipeProfileAsync("Player_"..plr.UserId)
 end)
