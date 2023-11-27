@@ -169,7 +169,7 @@ local function getInstantCFrame()
     return calculateItemPosition()
 end
 
-function Placement:place(remote: RemoteFunction, objectName, additionalParams: {})
+function Placement:place(remote: RemoteFunction, itemType, itemInfo: {}, additionalParams: {})
     if not collided and object then
         local placementCFrame = getInstantCFrame()
 
@@ -177,8 +177,11 @@ function Placement:place(remote: RemoteFunction, objectName, additionalParams: {
         -- saved to DS as object-space in case interior plot position gets moved in future updates
         local relativeOffset = plot.CFrame:ToObjectSpace(placementCFrame)
 
+        itemInfo["PlacementCFrame"] = placementCFrame
+        itemInfo["RelativeCFrame"] = relativeOffset
+
         -- additionalParams contain info you want to send to the server that are exclusive to your games functionality (e.g. an items rarity)
-        return remote:FireServer(objectName, placementCFrame, relativeOffset, additionalParams)
+        return remote:FireServer(itemType, itemInfo, additionalParams)
     end
 end
 

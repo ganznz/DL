@@ -361,11 +361,15 @@ local function clearBuildModeViewport()
     end
 end
 
+-- itemType: "furniture" | "essential", itemInfo: {}, movingItem: boolean
 local function registerBuildModeItemListener(itemBtn, itemCategory)
     local connection = itemBtn.Activated:Connect(function()
-        -- check that plr actually has item on server
-        local itemName = itemBtn.Name
-        Remotes.Studio.BuildMode.EnterPlaceMode:FireServer(itemName, itemCategory, false)
+        local itemInfo = {
+            ItemName = itemBtn.Name,
+            ItemCategory = itemCategory
+        }
+
+        Remotes.Studio.BuildMode.EnterPlaceMode:FireServer("furniture", itemInfo, false)
     end)
     return connection
 end
