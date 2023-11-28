@@ -854,7 +854,9 @@ end)
 Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(studioInventoryData)
     hideItemInteractionBtns()
     if inBuildMode then
-        studioFurnitureInventory = studioInventoryData
+        if studioInventoryData then
+            studioFurnitureInventory = studioInventoryData
+        end
         setupBuildModeGui()
     end
 end)
