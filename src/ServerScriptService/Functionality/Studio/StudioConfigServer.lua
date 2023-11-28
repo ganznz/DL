@@ -70,7 +70,7 @@ function Studio.PurchaseNextStudio(plr: Player): boolean
     return true
 end
 
-function Studio.HasItem(plr: Player, itemName: string, itemCategory: string, studioIndex): boolean
+function Studio.HasFurnitureItem(plr: Player, itemName: string, itemCategory: string, studioIndex): boolean
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -96,7 +96,7 @@ function Studio.HasItem(plr: Player, itemName: string, itemCategory: string, stu
     return false
 end
 
-function Studio.UpdateFurnitureItemData(plr: Player, itemName: string, itemUUID: string, itemCFrame: CFrame, itemCategory: string, studioIndex): string
+function Studio.UpdateFurnitureItemData(plr: Player, itemInfo: {}, studioIndex): string
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -107,15 +107,15 @@ function Studio.UpdateFurnitureItemData(plr: Player, itemName: string, itemUUID:
 
     local studioType: "Standard" | "Premium" = studioConfig.StudioType
 
-    local furnitureItemInstance = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName][itemUUID]
+    local furnitureItemInstance = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID]
     if furnitureItemInstance then
         -- update data
-        plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName][itemUUID].CFrame = DatastoreUtils.CFrameToTable(itemCFrame)
+        plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID].CFrame = DatastoreUtils.CFrameToTable(itemInfo.RelativeCFrame)
     end
 end
 
 -- function for saving a placed furniture items data to plr data
-function Studio.StoreFurnitureItemData(plr: Player, itemName: string, itemCFrame: CFrame, itemCategory: string, studioIndex): string
+function Studio.StoreFurnitureItemData(plr: Player, itemInfo: {}, studioIndex): string
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -126,18 +126,18 @@ function Studio.StoreFurnitureItemData(plr: Player, itemName: string, itemCFrame
 
     local studioType: "Standard" | "Premium" = studioConfig.StudioType
 
-    local furnitureItemInstancesInInventory = plrData.Inventory.StudioFurnishing[itemCategory][itemName]
-    local furnitureItemInstancesInStudio = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName]
+    local furnitureItemInstancesInInventory = plrData.Inventory.StudioFurnishing[itemInfo.ItemCategory][itemInfo.ItemName]
+    local furnitureItemInstancesInStudio = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemInfo.ItemCategory][itemInfo.ItemName]
 
     local itemData = {}
-    itemData.CFrame = DatastoreUtils.CFrameToTable(itemCFrame)
+    itemData.CFrame = DatastoreUtils.CFrameToTable(itemInfo.RelativeCFrame)
 
     for _i, itemUUID in furnitureItemInstancesInInventory do
         -- check if there aren't any instances of this item already placed in studio
         -- if not, use current UUID in iteration to store in data
         if not furnitureItemInstancesInStudio then
-            plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName] = {}
-            plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName][itemUUID] = itemData
+            plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemInfo.ItemCategory][itemInfo.ItemName] = {}
+            plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemInfo.ItemCategory][itemInfo.ItemName][itemUUID] = itemData
             return itemUUID
         end
 
@@ -145,9 +145,27 @@ function Studio.StoreFurnitureItemData(plr: Player, itemName: string, itemCFrame
 
         -- found UUID that is not yet stored inside studio placed furniture data
         -- store this UUID with the item data
-        plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName][itemUUID] = itemData
+        plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemInfo.ItemCategory][itemInfo.ItemName][itemUUID] = itemData
         return itemUUID
     end
+end
+
+-- function for saving a placed essential items (e.g. computer, shelf) data to plr data
+function Studio.StoreEssentialItemData(plr: Player, itemInfo: {}, studioIndex)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local plrData = profile.Data
+
+    local studioConfig = StudioConfig.GetConfig(studioIndex)
+    if not studioConfig then return end
+
+    local studioType: "Standard" | "Premium" = studioConfig.StudioType
+
+    local itemData = {}
+    itemData.CFrame = DatastoreUtils.CFrameToTable(itemInfo.RelativeCFrame)
+
+    plrData.Studio.Studios[studioType][studioIndex].StudioEssentials[itemInfo.ItemName] = itemData
 end
 
 -- function for getting the data of already placed furniture items

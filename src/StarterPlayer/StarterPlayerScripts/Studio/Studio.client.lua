@@ -351,17 +351,30 @@ Remotes.Studio.General.KickFromStudio.OnClientEvent:Connect(function()
     end)
 end)
 
-Remotes.Studio.BuildMode.ReplicatePlaceItem.OnClientEvent:Connect(function(itemName: string, itemCategory: string, itemCFrame, itemUUID)
+Remotes.Studio.BuildMode.ReplicatePlaceItem.OnClientEvent:Connect(function(itemType: string, itemInfo)
     -- check that plr is ACTUALLY inside studio
     if not studioInteriorFolder then return end
 
-    local itemModelToPlace = StudioConfig.GetFurnitureItemModel(itemName, itemCategory)
-    StudioConfig.PlaceOnPlot(itemModelToPlace, itemUUID, itemCFrame, studioFurnitureFolder)
+    local itemModelToPlace
+    if itemType == "furniture" then
+        itemModelToPlace = StudioConfig.GetFurnitureItemModel(itemInfo.ItemName, itemInfo.ItemCategory)
+        StudioConfig.PlaceItemOnPlot(itemType, itemModelToPlace, itemInfo, studioFurnitureFolder)
+
+    elseif itemType == "essentials" then
+        itemModelToPlace = studioInteriorModel:FindFirstChild(itemInfo.ItemName)
+        StudioConfig.PlaceItemOnPlot(itemType, itemModelToPlace, itemInfo, studioInteriorModel)
+    end
 end)
 
-Remotes.Studio.BuildMode.RemoveItem.OnClientEvent:Connect(function(itemUUID: string)
-    local furnitureModel = studioFurnitureFolder:FindFirstChild(itemUUID)
-    if furnitureModel then furnitureModel:Destroy() end
+Remotes.Studio.BuildMode.RemoveItem.OnClientEvent:Connect(function(itemType: string, itemInfo: {})
+    if itemType == "furniture" then
+        local furnitureModel = studioFurnitureFolder:FindFirstChild(itemInfo.ItemUUID)
+        if furnitureModel then furnitureModel:Destroy() end
+
+    elseif itemType == "essential" then
+        local itemModel = studioInteriorModel:FindFirstChild(itemInfo.ItemName)
+        if itemModel then itemModel:Destroy() end
+    end
 end)
 
 -- plr stopped viewing shelf

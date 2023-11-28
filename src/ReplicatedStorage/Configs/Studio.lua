@@ -154,15 +154,22 @@ function Studio.GetFurnitureAvailableForStudio(plrData)
     return furnitureInInventoryCopy
 end
 
--- place item on plot
-function Studio.PlaceOnPlot(itemModel: Model, itemUUID: string, cf: CFrame, parentFolder: Folder)
-    itemModel:PivotTo(cf)
-    itemModel.Name = itemUUID
-    itemModel.Parent = parentFolder
-end
-
 function Studio.GetFurnitureItemModel(itemName: string, itemCategory: string)
     return ReplicatedStorage.Assets.Models.Studio.StudioFurnishing[itemCategory]:FindFirstChild(itemName):Clone()
+end
+
+-- method for placing item on plot
+function Studio.PlaceItemOnPlot(itemType: string, itemModel: Model, itemInfo: {}, parentFolder: Folder)
+    if itemType == "furniture" then
+        itemModel:PivotTo(itemInfo.PlacementCFrame)
+        itemModel.Name = itemInfo.ItemUUID
+        itemModel.Parent = parentFolder
+        
+    elseif itemType == "essential" then
+        itemModel:PivotTo(itemInfo.PlacementCFrame)
+        itemModel.Name = itemInfo.ItemName
+        itemModel.Parent = parentFolder
+    end
 end
 
 

@@ -33,6 +33,7 @@ local humanoid = char:WaitForChild("Humanoid")
 local placement
 local studioInteriorFolder
 local studioFurnitureFolder
+local studioInteriorModel
 local studioInteriorPlot
 local placeItemConnection = nil
 local inBuildMode = false
@@ -226,6 +227,9 @@ local function enableAllModelClickConnections()
         registerModelClickConnection(itemModel, "furniture")
     end
 
+    computerModel = studioInteriorFolder:FindFirstChild("Computer", true)
+    shelfModel = studioInteriorFolder:FindFirstChild("Shelf", true)
+
     if computerModel then registerModelClickConnection(computerModel, "essential") end
     if shelfModel then registerModelClickConnection(shelfModel, "essential") end
 end
@@ -234,13 +238,14 @@ Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioIn
     inBuildMode = true
 
     studioInteriorFolder = Workspace.TempAssets.Studios:FindFirstChild(localPlr.UserId)
+    studioInteriorModel = studioInteriorFolder:FindFirstChild("Interior")
     studioInteriorPlot = studioInteriorFolder:FindFirstChild("Plot", true)
     studioFurnitureFolder = studioInteriorFolder:FindFirstChild("PlacedObjects", true)
 
     computerModel = studioInteriorFolder:FindFirstChild("Computer", true)
     shelfModel = studioInteriorFolder:FindFirstChild("Shelf", true)
 
-    placement = PlacementSystem.new(2, studioInteriorPlot, studioFurnitureFolder, false)
+    placement = PlacementSystem.new(2, studioInteriorPlot)
     placement:RenderGrid()
 
     enableAllModelClickConnections()
@@ -294,20 +299,24 @@ Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemType:
     local itemModel
     local actionType
 
-    if movingItem then
-        actionType = "move"
-        if itemType == "furniture" then
+    if itemType == "furniture" then
+        if movingItem then
+            actionType = "move"
             itemModel = studioFurnitureFolder:FindFirstChild(itemInfo.ItemUUID)
-        end
-        
-    else
-        actionType = "newItem"
-        if itemType == "furniture" then
+            print("yess")
+        else
+            actionType = "newItem"
             itemModel = studioFurnitureModelsFolder[itemInfo.ItemCategory]:FindFirstChild(itemInfo.ItemName):Clone()
         end
-    end
+        placement:Activate(itemModel, studioFurnitureFolder)
 
-    placement:Activate(itemModel)
+    elseif itemType == "essential" then
+        if movingItem then
+            actionType = "move"
+            itemModel = studioInteriorFolder:FindFirstChild(itemInfo.ItemName, true)
+        end
+        placement:Activate(itemModel, studioInteriorModel)
+    end
 
     if plrPlatformProfile.Platform == "pc" then
         bindInputs()
@@ -334,9 +343,19 @@ end)
 
 
 -- place item in studio
-Remotes.Studio.BuildMode.PlaceItem.OnClientEvent:Connect(function(itemType, itemInfo, itemUUID)
-    local itemModelToPlace = StudioConfig.GetFurnitureItemModel(itemInfo.ItemName, itemInfo.ItemCategory)
-    StudioConfig.PlaceOnPlot(itemModelToPlace, itemUUID, itemInfo.PlacementCFrame, studioFurnitureFolder)
+Remotes.Studio.BuildMode.PlaceItem.OnClientEvent:Connect(function(itemType, itemInfo)
+    local itemModelToPlace
+
+    if itemType == "furniture" then
+        itemModelToPlace = StudioConfig.GetFurnitureItemModel(itemInfo.ItemName, itemInfo.ItemCategory)
+        StudioConfig.PlaceItemOnPlot(itemType, itemModelToPlace, itemInfo, studioFurnitureFolder)
+
+    elseif itemType == "essential" then
+        itemModelToPlace = studioInteriorModel:FindFirstChild(itemInfo.ItemName):Clone()
+        StudioConfig.PlaceItemOnPlot(itemType, itemModelToPlace, itemInfo, studioInteriorModel)
+    end
+
+    itemModelToPlace.PrimaryPart.Transparency = 1
 end)
 
 -- exit place mode

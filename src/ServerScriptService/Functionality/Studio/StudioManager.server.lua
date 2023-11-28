@@ -171,7 +171,8 @@ for _i, studioFolder in studioExteriorsFolder do
 end
 
 -- function for replicating placed item to all plrs currently in studio
-local function replicatePlaceFurnitureItem(studioOwner: Player, action: "newItem" | "move", itemInfo: {}, itemUUID: string)
+-- plr, additionalParams.Action, "furniture", itemInfo
+local function replicatePlaceItem(studioOwner: Player, action: "newItem" | "move", itemType: string, itemInfo: {})
     for plrUserId, studioInfo in plrsInStudio do
         if plrUserId == studioOwner.UserId then continue end
 
@@ -179,10 +180,10 @@ local function replicatePlaceFurnitureItem(studioOwner: Player, action: "newItem
             if studioInfo.PlrVisitingId == studioOwner.UserId then
                 local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
 
-                -- if the item got moved, delete the 'old' model before placing the new one in the updated position
-                if action == "move" then Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, itemUUID) end
+                Remotes.Studio.BuildMode.ReplicatePlaceItem:FireClient(plrToUpdate, itemType, itemInfo)
 
-                Remotes.Studio.BuildMode.ReplicatePlaceItem:FireClient(plrToUpdate, itemInfo.ItemName, itemInfo.ItemCategory, itemInfo.PlacementCFrame, itemUUID)
+                -- if the item got moved, delete the 'old' model
+                if action == "move" then Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, itemType, itemInfo) end
             end
         end
     end
@@ -195,24 +196,15 @@ local function placeFurnitureItem(plr, itemInfo, additionalParams)
     local plrStudioInfo = plrStudios[plr.UserId]
     if not plrStudioInfo then return end
 
-    local itemUUID
-
-    -- itemInfo = {
-    --     ItemName = itemModel:GetAttribute("Name"),
-    --     ItemCategory = itemModel:GetAttribute("Category"),
-    --     ItemUUID = itemModel.Name
-    -- }
-
     -- place and store item data as a new item
     if additionalParams.Action == "newItem" then
-        if not StudioConfigServer.HasItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudioInfo.StudioIndex) then return end
+        if not StudioConfigServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudioInfo.StudioIndex) then return end
 
-        itemUUID = StudioConfigServer.StoreFurnitureItemData(plr, itemInfo.ItemName, itemInfo.RelativeCFrame, itemInfo.ItemCategory, plrStudioInfo.StudioIndex)
+        itemInfo.ItemUUID = StudioConfigServer.StoreFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
 
     elseif additionalParams.Action == "move" then
         -- item was previously placed, only update item data
-        itemUUID = itemInfo.ItemUUID
-        StudioConfigServer.UpdateFurnitureItemData(plr, itemInfo.ItemName, itemUUID, itemInfo.RelativeCFrame, itemInfo.ItemCategory, plrStudioInfo.StudioIndex)
+        StudioConfigServer.UpdateFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
     end
 
     local profile = PlrDataManager.Profiles[plr]
@@ -221,17 +213,33 @@ local function placeFurnitureItem(plr, itemInfo, additionalParams)
     -- data that gets sent to client to populate build mode gui with
     local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
 
-    Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, "furniture", itemInfo, itemUUID)
+    Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, "furniture", itemInfo)
     Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr, studioFurnitureInventory)
 
     -- replicate to others in studio
-    replicatePlaceFurnitureItem(plr, additionalParams.Action, itemInfo, itemUUID)
+    replicatePlaceItem(plr, additionalParams.Action, "furniture", itemInfo)
+end
+
+local function placeEssentialItem(plr, itemInfo, additionalParams)
+    local plrStudioInfo = plrStudios[plr.UserId]
+    if not plrStudioInfo then return end
+
+    StudioConfigServer.StoreEssentialItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
+
+    Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, "essential", itemInfo)
+    Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr)
+
+    -- replicate to others in studio
+    replicatePlaceItem(plr, additionalParams.Action, "essential", itemInfo)
 end
 
 -- STUDIO BUILD MODE FUNCTIONALITY
 local function placeStudioItem(plr: Player, itemType: "furniture" | "essential", itemInfo, additionalParams): boolean
     if itemType == "furniture" then
         placeFurnitureItem(plr, itemInfo, additionalParams)
+    
+    elseif itemType == "essential" then
+        placeEssentialItem(plr, itemInfo, additionalParams)
     end
 end
 
@@ -249,7 +257,7 @@ local function deleteStudioItems(plr: Player, itemsToDelete)
                         if studioInfo then
                             if studioInfo.PlrVisitingId == plr.UserId then
                                 local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
-                                Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, uuidToDelete)
+                                Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, "furniture", itemInfo)
                             end
                         end
                     end
@@ -349,11 +357,15 @@ Remotes.Studio.BuildMode.EnterPlaceMode.OnServerEvent:Connect(function(plr: Play
     if itemType == "furniture" then
         if itemInfo.ItemCategory == "Mood" or itemInfo.ItemCategory == "Energy" or itemInfo.ItemCategory == "Hunger" or itemInfo.ItemCategory == "Decor" then
     
-            local hasItem: boolean = StudioConfigServer.HasItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudios[plr.UserId].StudioIndex)
+            local hasItem: boolean = StudioConfigServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudios[plr.UserId].StudioIndex)
             if hasItem then
                 Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)
             end
         end
+    end
+
+    if itemType == "essential" then
+        Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)
     end
 end)
 
