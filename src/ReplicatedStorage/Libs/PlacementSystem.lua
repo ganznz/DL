@@ -34,9 +34,8 @@ local GRID_SIZE -- size of each tile on plot, in studs
 
 -- Activation variables
 local object
-local placedObjects
+local objectParent
 local plot
-local isStackable
 
 -- Variables used in calculations
 local posX
@@ -127,12 +126,8 @@ local function calculateItemPosition()
         x =  mouse.Hit.X - offsetX
         z = mouse.Hit.Z - offsetZ
     end
-    
-    if isStackable and mouse.Target and mouse.Target:IsDescendantOf(plot) then
-        posY = calculateYPosition(mouse.Target.Position.Y, mouse.Target.Size.Y, object.PrimaryPart.Size.Y)
-    else
-        posY = calculateYPosition(plot.Position.Y, plot.Size.Y, object.PrimaryPart.Size.Y)
-    end
+
+    posY = calculateYPosition(plot.Position.Y, plot.Size.Y, object.PrimaryPart.Size.Y)
 
     if moveByGrid then
         local plotCFrame = CFrame.new(plot.CFrame.X, plot.CFrame.Y, plot.CFrame.Z)
@@ -155,7 +150,7 @@ end
 
 -- set object position based on pivot
 local function translateObj()
-    if placedObjects and object.Parent == placedObjects then
+    if objectParent and object.Parent == objectParent then
         handleCollisions()
         changeHitboxColour()
 
@@ -208,15 +203,13 @@ local function approvePlacement()
 end
 
 -- Constructor function
-function Placement.new(gridSize, plt, placedObjs, stackable: boolean)
+function Placement.new(gridSize, plt)
     local data = {}
     setmetatable(data, Placement)
 
     GRID_SIZE = gridSize
 
     plot = plt
-    placedObjects = placedObjs
-    isStackable = stackable
 
     data.grid = GRID_SIZE
 
@@ -224,7 +217,9 @@ function Placement.new(gridSize, plt, placedObjs, stackable: boolean)
 end
 
 -- activates placement
-function Placement:Activate(obj: Model)
+function Placement:Activate(obj: Model, objParent)
+    objectParent = objParent
+
     -- destroy previous build-mode session object if it still exists
     if object then
         object:Destroy()
@@ -244,11 +239,7 @@ function Placement:Activate(obj: Model)
 
     if not approvePlacement() then return "Placement could not activate" end
 
-    if not isStackable then
-        mouse.TargetFilter = placedObjects
-    else
-        mouse.TargetFilter = object
-    end
+    mouse.TargetFilter = object
 
     -- sets up interpolation speed
     local tempSpeed = 1
@@ -260,7 +251,7 @@ function Placement:Activate(obj: Model)
     -- prevents visual 'dragging/lerping' of object from it's initial position in ReplicatedStorage to the workspace
     object:PivotTo(calculateItemPosition())
 
-    object.Parent = placedObjects
+    object.Parent = objectParent
 
     task.wait()
 
