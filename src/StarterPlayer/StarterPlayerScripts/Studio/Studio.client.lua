@@ -108,15 +108,20 @@ local function registerShelfViewBtn(viewBtn)
 end
 
 local function registerInteractionBtns()
+    local VIEWING_DISTANCE = 15 -- studs
+
+    computerModel = studioInteriorModel:FindFirstChild("Computer")
+    shelfModel = studioInteriorModel:FindFirstChild("Shelf")
+
     local shelfInteractionBillboard = PlayerGui.AllGui.Studio:FindFirstChild("ShelfInteractionSettings")
     local shelfViewBtn = shelfInteractionBillboard:FindFirstChild("View", true)
-    local shelfViewDistance = 15 -- studs
+    local shelfViewDistance = VIEWING_DISTANCE
     shelfInteractionBillboard.Adornee = shelfModel.PrimaryPart
 
     local computerInteractionBillboard = PlayerGui.AllGui.Studio:FindFirstChild("ComputerInteractionSettings")
     local computerMakeGameBtn = computerInteractionBillboard:FindFirstChild("MakeGame", true)
     local computerUpgradeBtn = computerInteractionBillboard:FindFirstChild("Upgrade", true)
-    local computerViewDistance = 15
+    local computerViewDistance = VIEWING_DISTANCE
     computerInteractionBillboard.Adornee = computerModel.PrimaryPart
 
     registerShelfViewBtn(shelfViewBtn)
@@ -146,7 +151,6 @@ local function registerInteractionBtns()
         shelfInteractionBillboard.Enabled = false
         computerInteractionBillboard.Enabled = false
     end)
-
 end
 
 -- function used for replacing placeholder shelf in studio interior plots with 'real' one
@@ -227,10 +231,6 @@ local function replaceComputerModel(plrData, studioType: "Standard" | "Premium")
     return newComputerModel
 end
 
-local function loadComputerModel(plrData, studioType: "Standard" | "Premium")
-    computerModel = replaceComputerModel(plrData, studioType)
-end
-
 local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
     local plrToVisitData = Remotes.Data.GetAllData:InvokeServer(plrToVisit)
 
@@ -248,7 +248,7 @@ local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
 
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         studioInteriorModel:PivotTo(interiorTpPart.CFrame * CFrame.new(0, yOffset, 0))
-        loadComputerModel(plrToVisitData, studioType)
+        replaceComputerModel(plrToVisitData, studioType)
         loadShelfModel(plrToVisitData, studioType)
         loadInteriorFurniture()
 
@@ -339,6 +339,15 @@ Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(studioOwn
 
     -- listener for when player exits studio
     studioInteriorExitListener()
+end)
+
+-- exit place mode
+Remotes.Studio.BuildMode.ExitBuildModeBindable.Event:Connect(function()
+    registerInteractionBtns()
+end)
+
+Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryData)
+    disableInteractionBtns()
 end)
 
 Remotes.Studio.General.KickFromStudio.OnClientEvent:Connect(function()
