@@ -352,18 +352,15 @@ Remotes.Studio.General.KickFromStudio.OnClientEvent:Connect(function()
 end)
 
 Remotes.Studio.BuildMode.ReplicatePlaceItem.OnClientEvent:Connect(function(itemType: string, itemInfo)
-    -- check that plr is ACTUALLY inside studio
-    if not studioInteriorFolder then return end
+    local itemParent
 
-    local itemModelToPlace
     if itemType == "furniture" then
-        itemModelToPlace = StudioConfig.GetFurnitureItemModel(itemInfo.ItemName, itemInfo.ItemCategory)
-        StudioConfig.PlaceItemOnPlot(itemType, itemModelToPlace, itemInfo, studioFurnitureFolder)
-
-    elseif itemType == "essentials" then
-        itemModelToPlace = studioInteriorModel:FindFirstChild(itemInfo.ItemName)
-        StudioConfig.PlaceItemOnPlot(itemType, itemModelToPlace, itemInfo, studioInteriorModel)
+        itemParent = studioFurnitureFolder
+    elseif itemType == "essential" then
+        itemParent = studioInteriorModel
     end
+
+    StudioConfig.PlaceItemOnPlot(itemType, itemInfo, itemParent)
 end)
 
 Remotes.Studio.BuildMode.RemoveItem.OnClientEvent:Connect(function(itemType: string, itemInfo: {})

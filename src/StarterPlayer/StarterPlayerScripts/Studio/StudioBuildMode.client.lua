@@ -303,7 +303,6 @@ Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemType:
         if movingItem then
             actionType = "move"
             itemModel = studioFurnitureFolder:FindFirstChild(itemInfo.ItemUUID)
-            print("yess")
         else
             actionType = "newItem"
             itemModel = studioFurnitureModelsFolder[itemInfo.ItemCategory]:FindFirstChild(itemInfo.ItemName):Clone()
@@ -341,21 +340,21 @@ Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(_studioFur
     end
 end)
 
+local function PlaceItemOnPlot(itemType, itemInfo, itemModel, modelParent)
+end
+
 
 -- place item in studio
 Remotes.Studio.BuildMode.PlaceItem.OnClientEvent:Connect(function(itemType, itemInfo)
-    local itemModelToPlace
+    local itemParent
 
     if itemType == "furniture" then
-        itemModelToPlace = StudioConfig.GetFurnitureItemModel(itemInfo.ItemName, itemInfo.ItemCategory)
-        StudioConfig.PlaceItemOnPlot(itemType, itemModelToPlace, itemInfo, studioFurnitureFolder)
-
+        itemParent = studioFurnitureFolder
     elseif itemType == "essential" then
-        itemModelToPlace = studioInteriorModel:FindFirstChild(itemInfo.ItemName):Clone()
-        StudioConfig.PlaceItemOnPlot(itemType, itemModelToPlace, itemInfo, studioInteriorModel)
+        itemParent = studioInteriorModel
     end
 
-    itemModelToPlace.PrimaryPart.Transparency = 1
+    StudioConfig.PlaceItemOnPlot(itemType, itemInfo, itemParent)
 end)
 
 -- exit place mode

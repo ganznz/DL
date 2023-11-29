@@ -159,17 +159,21 @@ function Studio.GetFurnitureItemModel(itemName: string, itemCategory: string)
 end
 
 -- method for placing item on plot
-function Studio.PlaceItemOnPlot(itemType: string, itemModel: Model, itemInfo: {}, parentFolder: Folder)
+function Studio.PlaceItemOnPlot(itemType: string, itemInfo: {}, parent: Folder)
+    local itemModelToPlace
+
     if itemType == "furniture" then
-        itemModel:PivotTo(itemInfo.PlacementCFrame)
-        itemModel.Name = itemInfo.ItemUUID
-        itemModel.Parent = parentFolder
+        itemModelToPlace = Studio.GetFurnitureItemModel(itemInfo.ItemName, itemInfo.ItemCategory)
+        itemModelToPlace.Name = itemInfo.ItemUUID
         
     elseif itemType == "essential" then
-        itemModel:PivotTo(itemInfo.PlacementCFrame)
-        itemModel.Name = itemInfo.ItemName
-        itemModel.Parent = parentFolder
+        itemModelToPlace = parent:FindFirstChild(itemInfo.ItemName):Clone()
+        itemModelToPlace.Name = itemInfo.ItemName
     end
+
+    itemModelToPlace.PrimaryPart.Transparency = 1
+    itemModelToPlace:PivotTo(itemInfo.PlacementCFrame)
+    itemModelToPlace.Parent = parent
 end
 
 
