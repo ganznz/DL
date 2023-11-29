@@ -132,7 +132,7 @@ local function calculateItemPosition()
     if moveByGrid then
         local plotCFrame = CFrame.new(plot.CFrame.X, plot.CFrame.Y, plot.CFrame.Z)
         local pos = CFrame.new(x, 0, z)
-        pos = snap(pos * plotCFrame:Inverse())
+        pos = snap(pos * plotCFrame:Inverse()) -- ToObjectSpace
         finalCFrame = pos * plotCFrame * CFrame.new(offsetX, 0, offsetZ)
     else
         finalCFrame = CFrame.new(mouse.Hit.X, posY, mouse.Hit.Z)

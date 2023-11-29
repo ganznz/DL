@@ -340,10 +340,6 @@ Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(_studioFur
     end
 end)
 
-local function PlaceItemOnPlot(itemType, itemInfo, itemModel, modelParent)
-end
-
-
 -- place item in studio
 Remotes.Studio.BuildMode.PlaceItem.OnClientEvent:Connect(function(itemType, itemInfo)
     local itemParent
@@ -357,7 +353,7 @@ Remotes.Studio.BuildMode.PlaceItem.OnClientEvent:Connect(function(itemType, item
     StudioConfig.PlaceItemOnPlot(itemType, itemInfo, itemParent)
 end)
 
--- exit place mode
+-- exit build mode
 Remotes.Studio.BuildMode.ExitBuildModeBindable.Event:Connect(function()
     placement:DestroyGrid()
     disableAllModelClickConnections()

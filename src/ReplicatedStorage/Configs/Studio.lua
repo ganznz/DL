@@ -174,6 +174,10 @@ function Studio.PlaceItemOnPlot(itemType: string, itemInfo: {}, parent: Folder)
     itemModelToPlace.PrimaryPart.Transparency = 1
     itemModelToPlace:PivotTo(itemInfo.PlacementCFrame)
     itemModelToPlace.Parent = parent
+
+    for _i, v in itemModelToPlace:GetDescendants() do
+        if v:IsA("BasePart") then v.CanCollide = true end
+    end
 end
 
 
