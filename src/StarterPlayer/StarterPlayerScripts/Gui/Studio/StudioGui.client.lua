@@ -9,13 +9,13 @@ local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiService
 local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
 local CameraControls = require(ReplicatedStorage.Libs:WaitForChild("CameraControls"))
-local StudioConfig = require(ReplicatedStorage.Configs:WaitForChild("Studio"))
+local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
 local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("HungerFurniture"))
 local EnergyFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("EnergyFurniture"))
 local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
 local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("DecorFurniture"))
-local GenreConfig = require(ReplicatedStorage.Configs:WaitForChild("Genre"))
-local TopicConfig = require(ReplicatedStorage.Configs:WaitForChild("Topic"))
+local GenreConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Genre"))
+local TopicConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Topic"))
 
 local Remotes = ReplicatedStorage.Remotes
 local furnitureModelFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing

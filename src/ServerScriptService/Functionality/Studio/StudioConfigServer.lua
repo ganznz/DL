@@ -2,7 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
-local StudioConfig = require(ReplicatedStorage.Configs.Studio)
+local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
 local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
 local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
 

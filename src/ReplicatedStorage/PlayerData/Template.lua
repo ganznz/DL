@@ -1,7 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local GenreConfig = require(ReplicatedStorage.Configs:WaitForChild("Genre"))
-local TopicConfig = require(ReplicatedStorage.Configs:WaitForChild("Topic"))
+local GenreConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Genre"))
+local TopicConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Topic"))
 local TeleportAreas = require(ReplicatedStorage.Configs:WaitForChild("TeleportAreas"))
 
 local DEFAULT_UNLOCKABLE_AREAS = {}

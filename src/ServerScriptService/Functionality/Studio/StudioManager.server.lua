@@ -6,7 +6,7 @@ local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
-local StudioConfig = require(ReplicatedStorage.Configs.Studio)
+local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
 local StudioConfigServer = require(script.Parent.StudioConfigServer)
 local Zone = require(ReplicatedStorage.Libs.Zone)
 

@@ -6,7 +6,7 @@ local ContextActionService = game:GetService("ContextActionService")
 
 local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
 local PlacementSystem = require(ReplicatedStorage.Libs:WaitForChild("PlacementSystem"))
-local StudioConfig = require(ReplicatedStorage.Configs:WaitForChild("Studio"))
+local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
 local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
 local EnergyFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("EnergyFurniture"))
 local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("HungerFurniture"))
