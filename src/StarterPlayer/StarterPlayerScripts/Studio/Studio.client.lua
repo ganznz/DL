@@ -34,6 +34,8 @@ local studioInteriorExitZone = nil
 
 local computerModel = nil
 local shelfModel = nil
+local genreIterationIndex = 1 -- vars for book model placement on shelf
+local topicIterationIndex = 1
 
 -- connections
 local ComputerShelfInteractionBtnConnection = nil -- connection used for interacting w/ computer & shelf. Disconnect when plr leaves their studio
@@ -58,6 +60,8 @@ local function resetStudioVariables()
     studioInteriorFolder = nil
     studioInteriorExitZone = nil
     studioExteriorTpPart = nil
+    genreIterationIndex = 1
+    topicIterationIndex = 1
 end
 
 local function placeFurnitureItem(model: Model, itemUUID: string, itemOffsetCFrame: CFrame)
@@ -170,6 +174,28 @@ local function replaceShelfModel(plrData, studioType: "Standard" | "Premium"): M
     return newShelfModel
 end
 
+local function addBookModelToShelf(bookType: "genre" | "topic", name: string)
+    local bookModel
+    local placementAttachment
+
+    if bookType == "genre" then
+        bookModel = ReplicatedStorage.Assets.Models.Studio.GenreBooks:FindFirstChild(name):Clone()
+        placementAttachment = shelfModel:FindFirstChild("GenrePlacementParts"):FindFirstChild(genreIterationIndex)
+        bookModel.Parent = shelfModel:FindFirstChild("GenreBooks")
+        genreIterationIndex += 1
+    else
+        bookModel = ReplicatedStorage.Assets.Models.Studio.TopicBooks:FindFirstChild(name):Clone()
+        placementAttachment = shelfModel:FindFirstChild("TopicPlacementParts"):FindFirstChild(topicIterationIndex)
+        bookModel.Parent = shelfModel:FindFirstChild("TopicBooks")
+        topicIterationIndex += 1
+    end
+
+    local yOffset = bookModel.PrimaryPart.Size.Y * 0.5 -- GETS HEIGHT OF BOOK
+    
+    if placementAttachment then
+        bookModel:PivotTo(placementAttachment.WorldCFrame * CFrame.new(0, yOffset, 0))
+    end
+end
 
 local function loadShelfModel(plrData, studioType: "Standard" | "Premium")
     local unlockedGenres = plrData.GameDev.Genres
@@ -178,37 +204,13 @@ local function loadShelfModel(plrData, studioType: "Standard" | "Premium")
     shelfModel = replaceShelfModel(plrData, studioType)
 
     -- display books on shelf
-    local genreIterationIndex = 1
-    local genreBooksFolder = shelfModel:FindFirstChild("GenreBooks")
     for genre in unlockedGenres do
-        local genreBookModel = ReplicatedStorage.Assets.Models.Studio.GenreBooks:FindFirstChild(genre):Clone()
-        local yOffset = genreBookModel.PrimaryPart.Size.Y * 0.5 -- GETS HEIGHT OF BOOK
-        
-        local placementAttachment = shelfModel:FindFirstChild("GenrePlacementParts"):FindFirstChild(genreIterationIndex)
-        if placementAttachment then
-            genreBookModel.Parent = genreBooksFolder
-
-            genreBookModel:PivotTo(placementAttachment.WorldCFrame * CFrame.new(0, yOffset, 0))
-            genreIterationIndex += 1
-        end
+        addBookModelToShelf("genre", genre)
     end
 
-    local topicIterationIndex = 1
-    local topicBooksFolder = shelfModel:FindFirstChild("TopicBooks")
     for topic in unlockedTopics do
-        local topicBookModel = ReplicatedStorage.Assets.Models.Studio.TopicBooks:FindFirstChild(topic):Clone()
-        local yOffset = topicBookModel.PrimaryPart.Size.Y * 0.5 -- GETS HEIGHT OF BOOK
-        
-        local placementAttachment = shelfModel:FindFirstChild("TopicPlacementParts"):FindFirstChild(topicIterationIndex)
-        if placementAttachment then
-            topicBookModel.Parent = topicBooksFolder
-
-            topicBookModel:PivotTo(placementAttachment.WorldCFrame * CFrame.new(0, yOffset, 0))
-            topicIterationIndex += 1
-        end
+        addBookModelToShelf("topic", topic)
     end
-
-    return shelfModel
 end
 
 -- function used for replacing placeholder shelf in studio interior plots with 'real' one
@@ -381,6 +383,16 @@ Remotes.Studio.BuildMode.RemoveItem.OnClientEvent:Connect(function(itemType: str
         local itemModel = studioInteriorModel:FindFirstChild(itemInfo.ItemName)
         if itemModel then itemModel:Destroy() end
     end
+end)
+
+-- add genre book to shelf
+Remotes.GameDev.UnlockGenre.OnClientEvent:Connect(function(genreName)
+    if inStudio then addBookModelToShelf("genre", genreName) end
+end)
+
+-- add topic book to shelf
+Remotes.GameDev.UnlockTopic.OnClientEvent:Connect(function(topicName)
+    if inStudio then addBookModelToShelf("topic", topicName) end
 end)
 
 -- plr stopped viewing shelf

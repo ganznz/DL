@@ -5,6 +5,8 @@ local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local GenreConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Genre"))
 local TopicConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Topic"))
 
+local Remotes = ReplicatedStorage.Remotes
+
 local GenreTopic = {}
 
 local function getAvailableGenres(plrData): {}
@@ -42,6 +44,12 @@ function GenreTopic.UnlockGenre(plr: Player): string
     profile.Data.GameDev.Genres[newGenre] = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil }
     
     print(string.format("%s has unlocked genre - %s!", plr.Name, newGenre))
+
+    Remotes.GameDev.UnlockGenre:FireClient(plr, newGenre)
+
+    -- let other scripts know plr unlocked genre (for other plr's in studio)
+    Remotes.GameDev.UnlockGenreBindable:Fire(plr, newGenre)
+
     return newGenre
 end
 
@@ -60,6 +68,12 @@ function GenreTopic.UnlockTopic(plr: Player)
     profile.Data.GameDev.Topics[newTopic] = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil }
     
     print(string.format("%s has unlocked topic - %s!", plr.Name, newTopic))
+
+    Remotes.GameDev.UnlockTopic:FireClient(plr, newTopic)
+
+    -- let other scripts know plr unlocked genre (for other plr's in studio)
+    Remotes.GameDev.UnlockTopicBindable:Fire(plr, newTopic)
+
     return newTopic
 end
 
