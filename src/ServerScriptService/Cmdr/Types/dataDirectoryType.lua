@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PlrDataTemplate = require(ReplicatedStorage.PlayerData.Template)
 
 local directories = {}
-for directory, value in PlrDataTemplate do
+for directory, _value in PlrDataTemplate do
     table.insert(directories, directory)
 end
 
