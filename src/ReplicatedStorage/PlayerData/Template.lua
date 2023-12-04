@@ -11,6 +11,7 @@ end
 
 -- Template is what empty profiles default to
 local Template = {
+    Admin = false, -- for admin cmd access
     Cash = 0,
     Gems = 0,
     Fans = 0,
@@ -54,58 +55,16 @@ local Template = {
     Inventory = {
         StudioFurnishing = {
             -- character need name = { items that fulfill the need }
-            Mood = {
-                ["Arcade Machine"] = {
-                    "01",
-                    "02",
-                    "03",
-                    "04",
-                    "05",
-                }
-            },
-            Energy = {
-                Default = {
-                    "11",
-                    "12",
-                    "13",
-                },
-                Basic = {
-                    "24",
-                    "25",
-                    "28",
-                    "29",
-                },
-            },
-            Hunger = {
-                Default = {
-                    "11",
-                },
-                Basic = {
-                    "24",
-                    "29",
-                },
-            },
-            Decor = {
-                ["Book Stack"] = {
-                    "56",
-                    "51",
-                    "57",
-                },
-                ["Pot Plant"] = {
-                    "56",
-                    "51",
-                    "57",
-                },
-                Crate = {
-                    "56",
-                }
-            },
+            Mood = {},
+            Energy = {},
+            Hunger = {},
+            Decor = {},
         }
     },
 
     Studio = {
         -- index of studio that the player is currently using
-        ActiveStudio = "1",
+        ActiveStudio = "1", -- by default is "1"
 
         StudioStatus = "open", -- "open" | "closed"| "friends"
 
@@ -116,25 +75,10 @@ local Template = {
                 ["1"] = {
                     Furnishings = {
                         -- contain information for placed items in this studio
-                        Mood = {
-                            -- ["Arcade Machine"] = {
-                            --     -- ["01"] = {},
-                            --     -- ["04"] = {},
-                            --     -- ["05"] = {},
-                            -- },
-                        },
-                        Energy = {
-                            -- Basic = {
-                            --     -- ["24"] = {},
-                            --     -- ["25"] = {},
-                            -- },
-                        },
+                        Mood = {},
+                        Energy = {},
                         Hunger = {},
-                        Decor = {
-                            -- ["Book Stack"] = {
-                            --     -- ["56"] = {},
-                            -- },
-                        }
+                        Decor = {}
                     },
                     StudioEssentials = {
                         Computer = {},
