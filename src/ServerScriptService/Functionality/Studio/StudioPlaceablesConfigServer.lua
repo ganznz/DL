@@ -57,7 +57,6 @@ function StudioPlaceables.PurchaseFurnitureItem(plr: Player, itemName: string, i
         }
     end
 
-    print(profile.Data.Inventory.StudioFurnishing)
     return string.format("%s received %s - %s!", plr.Name, itemCategory, itemName)
 end
 

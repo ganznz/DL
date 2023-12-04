@@ -1,4 +1,3 @@
-local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -18,7 +17,6 @@ local GenreConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Genr
 local TopicConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Topic"))
 
 local Remotes = ReplicatedStorage.Remotes
-local furnitureModelFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
@@ -164,9 +162,9 @@ local visitBtnConnections = {}
 -- { [viewportItemInstance] = connection }
 local buildModeItemConnections = {}
 
-GuiServices.DefaultMainGuiStyling(StudioListContainer, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
-GuiServices.DefaultMainGuiStyling(DeleteItemsPopup, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
-GuiServices.CustomMainGuiStyling(GenreTopicViewContainer, 0.65, GlobalVariables.Gui.MainGuiInvisiblePosOffset)
+GuiServices.DefaultMainGuiStyling(StudioListContainer)
+GuiServices.DefaultMainGuiStyling(DeleteItemsPopup)
+GuiServices.DefaultMainGuiStyling(GenreTopicViewContainer)
 
 local function getPlrStudioName(studioIndex: string)
     local studioConfig = StudioConfig.GetConfig(studioIndex)
@@ -691,11 +689,11 @@ end)
 PlrStudiosBtn.Activated:Connect(function()
     clearStudioList()
     populateStudioList()
-    GuiServices.ShowGuiStandard(StudioListContainer, visibleGuiPos, visibleGuiSize, GlobalVariables.Gui.GuiBackdropColourDefault)
+    GuiServices.ShowGuiStandard(StudioListContainer, GlobalVariables.Gui.GuiBackdropColourDefault)
 end)
 
 StudioListExitBtn.Activated:Connect(function()
-    GuiServices.HideGuiStandard(StudioListContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
+    GuiServices.HideGuiStandard(StudioListContainer)
 end)
 
 StudioWhitelistBtn.Activated:Connect(function()
@@ -767,7 +765,7 @@ ItemCancelBtnPc.Activated:Connect(function()
 end)
 
 DeleteItemsYesBtn.Activated:Connect(function()
-    GuiServices.HideGuiStandard(DeleteItemsPopup, UDim2.fromScale(deleteItemsPopupVisiblePos.X.Scale, deleteItemsPopupVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(deleteItemsPopupVisibleSize.X.Scale, deleteItemsPopupVisibleSize.Y.Scale - 0.2))
+    GuiServices.HideGuiStandard(DeleteItemsPopup)
     
     Remotes.Studio.BuildMode.DeleteItems:FireServer(currentItemsToDelete)
 
@@ -778,14 +776,14 @@ end)
 DeleteItemsNoBtn.Activated:Connect(function()
     currentItemsToDelete = nil
 
-    GuiServices.HideGuiStandard(DeleteItemsPopup, UDim2.fromScale(deleteItemsPopupVisiblePos.X.Scale, deleteItemsPopupVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(deleteItemsPopupVisibleSize.X.Scale, deleteItemsPopupVisibleSize.Y.Scale - 0.2))
+    GuiServices.HideGuiStandard(DeleteItemsPopup)
     
     setupBuildModeGui()
     Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
 end)
 
 GenreTopicViewExitBtn.Activated:Connect(function()
-    GuiServices.HideGuiStandard(GenreTopicViewContainer, UDim2.fromScale(genreTopicViewVisiblePos.X.Scale, genreTopicViewVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(genreTopicViewVisibleSize.X.Scale, genreTopicViewVisibleSize.Y.Scale - 0.2))
+    GuiServices.HideGuiStandard(GenreTopicViewContainer)
     
     -- stop viewing shelf
     Remotes.GUI.Studio.StopViewingShelf:Fire()
@@ -811,7 +809,7 @@ Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(_plr, _stud
 end)
 
 Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(_studioIndex, _interiorPlrTpPart, _exteriorPlrTpPart)
-    GuiServices.HideGuiStandard(StudioListContainer, UDim2.new(visibleGuiPos.X.Scale, 0, visibleGuiPos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset, 0), UDim2.new(visibleGuiSize.X.Scale, 0, visibleGuiSize.Y.Scale - 0.2, 0))
+    GuiServices.HideGuiStandard(StudioListContainer)
 end)
 
 Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function()
@@ -877,7 +875,7 @@ Remotes.GUI.Studio.DeleteFurniturePopup.Event:Connect(function(singleItem: boole
         displayDeleteMultipleItemsPopup(currentItemsToDelete)
     end
 
-    GuiServices.ShowGuiStandard(DeleteItemsPopup, deleteItemsPopupVisiblePos, deleteItemsPopupVisibleSize, GlobalVariables.Gui.GuiBackdropColourDefault)
+    GuiServices.ShowGuiStandard(DeleteItemsPopup, GlobalVariables.Gui.GuiBackdropColourDefault)
 end)
 
 
@@ -891,9 +889,10 @@ end)
 
 -- view shelf
 Remotes.GUI.Studio.ViewShelf.Event:Connect(function()
+    print('aaa')
     viewingShelf = true
     populateShelfGui()
-    GuiServices.ShowGuiStandard(GenreTopicViewContainer, genreTopicViewVisiblePos, genreTopicViewVisibleSize)
+    GuiServices.ShowGuiStandard(GenreTopicViewContainer)
 end)
 
 humanoid.Died:Connect(function()
@@ -908,7 +907,7 @@ humanoid.Died:Connect(function()
     end
 
     if viewingShelf then
-        GuiServices.HideGuiStandard(GenreTopicViewContainer, UDim2.fromScale(genreTopicViewVisiblePos.X.Scale, genreTopicViewVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(genreTopicViewVisibleSize.X.Scale, genreTopicViewVisibleSize.Y.Scale - 0.2))
+        GuiServices.HideGuiStandard(GenreTopicViewContainer)
         resetGenreTopicGuiView()
         bookViewDebounce = true
         CameraControls.SetDefault(localPlr, camera, true)
@@ -930,7 +929,7 @@ localPlr.CharacterAdded:Connect(function(character: Model)
         end
 
         if viewingShelf then
-            GuiServices.HideGuiStandard(GenreTopicViewContainer, UDim2.fromScale(genreTopicViewVisiblePos.X.Scale, genreTopicViewVisiblePos.Y.Scale + GlobalVariables.Gui.MainGuiInvisiblePosOffset), UDim2.fromScale(genreTopicViewVisibleSize.X.Scale, genreTopicViewVisibleSize.Y.Scale - 0.2))
+            GuiServices.HideGuiStandard(GenreTopicViewContainer)
             resetGenreTopicGuiView()
             bookViewDebounce = true
             CameraControls.SetDefault(localPlr, camera, true)
