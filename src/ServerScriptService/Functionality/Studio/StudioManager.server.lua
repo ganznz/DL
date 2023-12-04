@@ -3,10 +3,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
-local HttpService = game:GetService("HttpService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
+local StudioPlaceablesServer = require(ServerScriptService.Functionality.Studio.StudioPlaceablesConfigServer)
 local StudioConfigServer = require(script.Parent.StudioConfigServer)
 local Zone = require(ReplicatedStorage.Libs.Zone)
 
@@ -73,7 +73,7 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: string)
     local interiorPlayerTpPart = studioExteriorFolder:FindFirstChild("PlrTeleportToPartInterior")
     local exteriorPlayerTpPart = studioExteriorFolder:FindFirstChild("TeleportToPart")
 
-    local alreadyPlacedFurnitureData = StudioConfigServer.AlreadyPlacedFurnitureData(plrToVisit, studioIndex)
+    local alreadyPlacedFurnitureData = StudioPlaceablesServer.AlreadyPlacedFurnitureData(plrToVisit, studioIndex)
     if plr == plrToVisit then
         profile.Data.Studio.ActiveStudio = studioIndex
         plrStudios[plrToVisit.UserId].StudioIndex = profile.Data.Studio.ActiveStudio
@@ -198,13 +198,13 @@ local function placeFurnitureItem(plr, itemInfo, additionalParams)
 
     -- place and store item data as a new item
     if additionalParams.Action == "newItem" then
-        if not StudioConfigServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudioInfo.StudioIndex) then return end
+        if not StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudioInfo.StudioIndex) then return end
 
-        itemInfo.ItemUUID = StudioConfigServer.StoreFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
+        itemInfo.ItemUUID = StudioPlaceablesServer.StoreFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
 
     elseif additionalParams.Action == "move" then
         -- item was previously placed, only update item data
-        StudioConfigServer.UpdateFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
+        StudioPlaceablesServer.UpdateFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
     end
 
     local profile = PlrDataManager.Profiles[plr]
@@ -224,7 +224,7 @@ local function placeEssentialItem(plr, itemInfo, additionalParams)
     local plrStudioInfo = plrStudios[plr.UserId]
     if not plrStudioInfo then return end
 
-    StudioConfigServer.StoreEssentialItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
+    StudioPlaceablesServer.StoreEssentialItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
 
     Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, "essential", itemInfo)
     Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr)
@@ -249,7 +249,7 @@ local function deleteStudioItems(plr: Player, itemsToDelete)
             
             -- only 1 item to delete
             if itemInfo["ItemUUID"] then
-                local uuidToDelete = StudioConfigServer.DeleteSingleItem(plr, category, itemName, itemInfo.ItemUUID)
+                local uuidToDelete = StudioPlaceablesServer.DeleteSingleItem(plr, category, itemName, itemInfo.ItemUUID)
                 
                 -- remove item for all plrs in studio
                 if uuidToDelete then
@@ -357,7 +357,7 @@ Remotes.Studio.BuildMode.EnterPlaceMode.OnServerEvent:Connect(function(plr: Play
     if itemType == "furniture" then
         if itemInfo.ItemCategory == "Mood" or itemInfo.ItemCategory == "Energy" or itemInfo.ItemCategory == "Hunger" or itemInfo.ItemCategory == "Decor" then
     
-            local hasItem: boolean = StudioConfigServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudios[plr.UserId].StudioIndex)
+            local hasItem: boolean = StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudios[plr.UserId].StudioIndex)
             if hasItem then
                 Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)
             end
