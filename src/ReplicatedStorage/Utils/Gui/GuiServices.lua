@@ -2,12 +2,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
 
 local GuiTransparency = require(ReplicatedStorage.Libs:WaitForChild("GUITransparency"))
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
+local Stack = require(ReplicatedStorage.Utils.DataStructures:WaitForChild("Stack"))
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
+
+local camera = Workspace:FindFirstChild("Camera")
 
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
 local GuiBackdropFrame = AllGuiScreenGui.Misc:WaitForChild("GuiBackdrop")
@@ -38,8 +42,11 @@ function GuiServices.DisableUnrelatedButtons(guiInstanceToIgnore)
     end
 end
 
-function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, posOffset: number)
-    guiInstance.Position = UDim2.fromScale(0.5, guiInstance.Position.Y.Scale + posOffset)
+function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, xOffset: number, yOffset: number)
+    local xPos = guiInstance.Position.X.Scale + (xOffset and xOffset or 0)
+    local yPos = guiInstance.Position.Y.Scale + (yOffset and yOffset or GlobalVariables.Gui.MainGuiInvisibleYOffset)
+
+    guiInstance.Position = UDim2.fromScale(xPos, yPos)
     guiInstance.Visible = false
 end
 
@@ -50,58 +57,72 @@ function GuiServices.CustomMainGuiStyling(guiInstance: Frame, xPosScale, yPosOff
     guiInstance.Visible = false
 end
 
+local function showBackdrop(colour: Color3)
+    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiOpenTime)
 
-
-function GuiServices.ShowGuiStandard(guiInstance, goalPos, goalSize, backdropColour: Color3)
-    guiInstance.Visible = true
+    GuiBackdropFrame.BackgroundColor3 = colour
+    GuiBackdropFrame.Visible = true
     
-    local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-    local mainTween = TweenService:Create(guiInstance, tweenInfo, {
-        Position = goalPos,
-        Size = goalSize
-    })
-    
-    -- backdrop should be present
-    if backdropColour then
-        GuiServices.DisableUnrelatedButtons(guiInstance)
+    local guiBackdropTween = TweenService:Create(GuiBackdropFrame, tweenInfo, { BackgroundTransparency = 0.6 })
+    guiBackdropTween:Play()
 
-        GuiBackdropFrame.BackgroundColor3 = backdropColour
-        GuiBackdropFrame.Visible = true
-        
-        local guiBackdropTween = TweenService:Create(GuiBackdropFrame, tweenInfo, { BackgroundTransparency = 0.6 })
-        guiBackdropTween:Play()
-    
-        local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 20 })
-        guiBlurTween:Play()
-    end
-
-    mainTween:Play()
-
-    return mainTween
+    local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 20 })
+    guiBlurTween:Play()
 end
 
-function GuiServices.HideGuiStandard(guiInstance, goalPos, goalSize)
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-    local mainTween = TweenService:Create(guiInstance, tweenInfo, {
-        Position = goalPos,
-        Size = goalSize
-    })
-    mainTween:Play()
-    mainTween.Completed:Connect(function(_playbackState)
-        guiInstance.Visible = false
-    end)
+local function hideBackdrop()
+    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime)
 
     local guiBackdropTween = TweenService:Create(GuiBackdropFrame, tweenInfo, { BackgroundTransparency = 1 })
     guiBackdropTween:Play()
-    guiBackdropTween.Completed:Connect(function(_playbackState)
-        GuiBackdropFrame.Visible = false
-        GuiServices.EnableUnrelatedButtons(guiInstance)
+
+    guiBackdropTween.Completed:Connect(function(_playbackState) GuiBackdropFrame.Visible = false end)
+end
+
+function GuiServices.ShowGuiStandard(guiInstance, backdropColour: Color3)
+    print('show')
+    guiInstance.Visible = true
+
+    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiOpenTime, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+
+    local guiTween = TweenService:Create(guiInstance, tweenInfo, {
+        Position = UDim2.fromScale(guiInstance.Position.X.Scale - GlobalVariables.Gui.MainGuiInvisibleXOffset, guiInstance.Position.Y.Scale - GlobalVariables.Gui.MainGuiInvisibleYOffset),
+        Size = UDim2.fromScale(guiInstance.Size.X.Scale - GlobalVariables.Gui.MainGuiInvisibleXSize, guiInstance.Size.Y.Scale + GlobalVariables.Gui.MainGuiInvisibleYSize)
+    })
+
+    local cameraTween = TweenService:Create(camera, TweenInfo.new(GlobalVariables.Gui.GuiVisibleCameraTime), { FieldOfView = GlobalVariables.Gui.GuiVisibleCameraFOV })
+    cameraTween:Play()
+    
+    -- backdrop should be present
+    if backdropColour then showBackdrop(backdropColour) end
+
+    guiTween:Play()
+
+    return guiTween
+end
+
+function GuiServices.HideGuiStandard(guiInstance)
+    print('hide')
+    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime, Enum.EasingStyle.Linear)
+
+    local guiTween = TweenService:Create(guiInstance, tweenInfo, {
+        Position = UDim2.fromScale(guiInstance.Position.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXOffset, guiInstance.Position.Y.Scale + GlobalVariables.Gui.MainGuiInvisibleYOffset),
+        Size = UDim2.fromScale(guiInstance.Size.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXSize, guiInstance.Size.Y.Scale - GlobalVariables.Gui.MainGuiInvisibleYSize)
+    })
+    guiTween:Play()
+    guiTween.Completed:Connect(function(_playbackState)
+        guiInstance.Visible = false
     end)
+
+    local cameraTween = TweenService:Create(camera, TweenInfo.new(GlobalVariables.Gui.GuiInvisibleCameraTime), { FieldOfView = GlobalVariables.Gui.GuiInvisibleCameraFOV })
+    cameraTween:Play()
+
+    hideBackdrop()
 
     local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 0 })
     guiBlurTween:Play()
 
-    return mainTween
+    return guiTween
 end
 
 function GuiServices.AdjustTransparency(guiInstance, transparencyValue, tweenInfo)
