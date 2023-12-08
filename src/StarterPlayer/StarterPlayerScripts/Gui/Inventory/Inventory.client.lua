@@ -120,6 +120,8 @@ local function determinePlaceBtnSettings(placeBtn: TextButton, options: {})
             placeBtn.BackgroundColor3 = GlobalVariables.Gui.InvalidRedColour
 
             placeBtnConnection = placeBtn.Activated:Connect(function()
+                Remotes.Studio.BuildMode.StoreItem:FireServer("furniture", options)
+                GuiServices.HideGuiStandard(InventoryContainer)
             end)
 
         -- btn when activated should enter place mode w that item

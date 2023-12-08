@@ -158,7 +158,26 @@ local function registerItemDeleteBtn(billboardGui, deleteBtn, itemType: "furnitu
     end)
 end
 
-local function registerItemStoreBtn(billboardGui, storeBtn)
+local function registerItemStoreBtn(billboardGui, storeBtn, itemType: "furniture" | "essential")
+    storeBtn.Activated:Connect(function()
+        local itemModel = billboardGui.Adornee
+        local itemInfo
+
+        if itemType == "furniture" then
+            itemInfo = {
+                ItemName = itemModel:GetAttribute("Name"),
+                ItemCategory = itemModel:GetAttribute("Category"),
+                ItemUUID = itemModel.Name
+            }
+        
+        elseif itemType == "essential" then
+            itemInfo = {
+                ItemName = itemModel.Name
+            }
+        end
+
+        Remotes.Studio.BuildMode.StoreItem:FireServer(itemType, itemInfo)
+    end)
 end
 
 local function registerFurnitureItemSettingButtons(billboard: BillboardGui)
@@ -169,6 +188,7 @@ local function registerFurnitureItemSettingButtons(billboard: BillboardGui)
 
     registerItemMoveBtn(billboard, moveBtn, "furniture")
     registerItemDeleteBtn(billboard, deleteBtn, "furniture")
+    registerItemStoreBtn(billboard, storeBtn, "furniture")
 end
 
 local function registerEssentialItemSettingButtons(billboard: BillboardGui)

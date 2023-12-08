@@ -198,7 +198,7 @@ local function placeFurnitureItem(plr, itemInfo, additionalParams)
 
     -- place and store item data as a new item
     if additionalParams.Action == "newItem" then
-        if not StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudioInfo.StudioIndex) then return end
+        if not StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex, false) then return end
 
         itemInfo.ItemUUID = StudioPlaceablesServer.StoreFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
 
@@ -269,6 +269,32 @@ local function deleteStudioItems(plr: Player, itemsToDelete)
     end
 end
 
+-- function stores placed item back in inventory
+local function storeStudioItem(plr: Player, itemType: string, itemInfo: {})
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local plrStudioInfo = plrStudios[plr.UserId]
+    if not plrStudioInfo then return end
+
+    if itemType == "furniture" then
+        local hasItem = StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex, true)
+        if not hasItem then return end
+
+        StudioPlaceablesServer.StoreFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex)
+    end
+
+    -- remove item for all plrs in studio
+    for plrUserId, studioInfo in plrsInStudio do
+        if studioInfo then
+            if studioInfo.PlrVisitingId == plr.UserId then
+                local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
+                Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, itemType, itemInfo)
+            end
+        end
+    end
+end
+
 Remotes.Studio.General.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
@@ -320,8 +346,7 @@ end
 
 Remotes.Studio.General.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)
     local newWhitelistSetting = updateStudioWhitelist(plr)
-    
-    
+
     if newWhitelistSetting == "friends" then
         kickAllPlrsFromStudio(plr, true)
     elseif newWhitelistSetting == "closed" then
@@ -360,12 +385,9 @@ end)
 Remotes.Studio.BuildMode.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemType: "furniture" | "essential", itemInfo: {}, movingItem: boolean)
     if itemType == "furniture" then
         if itemInfo.ItemCategory == "Mood" or itemInfo.ItemCategory == "Energy" or itemInfo.ItemCategory == "Hunger" or itemInfo.ItemCategory == "Decor" then
-            if not movingItem then
-                local hasItem: boolean = StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudios[plr.UserId].StudioIndex)
-                print(hasItem)
-                print(itemInfo)
-                if not hasItem then return end
-            end
+            local hasItem: boolean = StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo, plrStudios[plr.UserId].StudioIndex, movingItem)
+            if not hasItem then return end
+
             Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)
         end
     end
@@ -383,6 +405,8 @@ Remotes.Studio.BuildMode.ExitPlaceMode.OnServerEvent:Connect(function(plr: Playe
 end)
 
 Remotes.Studio.BuildMode.DeleteItems.OnServerEvent:Connect(deleteStudioItems)
+
+Remotes.Studio.BuildMode.StoreItem.OnServerEvent:Connect(storeStudioItem)
 
 Remotes.GameDev.UnlockGenreBindable.Event:Connect(function(plrWhoUnlocked, genreName)
     for plrUserId, studioInfo in plrsInStudio do
