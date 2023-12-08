@@ -24,7 +24,21 @@ local OFFSET_PER_NOTI = 0.27
 local NOTI_VISIBLE_X_POS = 0.5 -- scale value
 local NOTI_HIDDEN_X_POS = 2 -- scale value
 
+-- this cache is used to store position/size information regarding GUI in-game
+local GuiCache = {}
+
+-- this stack is used to determine how GUI should be displayed.
+-- usecases include: opening GUI when another GUI instance is open, GUI history (notification popup opens and closes previous GUI, when popup is closed the previous GUI opens back up), etc
+local GuiStack = Stack.new()
+
 local GuiServices = {}
+
+function GuiServices.StoreInCache(guiInstance)
+    GuiCache[guiInstance] = {
+        Position = guiInstance.Position,
+        Size = guiInstance.Size
+    }
+end
 
 function GuiServices.EnableUnrelatedButtons(guiInstanceToIgnore)
     for _i, instance in PlayerGui:GetDescendants() do
@@ -42,18 +56,17 @@ function GuiServices.DisableUnrelatedButtons(guiInstanceToIgnore)
     end
 end
 
-function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, xOffset: number, yOffset: number)
-    local xPos = guiInstance.Position.X.Scale + (xOffset and xOffset or 0)
-    local yPos = guiInstance.Position.Y.Scale + (yOffset and yOffset or GlobalVariables.Gui.MainGuiInvisibleYOffset)
-
-    guiInstance.Position = UDim2.fromScale(xPos, yPos)
-    guiInstance.Visible = false
+function GuiServices.HideHUD()
 end
 
--- same functionality as DefaultMainGuiStyling, except x-coord can be specified.
--- for GUI that typically isn't centered horizontally on-screen.
-function GuiServices.CustomMainGuiStyling(guiInstance: Frame, xPosScale, yPosOffset: number)
-    guiInstance.Position = UDim2.fromScale(xPosScale, guiInstance.Position.Y.Scale + yPosOffset)
+function GuiServices.ShowHUD()
+end
+
+function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, xOffset: number, yOffset: number)
+    local xPos = GuiCache[guiInstance].Position.X.Scale + (xOffset and xOffset or 0)
+    local yPos = GuiCache[guiInstance].Position.Y.Scale + (yOffset and yOffset or GlobalVariables.Gui.MainGuiInvisibleYOffset)
+
+    guiInstance.Position = UDim2.fromScale(xPos, yPos)
     guiInstance.Visible = false
 end
 
@@ -79,15 +92,65 @@ local function hideBackdrop()
     guiBackdropTween.Completed:Connect(function(_playbackState) GuiBackdropFrame.Visible = false end)
 end
 
+-- switchingGui parameter only present if opening gui while naother gui instance is already open
+function GuiServices.HideGuiStandard(guiInstance, switchingUI: true | nil)
+    GuiStack:Pop()
+
+    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime, Enum.EasingStyle.Linear)
+
+    local guiPosition = GuiCache[guiInstance].Position
+    local guiSize = GuiCache[guiInstance].Size
+
+    local guiTween = TweenService:Create(guiInstance, tweenInfo, {
+        Position = UDim2.fromScale(guiPosition.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXOffset, guiPosition.Y.Scale + GlobalVariables.Gui.MainGuiInvisibleYOffset),
+        Size = UDim2.fromScale(guiSize.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXSize, guiSize.Y.Scale - GlobalVariables.Gui.MainGuiInvisibleYSize)
+    })
+    guiTween:Play()
+    guiTween.Completed:Connect(function(_playbackState)
+        guiInstance.Visible = false
+    end)
+
+    -- only hide backdrop & revert camera settings if closing gui, not if switching between gui instances
+    if switchingUI then return guiTween end
+
+    local cameraTween = TweenService:Create(camera, TweenInfo.new(GlobalVariables.Gui.GuiInvisibleCameraTime), { FieldOfView = GlobalVariables.Gui.GuiInvisibleCameraFOV })
+    cameraTween:Play()
+
+    hideBackdrop()
+
+    local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 0 })
+    guiBlurTween:Play()
+
+    return guiTween
+end
+
 function GuiServices.ShowGuiStandard(guiInstance, backdropColour: Color3)
-    print('show')
+    -- check if other GUI is open already
+    local previousInstance = GuiStack:Peek()
+
+    if previousInstance and previousInstance ~= "" then
+        if previousInstance == guiInstance then
+            GuiServices.HideGuiStandard(previousInstance)
+            return
+        else
+            GuiServices.HideGuiStandard(previousInstance, true)
+        end
+    end
+
+    -- push new visible GUI onto stack
+    GuiStack:Push("")
+    GuiStack:Push(guiInstance)
+
     guiInstance.Visible = true
 
     local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiOpenTime, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
 
+    local guiPosition = GuiCache[guiInstance].Position
+    local guiSize = GuiCache[guiInstance].Size
+
     local guiTween = TweenService:Create(guiInstance, tweenInfo, {
-        Position = UDim2.fromScale(guiInstance.Position.X.Scale - GlobalVariables.Gui.MainGuiInvisibleXOffset, guiInstance.Position.Y.Scale - GlobalVariables.Gui.MainGuiInvisibleYOffset),
-        Size = UDim2.fromScale(guiInstance.Size.X.Scale - GlobalVariables.Gui.MainGuiInvisibleXSize, guiInstance.Size.Y.Scale + GlobalVariables.Gui.MainGuiInvisibleYSize)
+        Position = UDim2.fromScale(guiPosition.X.Scale, guiPosition.Y.Scale),
+        Size = UDim2.fromScale(guiSize.X.Scale, guiSize.Y.Scale)
     })
 
     local cameraTween = TweenService:Create(camera, TweenInfo.new(GlobalVariables.Gui.GuiVisibleCameraTime), { FieldOfView = GlobalVariables.Gui.GuiVisibleCameraFOV })
@@ -97,30 +160,6 @@ function GuiServices.ShowGuiStandard(guiInstance, backdropColour: Color3)
     if backdropColour then showBackdrop(backdropColour) end
 
     guiTween:Play()
-
-    return guiTween
-end
-
-function GuiServices.HideGuiStandard(guiInstance)
-    print('hide')
-    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime, Enum.EasingStyle.Linear)
-
-    local guiTween = TweenService:Create(guiInstance, tweenInfo, {
-        Position = UDim2.fromScale(guiInstance.Position.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXOffset, guiInstance.Position.Y.Scale + GlobalVariables.Gui.MainGuiInvisibleYOffset),
-        Size = UDim2.fromScale(guiInstance.Size.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXSize, guiInstance.Size.Y.Scale - GlobalVariables.Gui.MainGuiInvisibleYSize)
-    })
-    guiTween:Play()
-    guiTween.Completed:Connect(function(_playbackState)
-        guiInstance.Visible = false
-    end)
-
-    local cameraTween = TweenService:Create(camera, TweenInfo.new(GlobalVariables.Gui.GuiInvisibleCameraTime), { FieldOfView = GlobalVariables.Gui.GuiInvisibleCameraFOV })
-    cameraTween:Play()
-
-    hideBackdrop()
-
-    local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 0 })
-    guiBlurTween:Play()
 
     return guiTween
 end
