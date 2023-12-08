@@ -154,6 +154,19 @@ function Studio.GetFurnitureAvailableForStudio(plrData)
     return furnitureInInventoryCopy
 end
 
+-- StudioConfig.ItemInStudio(plrData, options.ItemName, options.ItemCategory, options.ItemUUID ,studioPlrInfo.StudioIndex, studioType)
+function Studio.ItemInStudio(plrData, itemName: string, itemCategory: string, itemUUID: string, studioIndex: string, studioType: string): boolean
+    local studioFurnishingData = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory]
+
+    if studioFurnishingData[itemName] then
+        if studioFurnishingData[itemName][itemUUID] then
+            return true
+        end
+    end
+    
+    return false
+end
+
 function Studio.GetFurnitureItemModel(itemName: string, itemCategory: string)
     return ReplicatedStorage.Assets.Models.Studio.StudioFurnishing[itemCategory]:FindFirstChild(itemName):Clone()
 end
