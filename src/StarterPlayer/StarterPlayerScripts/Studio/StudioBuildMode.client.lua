@@ -36,8 +36,6 @@ local studioFurnitureFolder
 local studioInteriorModel
 local studioInteriorPlot
 local placeItemConnection = nil
-local inBuildMode = false
-local inPlaceMode = false
 local computerModel = nil
 local shelfModel = nil
 
@@ -145,9 +143,9 @@ local function registerItemDeleteBtn(billboardGui, deleteBtn, itemType: "furnitu
         local itemCategory = itemModel:GetAttribute("Category")
         local itemUUID = itemModel.Name
 
-        if inBuildMode then
+        if localPlr:GetAttribute("InBuildMode") then
             placement:DestroyGrid()
-            inBuildMode = false
+            localPlr:SetAttribute("InBuildMode", false)
             disableAllModelClickConnections()
         end
 
@@ -235,7 +233,7 @@ local function enableAllModelClickConnections()
 end
 
 Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryData)
-    inBuildMode = true
+    localPlr:SetAttribute("InBuildMode", true)
 
     studioInteriorFolder = Workspace.TempAssets.Studios:FindFirstChild(localPlr.UserId)
     studioInteriorModel = studioInteriorFolder:FindFirstChild("Interior")
@@ -270,18 +268,18 @@ local function cancelOnTermination(_actionName, inputState, inputObj)
     -- ensures cancel only occurs once (on key down, not on key up too)
     if inputState and inputState == Enum.UserInputState.Begin then
         exitPlaceMode()
-        inPlaceMode = false
+        localPlr:SetAttribute("InPlaceMode", false)
 
     elseif not inputState then
         -- user is on other platform
         exitPlaceMode()
-        inPlaceMode = false
+        localPlr:SetAttribute("InPlaceMode", false)
     end
     
     -- reopen build-mode gui & related build-mode functionality declared in other files
     Remotes.Studio.BuildMode.ExitPlaceModeBindable:Fire()
 
-    if inBuildMode then
+    if localPlr:GetAttribute("InBuildMode") then
         -- clear all connections to prevent duplicating
         disableAllModelClickConnections()
         enableAllModelClickConnections()
@@ -294,7 +292,7 @@ local function bindInputs()
 end
 
 Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemType: "furniture" | "essential", itemInfo: {}, movingItem: boolean)
-    inPlaceMode = true
+    localPlr:SetAttribute("InPlaceMode", true)
 
     local itemModel
     local actionType
@@ -331,9 +329,9 @@ end)
 
 Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(_studioFurnitureInventory)
     exitPlaceMode()
-    inPlaceMode = false
+    localPlr:SetAttribute("InPlaceMode", false)
 
-    if inBuildMode then
+    if localPlr:GetAttribute("InBuildMode") then
         -- clear all connections to prevent duplicating
         disableAllModelClickConnections()
         enableAllModelClickConnections()
@@ -357,7 +355,7 @@ end)
 Remotes.Studio.BuildMode.ExitBuildModeBindable.Event:Connect(function()
     placement:DestroyGrid()
     disableAllModelClickConnections()
-    inBuildMode = false
+    localPlr:SetAttribute("InBuildMode", false)
 end)
 
 Remotes.Studio.BuildMode.FurnitureItemRotate.Event:Connect(function()
@@ -369,15 +367,13 @@ Remotes.Studio.BuildMode.FurnitureItemCancel.Event:Connect(function()
 end)
 
 humanoid.Died:Connect(function()
-    if inBuildMode then
+    if localPlr:GetAttribute("InBuildMode") then
         placement:DestroyGrid()
-        inBuildMode = false
         disableAllModelClickConnections()
     end
 
-    if inPlaceMode then
+    if localPlr:GetAttribute("InPlaceMode") then
         exitPlaceMode()
-        inPlaceMode = false
     end
 end)
 
@@ -385,15 +381,13 @@ localPlr.CharacterAdded:Connect(function(character: Model)
     char = character
     humanoid = char:WaitForChild("Humanoid")
     humanoid.Died:Connect(function()
-        if inBuildMode then
+        if localPlr:GetAttribute("InBuildMode") then
             placement:DestroyGrid()
-            inBuildMode = false
             disableAllModelClickConnections()
         end
     
-        if inPlaceMode then
+        if localPlr:GetAttribute("InPlaceMode") then
             exitPlaceMode()
-            inPlaceMode = false
         end
     end)
 end)

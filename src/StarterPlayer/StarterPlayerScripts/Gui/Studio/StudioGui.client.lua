@@ -95,9 +95,6 @@ local GenreTopicInfoPerkTemplate = GenreTopicInfoPerksContainer:WaitForChild("Te
 local GenreTopicInfoBackBtn = GenreTopicViewContainer:WaitForChild("BackBtn")
 
 -- GUI PROPERTY VARIABLES
-local visibleGuiPos: UDim2 = StudioListContainer.Position
-local visibleGuiSize: UDim2 = StudioListContainer.Size
-
 local leftSideContainerVisiblePos: UDim2 = LeftSideContainer.Position
 local leftSideContainerVisibleSize: UDim2 = LeftSideContainer.Size
 
@@ -110,16 +107,8 @@ local plrInfoContainerVisibleSize: UDim2 = PlrInfoContainer.Size
 local studioBuildModeVisiblePos: UDim2 = StudioBuildModeContainer.Position
 local studioBuildModeHiddenPos: UDim2 = UDim2.fromScale(0.5, 1.25)
 
-local deleteItemsPopupVisiblePos: UDim2 = DeleteItemsPopup.Position
-local deleteItemsPopupVisibleSize: UDim2 = DeleteItemsPopup.Size
-
 local itemInteractionBtnContainerVisiblePos: UDim2 = ItemInteractionButtons.Position
 local itemInteractionBtnContainerHiddenPos: UDim2 = UDim2.fromScale(0.5, 1.2)
-local itemInteractionBtnContainerSize: UDim2 = ItemInteractionButtons.Size
-
-local genreTopicViewVisiblePos: UDim2 = GenreTopicViewContainer.Position
-local genreTopicViewVisibleSize: UDim2 = GenreTopicViewContainer.Size
-
 
 -- STATIC VARIABLES
 local WHITELIST_BTN_TEXT_TEMPLATE = "Studio: SETTING"
@@ -132,8 +121,6 @@ local KICK_PLRS_COOLDOWN = 1 -- seconds
 
 -- STATE VARIABLES
 local plrData = Remotes.Data.GetAllData:InvokeServer()
-local inBuildMode = false
-local inPlaceMode = false
 local viewingShelf = false
 local char = localPlr.Character or localPlr.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
@@ -161,6 +148,10 @@ local visitBtnConnections = {}
 -- stores Activated connections for when build-mode viewport items get clicked
 -- { [viewportItemInstance] = connection }
 local buildModeItemConnections = {}
+
+GuiServices.StoreInCache(StudioListContainer)
+GuiServices.StoreInCache(DeleteItemsPopup)
+GuiServices.StoreInCache(GenreTopicViewContainer)
 
 GuiServices.DefaultMainGuiStyling(StudioListContainer)
 GuiServices.DefaultMainGuiStyling(DeleteItemsPopup)
@@ -816,14 +807,14 @@ Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function()
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioBuildModeBtn, StudioTeleportBtn)
     end)
-    if inBuildMode then disableBuildModeGui() end
-    if inPlaceMode then
+    if localPlr:GetAttribute("InBuildMode") then disableBuildModeGui() end
+    if localPlr:GetAttribute("InPlaceMode") then
         -- fire to server, which then fires to client to terminate place mode functionality
         Remotes.Studio.BuildMode.ExitPlaceMode:FireServer()
     end
     
-    inPlaceMode = false
-    inBuildMode = false
+    localPlr:SetAttribute("InPlaceMode", false)
+    localPlr:SetAttribute("InBuildMode", false)
     currentViewedBook = nil
 end)
 
@@ -837,13 +828,13 @@ end)
 
 -- when plr enters build mode, save furniture inventory data to variable
 Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(studioInventoryData)
-    inBuildMode = true
+    localPlr:SetAttribute("InBuildMode", true)
     studioFurnitureInventory = studioInventoryData
 end)
 
 -- when plr enters place mode, hide build mode gui
 Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemName: string, itemCategory: string)
-    inPlaceMode = true
+    localPlr:SetAttribute("InPlaceMode", true)
     hideBuildModeGui()
     showItemInteractionBtns()
 end)
@@ -851,7 +842,7 @@ end)
 -- show build-mode gui again
 Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(studioInventoryData)
     hideItemInteractionBtns()
-    if inBuildMode then
+    if localPlr:GetAttribute("InBuildMode") then
         if studioInventoryData then
             studioFurnitureInventory = studioInventoryData
         end
@@ -862,10 +853,10 @@ end)
 Remotes.GUI.Studio.DeleteFurniturePopup.Event:Connect(function(singleItem: boolean, itemsToDelete)
     currentItemsToDelete = itemsToDelete
 
-    if inBuildMode then
+    if localPlr:GetAttribute("InBuildMode") then
         disableBuildModeGui()
-        inBuildMode = false
-        inPlaceMode = false
+        localPlr:SetAttribute("InBuildMode", false)
+        localPlr:SetAttribute("InPlaceMode", false)
     end
 
     if singleItem then
@@ -882,28 +873,25 @@ end)
 -- reopen build mode gui & related functionality
 Remotes.Studio.BuildMode.ExitPlaceModeBindable.Event:Connect(function()
     hideItemInteractionBtns()
-    if inBuildMode then
+    if localPlr:GetAttribute("InBuildMode") then
         setupBuildModeGui()
     end
 end)
 
 -- view shelf
 Remotes.GUI.Studio.ViewShelf.Event:Connect(function()
-    print('aaa')
     viewingShelf = true
     populateShelfGui()
     GuiServices.ShowGuiStandard(GenreTopicViewContainer)
 end)
 
 humanoid.Died:Connect(function()
-    if inPlaceMode then
+    if localPlr:GetAttribute("InPlaceMode") then
         hideItemInteractionBtns()
-        inPlaceMode = false
     end
 
-    if inBuildMode then
+    if localPlr:GetAttribute("InBuildMode") then
         disableBuildModeGui()
-        inBuildMode = false
     end
 
     if viewingShelf then
@@ -918,14 +906,12 @@ localPlr.CharacterAdded:Connect(function(character: Model)
     char = character
     humanoid = char:WaitForChild("Humanoid")
     humanoid.Died:Connect(function()
-        if inPlaceMode then
+        if localPlr:GetAttribute("InPlaceMode") then
             hideItemInteractionBtns()
-            inPlaceMode = false
         end
 
-        if inBuildMode then
+        if localPlr:GetAttribute("InBuildMode") then
             disableBuildModeGui()
-            inBuildMode = false
         end
 
         if viewingShelf then
