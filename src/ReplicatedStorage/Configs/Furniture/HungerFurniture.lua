@@ -5,82 +5,124 @@ local modelFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing.Hung
 local HungerFurniture = {}
 
 type HungerFurnitureConfig = {
-    HungerPerSec: number;
     Price: number;
     Currency: string,
-    ImageUrl: string
+    Image: string,
+    Stats: {}
 }
 
 local Config: { [string]: HungerFurnitureConfig } = {
     Default = {
-        HungerPerSec = 1,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 1 -- base item stat boost (+1 hunger/sec)
+        }
     },
     Basic = {
-        HungerPerSec = 2,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 2
+        }
     },
     Modern = {
-        HungerPerSec = 3,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 3
+        }
     },
     Rustic = {
-        HungerPerSec = 5,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 5
+        }
     },
     Fancy = {
-        HungerPerSec = 7,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 7
+        }
     },
     Futuristic = {
-        HungerPerSec = 9,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 9
+        }
     },
     Greek = {
-        HungerPerSec = 12,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 12
+        }
     },
     Steampunk = {
-        HungerPerSec = 15,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 15
+        }
     },
     Tropical = {
-        HungerPerSec = 18,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 18
+        }
     },
     Space = {
-        HungerPerSec = 22,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 22
+        }
     },
     Retro = {
-        HungerPerSec = 26,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 26
+        }
     },
     Rgb = {
-        HungerPerSec = 30,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 30
+        }
     },
     Prehistoric = {
-        HungerPerSec = 35,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 35
+        }
     },
     Crystal = {
-        HungerPerSec = 40,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 40
+        }
     },
 }
 

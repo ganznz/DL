@@ -5,82 +5,124 @@ local modelFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing.Mood
 local MoodFurniture = {}
 
 type MoodFurnitureConfig = {
-    MoodPerSec: number,
     Price: number;
     Currency: string,
-    ImageUrl: string
+    Image: string,
+    Stats: {}
 }
 
 local Config: { [string]: MoodFurnitureConfig } = {
     ["Arcade Machine"] = {
-        MoodPerSec = 1,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 1 -- base item stat boost (+1 mood/sec)
+        }
     },
     ["TV"] = {
-        MoodPerSec = 2,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 2
+        }
     },
     Modern = {
-        MoodPerSec = 3,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 3
+        }
     },
     Rustic = {
-        MoodPerSec = 5,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 5
+        }
     },
     Fancy = {
-        MoodPerSec = 7,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 7
+        }
     },
     Futuristic = {
-        MoodPerSec = 9,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 9
+        }
     },
     Greek = {
-        MoodPerSec = 12,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 12
+        }
     },
     Steampunk = {
-        MoodPerSec = 15,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 15
+        }
     },
     Tropical = {
-        MoodPerSec = 18,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 18
+        }
     },
     Space = {
-        MoodPerSec = 22,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 22
+        }
     },
     Retro = {
-        MoodPerSec = 26,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 26
+        }
     },
     Rgb = {
-        MoodPerSec = 30,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 30
+        }
     },
     Prehistoric = {
-        MoodPerSec = 35,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 35
+        }
     },
     Crystal = {
-        MoodPerSec = 40,
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
+        Stats = {
+            Base = 40
+        }
     },
 }
 

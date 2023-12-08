@@ -7,21 +7,24 @@ local DecorFurniture = {}
 type DecorFurnitureConfig = {
     Price: number;
     Currency: string,
-    ImageUrl: string
+    Image: string,
 }
 
 local Config: { [string]: DecorFurnitureConfig } = {
     ["Book Stack"] = {
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
     },
     ["Crate"] = {
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
     },
     ["Pot Plant"] = {
         Price = 99,
-        Currency = "Cash"
+        Currency = "Cash",
+        Image = "",
     },
 }
 
