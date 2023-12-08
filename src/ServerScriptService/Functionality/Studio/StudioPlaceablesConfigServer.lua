@@ -60,7 +60,10 @@ function StudioPlaceables.PurchaseFurnitureItem(plr: Player, itemName: string, i
     return string.format("%s received %s - %s!", plr.Name, itemCategory, itemName)
 end
 
-function StudioPlaceables.HasFurnitureItem(plr: Player, itemName: string, itemCategory: string, studioIndex): boolean
+-- function for checking if a player has a furniture item available
+-- lookForUUID: boolean - if true, search for instance by UUID instead of item name
+--                        if false, search for instance by instance name instead of UUID (e.g. for placing item in Studio)
+function StudioPlaceables.HasFurnitureItem(plr: Player, itemInfo: {}, studioIndex: boolean, lookForUUID: boolean): boolean
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -69,24 +72,31 @@ function StudioPlaceables.HasFurnitureItem(plr: Player, itemName: string, itemCa
     local studioConfig = StudioConfig.GetConfig(studioIndex)
     if not studioConfig then return end
 
+    local itemInInventory = plrData.Inventory.StudioFurnishing[itemInfo.ItemCategory][itemInfo.ItemName]
+    local itemInstanceInInventory
+
+    if itemInInventory and not lookForUUID then return true end
+
+    if itemInInventory and lookForUUID then
+        itemInstanceInInventory = table.find(itemInInventory, itemInfo.ItemUUID)
+        if itemInstanceInInventory then return true end
+    end
+
+    return false
+end
+
+-- remove a furniture item from studio and store back in inventory
+function StudioPlaceables.StoreFurnitureItem(plr: Player, itemInfo: {}, studioIndex: string)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local studioConfig = StudioConfig.GetConfig(studioIndex)
+    if not studioConfig then return end
+
     local studioType: "Standard" | "Premium" = studioConfig.StudioType
 
-    local itemInInventory = plrData.Inventory.StudioFurnishing[itemCategory][itemName]
-    if itemInInventory then
-        if not plrData.Studio.Studios[studioType][studioIndex] then return false end
-
-        local itemPlacedInStudio = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName]
-        if not itemPlacedInStudio then return true end
-
-        local difference = GeneralUtils.LengthOfDict(itemInInventory) - GeneralUtils.LengthOfDict(itemPlacedInStudio)
-        if difference >= 0 then return true end
-        -- else
-            -- local difference = GeneralUtils.LengthOfDict(itemInInventory) - GeneralUtils.LengthOfDict(itemPlacedInStudio)
-            -- print(difference)
-            -- if difference > 0 then return true else return false end
-        -- end
-    end
-    return false
+    local studioPlacedFurnitureData = profile.Data.Studio.Studios[studioType][studioIndex]
+    studioPlacedFurnitureData.Furnishings[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID] = nil
 end
 
 function StudioPlaceables.UpdateFurnitureItemData(plr: Player, itemInfo: {}, studioIndex): string
