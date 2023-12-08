@@ -76,12 +76,15 @@ function StudioPlaceables.HasFurnitureItem(plr: Player, itemName: string, itemCa
         if not plrData.Studio.Studios[studioType][studioIndex] then return false end
 
         local itemPlacedInStudio = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory][itemName]
-        if not itemPlacedInStudio then
-            return true
-        else
-            local difference = GeneralUtils.LengthOfDict(itemInInventory) - GeneralUtils.LengthOfDict(itemPlacedInStudio)
-            if difference > 0 then return true else return false end
-        end
+        if not itemPlacedInStudio then return true end
+
+        local difference = GeneralUtils.LengthOfDict(itemInInventory) - GeneralUtils.LengthOfDict(itemPlacedInStudio)
+        if difference >= 0 then return true end
+        -- else
+            -- local difference = GeneralUtils.LengthOfDict(itemInInventory) - GeneralUtils.LengthOfDict(itemPlacedInStudio)
+            -- print(difference)
+            -- if difference > 0 then return true else return false end
+        -- end
     end
     return false
 end

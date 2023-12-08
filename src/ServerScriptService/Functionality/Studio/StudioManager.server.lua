@@ -360,11 +360,13 @@ end)
 Remotes.Studio.BuildMode.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemType: "furniture" | "essential", itemInfo: {}, movingItem: boolean)
     if itemType == "furniture" then
         if itemInfo.ItemCategory == "Mood" or itemInfo.ItemCategory == "Energy" or itemInfo.ItemCategory == "Hunger" or itemInfo.ItemCategory == "Decor" then
-    
-            local hasItem: boolean = StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudios[plr.UserId].StudioIndex)
-            if hasItem then
-                Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)
+            if not movingItem then
+                local hasItem: boolean = StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo.ItemName, itemInfo.ItemCategory, plrStudios[plr.UserId].StudioIndex)
+                print(hasItem)
+                print(itemInfo)
+                if not hasItem then return end
             end
+            Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)
         end
     end
 
