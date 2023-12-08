@@ -59,6 +59,7 @@ local Template = {
             Energy = {},
             Hunger = {},
             Decor = {},
+            Special = {}
         }
     },
 
@@ -78,7 +79,8 @@ local Template = {
                         Mood = {},
                         Energy = {},
                         Hunger = {},
-                        Decor = {}
+                        Decor = {},
+                        Special = {}
                     },
                     StudioEssentials = {
                         Computer = {},

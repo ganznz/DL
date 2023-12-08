@@ -27,6 +27,7 @@ function Studio.InitializeStudioData(plr: Player, studioType: "Standard" | "Prem
             Energy = {},
             Hunger = {},
             Decor = {},
+            Special = {},
         },
 
         -- initialize computer & shelf cframe data relative to plot in datastore

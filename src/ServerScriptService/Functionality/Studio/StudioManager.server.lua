@@ -314,6 +314,10 @@ Remotes.Studio.General.GetStudioPlrInfo.OnServerInvoke = function()
     return plrStudios
 end
 
+Remotes.Studio.General.GetPlrsInStudioInfo.OnServerInvoke = function()
+    return plrsInStudio
+end
+
 Remotes.Studio.General.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)
     local newWhitelistSetting = updateStudioWhitelist(plr)
     
