@@ -154,7 +154,6 @@ function Studio.GetFurnitureAvailableForStudio(plrData)
     return furnitureInInventoryCopy
 end
 
--- StudioConfig.ItemInStudio(plrData, options.ItemName, options.ItemCategory, options.ItemUUID ,studioPlrInfo.StudioIndex, studioType)
 function Studio.ItemInStudio(plrData, itemName: string, itemCategory: string, itemUUID: string, studioIndex: string, studioType: string): boolean
     local studioFurnishingData = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory]
 
@@ -191,6 +190,23 @@ function Studio.PlaceItemOnPlot(itemType: string, itemInfo: {}, parent: Folder)
     for _i, v in itemModelToPlace:GetDescendants() do
         if v:IsA("BasePart") then v.CanCollide = true end
     end
+end
+
+-- if special furniture item is placed in a studio, return the index of that studio, else return nil
+function Studio.IndexOfSpecialFurnitureItemParent(plrData, itemName: string, itemUUID: string): string
+    for _studioType, studios in plrData.Studio.Studios do
+        for studioIndex, studioData in studios do
+            for uuid, _itemData in studioData.Furnishings.Special[itemName] do
+
+                if uuid == itemUUID then
+                    return studioIndex
+                end
+
+            end
+        end
+    end
+
+    return nil
 end
 
 
