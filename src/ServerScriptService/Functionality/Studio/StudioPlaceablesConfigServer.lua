@@ -1,3 +1,4 @@
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local HttpService = game:GetService("HttpService")
@@ -15,6 +16,10 @@ local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForC
 local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("DecorFurniture"))
 
 local StudioPlaceables = {}
+
+type FurnitureInstance = {
+    Locked: boolean
+}
 
 -- adminCmdExecutor parameter gets passed in ONLY when function called as a cmd.
 function StudioPlaceables.PurchaseFurnitureItem(plr: Player, itemName: string, itemCategory: string, adminCmdExecutor: Player)
@@ -35,25 +40,27 @@ function StudioPlaceables.PurchaseFurnitureItem(plr: Player, itemName: string, i
     if not itemConfig then return end
 
     local itemPrice = itemConfig.Price
-    if adminCmdExecutor and PlrManagerConfigServer.IsAdminEligible(adminCmdExecutor) then
+    if adminCmdExecutor and PlrManagerConfigServer.IsAdminEligible(adminCmdExecutor) and Players:GetPlayerByUserId(adminCmdExecutor.UserId) then
         itemPrice = 0 -- bypass cost if function called from an admin cmd
     end
 
-    local plrCurrencyAmt
-    if itemConfig.Currency == "Cash" then
-        plrCurrencyAmt = profile.Data.Cash
-    end
-
+    local plrCurrencyAmt = profile.Data[itemConfig.Currency]
     if plrCurrencyAmt - itemPrice < 0 then return "Cannot afford item" end
 
+    -- all checks passed, purchase item
     local itemUUID = HttpService:GenerateGUID(false)
+    profile.Data[itemConfig.Currency] -= itemPrice
+
+    local instanceData: FurnitureInstance = {
+        Locked = false
+    }
 
     -- plr already has instances of this item in inventory
     if profile.Data.Inventory.StudioFurnishing[itemCategory][itemName] then
-        table.insert(profile.Data.Inventory.StudioFurnishing[itemCategory][itemName], itemUUID)
+        profile.Data.Inventory.StudioFurnishing[itemCategory][itemName][itemUUID] = instanceData
     else
         profile.Data.Inventory.StudioFurnishing[itemCategory][itemName] = {
-            itemUUID
+            [itemUUID] = instanceData
         }
     end
 
@@ -213,8 +220,7 @@ function StudioPlaceables.DeleteSingleItem(plr: Player, itemCategory: string, it
     -- check to ensure item WAS in studio for deletion
     if uuidToDelete then
         -- delete from plr furniture inventory also
-        local itemIndex = table.find(profile.Data.Inventory.StudioFurnishing[itemCategory][itemName], itemUUID)
-        table.remove(profile.Data.Inventory.StudioFurnishing[itemCategory][itemName], itemIndex)
+        profile.Data.Inventory.StudioFurnishing[itemCategory][itemName][itemUUID] = nil
     end
     
     return uuidToDelete
