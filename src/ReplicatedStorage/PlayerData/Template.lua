@@ -12,7 +12,7 @@ end
 -- Template is what empty profiles default to
 local Template = {
     Admin = false, -- for admin cmd access
-    Cash = 0,
+    Coins = 0,
     Gems = 0,
     Fans = 0,
 

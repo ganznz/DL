@@ -1,6 +1,10 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
+local EnergyFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("EnergyFurniture"))
+local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
+local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("HungerFurniture"))
+local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("DecorFurniture"))
 
 local Studio = {}
 
@@ -8,7 +12,7 @@ export type StudioConfig = {
     StudioType: "Standard" | "Premium",
     Name: string,
     Price: number,
-    Currency: "Cash" | "Robux",
+    Currency: "Coins" | "Robux",
     FurnishingCapacity: number | nil,
     Previous: "string" | nil,
 }
@@ -18,14 +22,14 @@ local Config: { [string]: StudioConfig } = {
         StudioType = "Standard",
         Name = "Studio 1",
         Price = 0,
-        Currency = "Cash",
+        Currency = "Coins",
         FurnishingCapacity = 5,
     },
     ["2"]  = {
         StudioType = "Standard",
         Name = "Studio 2",
         Price = 50000,
-        Currency = "Cash",
+        Currency = "Coins",
         FurnishingCapacity = 10,
         Previous = "Studio 1"
     },
@@ -33,7 +37,7 @@ local Config: { [string]: StudioConfig } = {
         StudioType = "Standard",
         Name = "Studio 3",
         Price = 250000,
-        Currency = "Cash",
+        Currency = "Coins",
         FurnishingCapacity = 15,
         Previous = "Studio 2"
     },
@@ -41,7 +45,7 @@ local Config: { [string]: StudioConfig } = {
         StudioType = "Standard",
         Name = "Studio 4",
         Price = 1000000,
-        Currency = "Cash",
+        Currency = "Coins",
         FurnishingCapacity = 20,
         Previous = "Studio 3"
     },
@@ -118,9 +122,9 @@ function Studio.CanPurchaseNextStudio(plrData): boolean
 
     local nextStudioConfig = Studio.GetConfig(tostring(currentStudioLevel + 1))
 
-    if nextStudioConfig.Currency == "Cash" then
-        local plrCash = plrData.Cash
-        return plrCash >= nextStudioConfig.Price
+    if nextStudioConfig.Currency == "Coins" then
+        local plrCoins = plrData.Coins
+        return plrCoins >= nextStudioConfig.Price
     end
 
     return false
@@ -137,15 +141,12 @@ function Studio.GetFurnitureAvailableForStudio(plrData)
 
     -- remove from inventory whats already placed in studio
     for furnitureCategory, furnitureItems in furnitureInInventoryCopy do
-
         for furnitureItemName, itemInstances in furnitureItems do
-
-            for i=#itemInstances, 1, -1 do
+            for uuid, _instanceData in itemInstances do
                 if not furniturePlacedInStudio[furnitureCategory][furnitureItemName] then continue end
-                
-                local itemUUID = itemInstances[i]
-                if furniturePlacedInStudio[furnitureCategory][furnitureItemName][itemUUID] then
-                    table.remove(furnitureInInventoryCopy[furnitureCategory][furnitureItemName], i)
+
+                if furniturePlacedInStudio[furnitureCategory][furnitureItemName][uuid] then
+                    furnitureInInventoryCopy[furnitureCategory][furnitureItemName][uuid] = nil
                 end
             end
         end
@@ -168,6 +169,16 @@ end
 
 function Studio.GetFurnitureItemModel(itemName: string, itemCategory: string)
     return ReplicatedStorage.Assets.Models.Studio.StudioFurnishing[itemCategory]:FindFirstChild(itemName):Clone()
+end
+
+function Studio.GetAllFurnitureNames()
+    local allFurnitureNames = {}
+    for itemName, _itemInfo in EnergyFurnitureConfig.Config do table.insert(allFurnitureNames, itemName) end
+    for itemName, _itemInfo in HungerFurnitureConfig.Config do table.insert(allFurnitureNames, itemName) end
+    for itemName, _itemInfo in MoodFurnitureConfig.Config do table.insert(allFurnitureNames, itemName) end
+    for itemName, _itemInfo in DecorFurnitureConfig.Config do table.insert(allFurnitureNames, itemName) end
+
+    return allFurnitureNames
 end
 
 -- method for placing item on plot
