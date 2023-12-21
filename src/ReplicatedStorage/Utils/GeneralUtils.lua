@@ -37,5 +37,8 @@ function GeneralUtils.LengthOfDict(dict)
 	return counter
 end
 
+function GeneralUtils.GetDecalUrl(imageID: string)
+    return string.format("http://www.roblox.com/asset/?id=%s", imageID)
+end
 
 return GeneralUtils
