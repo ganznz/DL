@@ -1,5 +1,8 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local GlobalVariables = {}
 
+-- GUI --
 GlobalVariables.Gui = {}
 
 -- gui position variables
@@ -39,5 +42,15 @@ GlobalVariables.Gui.GuiSecondaryTextColour = Color3.fromRGB(126, 126, 126)
 GlobalVariables.Gui.NotificationStandard = Color3.fromRGB(130, 186, 255)
 GlobalVariables.Gui.NotificationGood = Color3.fromRGB(130, 229, 115)
 GlobalVariables.Gui.NotificationWarning = Color3.fromRGB(255, 106, 108)
+
+
+-- SOUND --
+local SoundsFolder = ReplicatedStorage.Assets.Sounds
+GlobalVariables.Sound = {}
+GlobalVariables.Sound.Sfx = {}
+
+-- gui sound effects
+GlobalVariables.Sound.Sfx.GuiOpen = SoundsFolder.Sfx:FindFirstChild("GuiOpen")
+GlobalVariables.Sound.Sfx.GuiMouseHover = SoundsFolder.Sfx:FindFirstChild("GuiMouseHover")
 
 return GlobalVariables
