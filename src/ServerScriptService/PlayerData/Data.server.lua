@@ -18,9 +18,9 @@ local function CreateLeaderstats(plr: Player)
     local leaderstats = Instance.new("Folder", plr)
     leaderstats.Name = "leaderstats"
 
-    local cash = Instance.new("NumberValue", leaderstats)
-    cash.Name = "Cash"
-    cash.Value = profile.Data.Cash
+    local coins = Instance.new("NumberValue", leaderstats)
+    coins.Name = "Coins"
+    coins.Value = profile.Data.Coins
 
     local fans = Instance.new("NumberValue", leaderstats)
     fans.Name = "Fans"

@@ -3,7 +3,7 @@ local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local Computer = {}
 
 type ComputerUpgradeConfig = {
-    StatIncrease: "design" | "graphics" | "sound" | "cash",
+    StatIncrease: "design" | "graphics" | "sound" | "coins",
     StatIncreaseAmt: number -- e.g. 20 (+20% for respective stat)
 }
 
@@ -21,7 +21,7 @@ local Config: { [number]: ComputerConfig } = {
             ["Design I"] = { StatIncrease = "design", StatIncreaseAmt = 10 },
             ["Graphics I"] = { StatIncrease = "graphics", StatIncreaseAmt = 10 },
             ["Sound I"] = { StatIncrease = "sound", StatIncreaseAmt = 10 },
-            ["Cash I"] = { StatIncrease = "cash", StatIncreaseAmt = 10 },
+            ["Coins I"] = { StatIncrease = "coins", StatIncreaseAmt = 10 },
         }
     },
     [2] = {
@@ -30,7 +30,7 @@ local Config: { [number]: ComputerConfig } = {
             ["Design II"] = { StatIncrease = "design", StatIncreaseAmt = 15 },
             ["Graphics II"] = { StatIncrease = "graphics", StatIncreaseAmt = 15 },
             ["Sound II"] = { StatIncrease = "sound", StatIncreaseAmt = 15 },
-            ["Cash II"] = { StatIncrease = "cash", StatIncreaseAmt = 10 },
+            ["Coins II"] = { StatIncrease = "coins", StatIncreaseAmt = 10 },
         }
     },
     [3] = {
@@ -39,7 +39,7 @@ local Config: { [number]: ComputerConfig } = {
             ["Design III"] = { StatIncrease = "design", StatIncreaseAmt = 15 },
             ["Graphics III"] = { StatIncrease = "graphics", StatIncreaseAmt = 15 },
             ["Sound III"] = { StatIncrease = "sound", StatIncreaseAmt = 15 },
-            ["Cash III"] = { StatIncrease = "cash", StatIncreaseAmt = 10 },
+            ["Coins III"] = { StatIncrease = "coins", StatIncreaseAmt = 10 },
         }
     },
 }
@@ -69,8 +69,8 @@ function Computer.CanUpgrade(plrData): boolean
     if Computer.HasLastItem(plrData) then return false end
 
     local nextComputerConfig = Computer.GetConfig(currentComputerLevel + 1)
-    local plrCash = plrData.Cash
-    return plrCash >= nextComputerConfig.Price
+    local plrCoins = plrData.Coins
+    return plrCoins >= nextComputerConfig.Price
 end
 
 return Computer

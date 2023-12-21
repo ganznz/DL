@@ -11,10 +11,12 @@ type HungerFurnitureConfig = {
     Stats: {}
 }
 
+HungerFurniture.CategoryImage = "15695739111"
+
 local Config: { [string]: HungerFurnitureConfig } = {
     Default = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 1 -- base item stat boost (+1 hunger/sec)
@@ -22,7 +24,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Basic = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 2
@@ -30,7 +32,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Modern = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 3
@@ -38,7 +40,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Rustic = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 5
@@ -46,7 +48,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Fancy = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 7
@@ -54,7 +56,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Futuristic = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 9
@@ -62,7 +64,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Greek = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 12
@@ -70,7 +72,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Steampunk = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 15
@@ -78,7 +80,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Tropical = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 18
@@ -86,7 +88,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Space = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 22
@@ -94,7 +96,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Retro = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 26
@@ -102,7 +104,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Rgb = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 30
@@ -110,7 +112,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Prehistoric = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 35
@@ -118,7 +120,7 @@ local Config: { [string]: HungerFurnitureConfig } = {
     },
     Crystal = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
         Stats = {
             Base = 40

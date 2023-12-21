@@ -10,20 +10,22 @@ type DecorFurnitureConfig = {
     Image: string,
 }
 
+DecorFurniture.CategoryImage = "15696116166"
+
 local Config: { [string]: DecorFurnitureConfig } = {
     ["Book Stack"] = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
     },
     ["Crate"] = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
     },
     ["Pot Plant"] = {
         Price = 99,
-        Currency = "Cash",
+        Currency = "Coins",
         Image = "",
     },
 }

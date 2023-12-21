@@ -7,7 +7,7 @@ local AllResearch = {
             PlrLevel = 10,
             Employees = 1
         },
-        Currency = "Cash",
+        Currency = "Coins",
         Price = 999
     },
     LargeGames = {
@@ -18,7 +18,7 @@ local AllResearch = {
             PlrLevel = 20,
             Employees = 2
         },
-        Currency = "Cash",
+        Currency = "Coins",
         Price = 999
     },
     MassiveGames = {
@@ -29,7 +29,7 @@ local AllResearch = {
             PlrLevel = 30,
             Employees = 3
         },
-        Currency = "Cash",
+        Currency = "Coins",
         Price = 999
     },
     Tutorial = {
@@ -39,7 +39,7 @@ local AllResearch = {
         Requirements = {
             PlrLevel = 1,
         },
-        Currency = "Cash",
+        Currency = "Coins",
         Price = 999
     },
     GameSaving = {
@@ -49,7 +49,7 @@ local AllResearch = {
         Requirements = {
             PlrLevel = 2,
         },
-        Currency = "Cash",
+        Currency = "Coins",
         Price = 999
     },
     BetterGraphics = {
@@ -59,7 +59,7 @@ local AllResearch = {
         Requirements = {
             PlrLevel = 3,
         },
-        Currency = "Cash",
+        Currency = "Coins",
         Price = 999
     },
     TextChat = {
@@ -69,7 +69,7 @@ local AllResearch = {
         Requirements = {
             PlrLevel = 4,
         },
-        Currency = "Cash",
+        Currency = "Coins",
         Price = 999
     },
     Raytracing = {
@@ -79,7 +79,7 @@ local AllResearch = {
         Requirements = {
             PlrLevel = 6,
         },
-        Currency = "Cash",
+        Currency = "Coins",
         Price = 999
     },
     ProximityChat = {
@@ -89,7 +89,7 @@ local AllResearch = {
         Requirements = {
             PlrLevel = 8,
         },
-        Currency = "Cash",
+        Currency = "Coins",
         Price = 999
     },
 }

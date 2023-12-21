@@ -7,5 +7,5 @@ return function(context, plr: Player?, amt: number?)
     
     amt = if amt then amt else 1
 
-    return PlrDataManager.AdjustPlrCash(plr, amt)
+    return PlrDataManager.AdjustPlrCoins(plr, amt)
 end

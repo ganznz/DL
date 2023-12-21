@@ -1,7 +1,7 @@
 return {
-    Name = "adjustPlayerCash";
+    Name = "adjustPlayerCoins";
     Aliases = { "apc" };
-    Description = "Adjust the players cash amount";
+    Description = "Adjust the players coin amount";
     Group = "Admin";
     Args = {
         {

@@ -6,23 +6,23 @@ local Manager = {}
 
 Manager.Profiles = {}
 
-function Manager.AdjustPlrCash(plr: Player, adjustBy: number)
+function Manager.AdjustPlrCoins(plr: Player, adjustBy: number)
     local profile = Manager.Profiles[plr]
     if not profile then return end
 
     local leaderstats = plr:WaitForChild("leaderstats")
     
-    if profile.Data.Cash + adjustBy < 0 then
-        profile.Data.Cash = 0
-        leaderstats.Cash.Value = 0
+    if profile.Data.Coins + adjustBy < 0 then
+        profile.Data.Coins = 0
+        leaderstats.Coins.Value = 0
     else
-        profile.Data.Cash += adjustBy
-        leaderstats.Cash.Value += adjustBy
+        profile.Data.Coins += adjustBy
+        leaderstats.Coins.Value += adjustBy
     end
 
-    Remotes.Character.AdjustPlrCash:FireClient(plr, profile.Data.Cash)
+    Remotes.Character.AdjustPlrCoins:FireClient(plr, profile.Data.Coins)
 
-    return "Adjusted the players cash by " .. tostring(adjustBy) .. "."
+    return "Adjusted the players coins by " .. tostring(adjustBy) .. "."
 end
 
 function Manager.AdjustPlrHunger(plr: Player, adjustBy: number)
