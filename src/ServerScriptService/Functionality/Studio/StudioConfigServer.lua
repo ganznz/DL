@@ -9,6 +9,14 @@ local Remotes = ReplicatedStorage.Remotes
 
 local Studio = {}
 
+-- table keeps track of all players in the server and their respective studio information
+-- { [plr.UserId] = { studioIndex: string, studioStatus: "open" | "closed" | "friends" } }
+Studio.PlrStudios = {}
+
+-- table keeps track of players who are in a studio
+-- { [plr.UserId] = { PlrVisitingId: number, studioIndex: string } | false }
+Studio.PlrsInStudio = {}
+
 function Studio.InitializeStudioData(plr: Player, studioType: "Standard" | "Premium", studioIndex: string)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
@@ -58,7 +66,7 @@ function Studio.PurchaseNextStudio(plr: Player): boolean
     if not canAfford then return false end
 
     -- can afford, purchase studio
-    PlrDataManager.AdjustPlrCash(plr, -studioUpgradePrice)
+    PlrDataManager.AdjustPlrCoins(plr, -studioUpgradePrice)
     profile.Data.Studio.ActiveStudio = newStudioIndex
     PlrDataManager.UnlockArea(plr, 'Studio'..tostring(newStudioIndex))
 
@@ -68,6 +76,14 @@ function Studio.PurchaseNextStudio(plr: Player): boolean
     Remotes.Purchase.PurchaseStudio:FireClient(plr, newStudioIndex)
 
     return true
+end
+
+Remotes.Studio.General.GetStudioPlrInfo.OnServerInvoke = function()
+    return Studio.PlrStudios
+end
+
+Remotes.Studio.General.GetPlrsInStudioInfo.OnServerInvoke = function()
+    return Studio.PlrsInStudio
 end
 
 return Studio
