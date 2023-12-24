@@ -143,10 +143,10 @@ local function calculateItemPosition()
     return finalCFrame * CFrame.Angles(0, math.rad(rotation), 0)
 end
 
-local function unbindInputs()
-    ContextActionService:UnbindAction("Rotate")
-    ContextActionService:UnbindAction("Cancel")
-end
+-- local function unbindInputs()
+--     ContextActionService:UnbindAction("Rotate")
+--     ContextActionService:UnbindAction("Cancel")
+-- end
 
 -- set object position based on pivot
 local function translateObj()
@@ -293,7 +293,7 @@ function Placement:DestroyGrid()
 end
 
 function Placement:Deactivate()
-    unbindInputs()
+    -- unbindInputs()
     object:Destroy()
     mouse.TargetFilter = nil
 end
