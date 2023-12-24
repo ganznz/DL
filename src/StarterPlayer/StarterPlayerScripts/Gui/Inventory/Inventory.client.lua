@@ -1,8 +1,11 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
+local GuiTemplates = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiTemplates"))
+local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
 local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("HungerFurniture"))
@@ -19,11 +22,15 @@ local PlayerGui = localPlr.PlayerGui
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
 local InventoryContainer = AllGuiScreenGui.Inventory:WaitForChild("InventoryContainerOuter")
 local InventoryExitBtn = InventoryContainer:WaitForChild("ExitBtn")
+local AmtSelectedText = InventoryContainer.InventoryContainerInner:WaitForChild("AmtSelectedText")
 
 local InventoryCategoryContainer = InventoryContainer.CategoryContainerOuter.CategoryContainerInner.CategoryContainer
-local StaffFurnitureBtn = InventoryCategoryContainer:WaitForChild("StaffBtn")
-local InventoryFurnitureBtn = InventoryCategoryContainer:WaitForChild("FurnitureBtn")
-local ItemsFurnitureBtn = InventoryCategoryContainer:WaitForChild("ItemsBtn")
+local StaffInventoryBtnContainer = InventoryCategoryContainer:WaitForChild("StaffBtnContainer")
+local FurnitureInventoryBtnContainer = InventoryCategoryContainer:WaitForChild("FurnitureBtnContainer")
+local ItemsInventoryBtnContainer = InventoryCategoryContainer:WaitForChild("ItemsBtnContainer")
+local StaffInventoryBtn = StaffInventoryBtnContainer:WaitForChild("StaffBtn")
+local FurnitureInventoryBtn = FurnitureInventoryBtnContainer:WaitForChild("FurnitureBtn")
+local ItemsInventoryBtn = ItemsInventoryBtnContainer:WaitForChild("ItemsBtn")
 
 local EditSettingsContainer = InventoryContainer.EditSettingsOuter.EditSettingsInner:WaitForChild("Container")
 local LockModeBtn = EditSettingsContainer:FindFirstChild("LockModeBtn")
@@ -33,8 +40,8 @@ local CancelBtn = EditSettingsContainer:FindFirstChild("CancelBtn")
 local ExitModeBtn = EditSettingsContainer:FindFirstChild("ExitModeBtn") -- btn only applies to lock-mode
 
 local InventoryScrollingFrame = InventoryContainer.InventoryContainerInner:WaitForChild("ScrollingFrame")
-local ScrollingFrameFurnitureTemplate = InventoryScrollingFrame:WaitForChild("FurnitureTemplate")
-local ScrollingFrameStaffTemplate = InventoryScrollingFrame:WaitForChild("StaffTemplate")
+local ScrollingFrameFurnitureTemplateContainer = InventoryScrollingFrame:WaitForChild("FurnitureTemplateContainer")
+local ScrollingFrameStaffTemplateContainer = InventoryScrollingFrame:WaitForChild("StaffTemplateContainer")
 
 local FurnitureInfoPanel = InventoryContainer.InventoryContainerInner:WaitForChild("FurnitureInfoPanel")
 local FurnitureInfoItemIcon = FurnitureInfoPanel:WaitForChild("ItemIcon")
@@ -64,6 +71,8 @@ local inventoryCategory = "staff" -- category that is currently being viewed, de
 local inLockMode = false
 local inTrashMode = false
 local placeBtnConnection = nil
+local itemsInTrashMode = {}
+local amtOfItemsInTrashMode = 0
 
 -- CONSTANT VARIABLES --
 local REMOVE_FROM_STUDIO_TEXT = "Remove from Studio"
@@ -72,18 +81,65 @@ local BE_IN_STUDIO_TEXT = "Enter your Studio to place"
 local CURRENTLY_PLACED_TEXT = "Placed in: STUDIO_NAME"
 local NOT_PLACED_TEXT = "Item not placed yet!"
 local STAT_BOOST_BASE_TEXT = "+AMT STAT"
-local LOCKED_ICON = "rbxassetid://15532080670"
+local AMT_SELECTED_TEXT = "AMT SELECTED!" 
+local ALL_TRASH_MODE_ICON_IDS = {}
 
 GuiServices.StoreInCache(InventoryContainer)
 
 GuiServices.DefaultMainGuiStyling(InventoryContainer)
 
+GuiTemplates.CreateButton(StaffInventoryBtn, { Rotates = true })
+GuiTemplates.CreateButton(FurnitureInventoryBtn, { Rotates = true })
+GuiTemplates.CreateButton(ItemsInventoryBtn, { Rotates = true })
+
+-- tween "AMT SELECTED" text
+TweenService:Create(AmtSelectedText, TweenInfo.new(2, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut, 99999999999, true), {
+    Rotation = 4
+}):Play()
 
 local function clearScrollingFrame()
     for _i, instance in InventoryScrollingFrame:GetChildren() do
-        if instance.Name == "UIGridLayout" or instance.Name == "UIPadding" or instance.Name == "FurnitureTemplate" or instance.Name == "StaffTemplate" then continue end
+        if instance.Name == "UIGridLayout" or instance.Name == "UIPadding" or instance.Name == "FurnitureTemplateContainer" or instance.Name == "StaffTemplateContainer" then continue end
 
         instance:Destroy()
+    end
+end
+
+local function defineTrashModeTable()
+    -- reset trash mode table
+    itemsInTrashMode = {}
+
+    if inventoryCategory == "staff" then
+        
+    elseif inventoryCategory == "furniture" then
+        itemsInTrashMode["Energy"] = {}
+        itemsInTrashMode["Mood"] = {}
+        itemsInTrashMode["Hunger"] = {}
+        itemsInTrashMode["Decor"] = {}
+        for _i, itemName in EnergyFurnitureConfig.GetAllFurnitureNames() do itemsInTrashMode["Energy"][itemName] = {} end
+        for _i, itemName in MoodFurnitureConfig.GetAllFurnitureNames() do itemsInTrashMode["Mood"][itemName] = {} end
+        for _i, itemName in HungerFurnitureConfig.GetAllFurnitureNames() do itemsInTrashMode["Hunger"][itemName] = {} end
+        for _i, itemName in DecorFurnitureConfig.GetAllFurnitureNames() do itemsInTrashMode["Decor"][itemName] = {} end
+    end
+end
+
+local function toggleItemTrashMode(itemInfo: {}): boolean
+    -- check if item is locked first
+    local isLocked = plrData.Inventory.StudioFurnishing[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID].Locked
+    if isLocked then return false end
+
+    if inventoryCategory == "furniture" then
+        local index = table.find(itemsInTrashMode[itemInfo.ItemCategory][itemInfo.ItemName], itemInfo.ItemUUID)
+        if index then
+            -- item is currently in trash table, remove from table
+            table.remove(itemsInTrashMode[itemInfo.ItemCategory][itemInfo.ItemName], index)
+            amtOfItemsInTrashMode -= 1
+            return false
+        else
+            table.insert(itemsInTrashMode[itemInfo.ItemCategory][itemInfo.ItemName], itemInfo.ItemUUID)
+            amtOfItemsInTrashMode += 1
+            return true
+        end
     end
 end
 
@@ -147,9 +203,9 @@ local function registerPlaceItemBtn(itemInfo: {})
     end
 end
 
-local function populateFurnitureInfoPanel(furnitureConfig, itemInfo: {})
-    FurnitureInfoItemIcon.Image = furnitureConfig.Image
-    -- FurnitureInfoItemTypeIcon.Image = 
+local function populateFurnitureInfoPanel(itemInfo: {})
+    FurnitureInfoItemIcon.Image = GeneralUtils.GetDecalUrl(itemInfo.ItemConfig.Image)
+    FurnitureInfoItemTypeIcon.Image = GeneralUtils.GetDecalUrl(itemInfo.CategoryConfig.CategoryImage)
     FurnitureInfoItemName.Text = itemInfo.ItemName
 
     -- determine PlacedInText status
@@ -168,8 +224,8 @@ local function populateFurnitureInfoPanel(furnitureConfig, itemInfo: {})
     end
 
     -- populate stat section
-    if furnitureConfig["Stats"] then
-        for statName, boostValue in furnitureConfig.Stats do
+    if itemInfo.ItemConfig["Stats"] then
+        for statName, boostValue in itemInfo.ItemConfig.Stats do
             local template = FurnitureInfoStatTemplate:Clone()
             local icon = template:FindFirstChild("Icon")
             local text = template:FindFirstChild("Text")
@@ -189,21 +245,25 @@ local function populateFurnitureInfoPanel(furnitureConfig, itemInfo: {})
     registerPlaceItemBtn(itemInfo)
 end
 
-local function registerItemClickConnection(itemBtn, config, itemInfo: {})
+local function registerItemClickConnection(itemBtn, itemInfo: {})
     itemBtn.Activated:Connect(function()
         if inLockMode then
-            Remotes.Inventory.General.LockItem:FireServer("furniture", itemInfo)
+            Remotes.Inventory.General.LockItem:FireServer(inventoryCategory, itemInfo)
+            plrData = Remotes.Data.GetAllData:InvokeServer() -- update plrData variable to include new locked data for the item
 
         return
         elseif inTrashMode then
-        
+            local trashModeIcon = itemBtn:FindFirstChild("TrashModeIcon", true)
+            local itemInTrashMode = toggleItemTrashMode(itemInfo)
+            trashModeIcon.Visible = itemInTrashMode
+            AmtSelectedText.Text = AMT_SELECTED_TEXT:gsub("AMT", amtOfItemsInTrashMode)
         return
         end
 
         if inventoryCategory == "staff" then
             
         elseif inventoryCategory == "furniture" then
-            populateFurnitureInfoPanel(config, itemInfo)
+            populateFurnitureInfoPanel(itemInfo)
             FurnitureInfoPanel.Visible = true
 
         elseif inventoryCategory == "items" then
@@ -214,36 +274,45 @@ end
 
 local function createItemTemplate(itemInfo: {})
     local template
+    local furnitureConfig
     local config
 
     if inventoryCategory == "staff" then
         
     elseif inventoryCategory == "furniture" then
         if itemInfo.ItemCategory == "Mood" then
+            furnitureConfig = MoodFurnitureConfig
             config = MoodFurnitureConfig.GetConfig(itemInfo.ItemName)
         elseif itemInfo.ItemCategory == "Energy" then
+            furnitureConfig = EnergyFurnitureConfig
             config = EnergyFurnitureConfig.GetConfig(itemInfo.ItemName)
         elseif itemInfo.ItemCategory == "Hunger" then
+            furnitureConfig = HungerFurnitureConfig
             config = HungerFurnitureConfig.GetConfig(itemInfo.ItemName)
         elseif itemInfo.ItemCategory == "Decor" then
+            furnitureConfig = DecorFurnitureConfig
             config = DecorFurnitureConfig.GetConfig(itemInfo.ItemName)
         end
 
-        template = ScrollingFrameFurnitureTemplate:Clone()
-        local nameText = template:FindFirstChild("Name")
-        local itemIcon = template:FindFirstChild("Icon")
-        local itemTypeIcon = template:FindFirstChild("TypeIcon")
-        local itemLockedIcon = template:FindFirstChild("LockIcon")
+        template = ScrollingFrameFurnitureTemplateContainer:Clone()
+        local templateBtn = template:FindFirstChild("FurnitureTemplate")
+        GuiTemplates.CreateButton(templateBtn, { Rotates = true })
 
+        local nameText = templateBtn:FindFirstChild("Name")
+        local itemIcon = templateBtn:FindFirstChild("Icon")
+        local itemTypeIcon = templateBtn:FindFirstChild("TypeIcon")
+        local itemLockedIcon = templateBtn:FindFirstChild("LockIcon")
+
+        itemTypeIcon.Image = GeneralUtils.GetDecalUrl(furnitureConfig.CategoryImage)
         local isLocked = plrData.Inventory.StudioFurnishing[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID].Locked
-        itemLockedIcon.Image = if isLocked then LOCKED_ICON else ""
+        itemLockedIcon.Visible = isLocked
 
         nameText.Text = itemInfo.ItemName
         itemIcon.Image = config.Image
 
-        if config then
-            registerItemClickConnection(template, config, itemInfo)
-        end
+        itemInfo["ItemConfig"] = config
+        itemInfo["CategoryConfig"] = furnitureConfig
+        registerItemClickConnection(templateBtn, itemInfo)
     end
 
     template.Name = itemInfo.ItemUUID
@@ -307,33 +376,53 @@ local function enableEditMode(mode: "lock" | "trash")
         ExitModeBtn.Visible = true
     
     elseif mode == "trash" then
+        defineTrashModeTable()
         inTrashMode = true
         ConfirmBtn.Visible = true
         CancelBtn.Visible = true
+        AmtSelectedText.Text = AMT_SELECTED_TEXT:gsub("AMT", 0)
+        AmtSelectedText.Visible = true
     end
 
     LockModeBtn.Visible = false
     TrashModeBtn.Visible = false
 end
 
-local function disableEditMode()
+local function disableLockMode()
     inLockMode = false
-    inTrashMode = false
+end
 
+local function disableTrashMode()
+    inTrashMode = false
+    AmtSelectedText.Visible = false
+    amtOfItemsInTrashMode = 0
+
+    -- hide all trash mode icons on item buttons
+    for _i, instance in InventoryScrollingFrame:GetDescendants() do -- called twice to access the actual template btn children
+        if instance.Name == "TrashModeIcon" then
+            instance.Visible = false
+        end
+    end
+end
+
+local function disableEditMode()
     LockModeBtn.Visible = true
     TrashModeBtn.Visible = true
 
     ConfirmBtn.Visible = false
     CancelBtn.Visible = false
     ExitModeBtn.Visible = false
+
+    disableLockMode()
+    disableTrashMode()
 end
 
 local function updateItemTemplate(itemType: string, itemInfo: {}, isLocked: boolean)
     local itemScrollingFrameBtn = InventoryScrollingFrame:FindFirstChild(itemInfo.ItemUUID)
     if not itemScrollingFrameBtn then return end
 
-    local itemLockedIcon = itemScrollingFrameBtn:FindFirstChild("LockIcon")
-    itemLockedIcon.Image = if isLocked then LOCKED_ICON else ""
+    local itemLockedIcon = itemScrollingFrameBtn:FindFirstChild("LockIcon", true)
+    itemLockedIcon.Visible = isLocked
 end
 
 
@@ -346,7 +435,14 @@ CancelBtn.Activated:Connect(disableEditMode)
 
 ExitModeBtn.Activated:Connect(disableEditMode)
 
-StaffFurnitureBtn.Activated:Connect(function()
+ConfirmBtn.Activated:Connect(function()
+    if inTrashMode then
+        Remotes.GUI.Inventory.DeleteItemPopup:Fire(inventoryCategory, itemsInTrashMode)
+        return
+    end
+end)
+
+StaffInventoryBtn.Activated:Connect(function()
     if inventoryCategory == "staff" then return end
 
     inventoryCategory = "staff"
@@ -354,7 +450,7 @@ StaffFurnitureBtn.Activated:Connect(function()
     populateInventoryFrame()
 end)
 
-InventoryFurnitureBtn.Activated:Connect(function()
+FurnitureInventoryBtn.Activated:Connect(function()
     if inventoryCategory == "furniture" then return end
 
     inventoryCategory = "furniture"
@@ -362,7 +458,7 @@ InventoryFurnitureBtn.Activated:Connect(function()
     populateInventoryFrame()
 end)
 
-ItemsFurnitureBtn.Activated:Connect(function()
+ItemsInventoryBtn.Activated:Connect(function()
     if inventoryCategory == "items" then return end
 
     inventoryCategory = "items"
