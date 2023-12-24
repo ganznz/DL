@@ -171,16 +171,6 @@ function Studio.GetFurnitureItemModel(itemName: string, itemCategory: string)
     return ReplicatedStorage.Assets.Models.Studio.StudioFurnishing[itemCategory]:FindFirstChild(itemName):Clone()
 end
 
-function Studio.GetAllFurnitureNames()
-    local allFurnitureNames = {}
-    for itemName, _itemInfo in EnergyFurnitureConfig.Config do table.insert(allFurnitureNames, itemName) end
-    for itemName, _itemInfo in HungerFurnitureConfig.Config do table.insert(allFurnitureNames, itemName) end
-    for itemName, _itemInfo in MoodFurnitureConfig.Config do table.insert(allFurnitureNames, itemName) end
-    for itemName, _itemInfo in DecorFurnitureConfig.Config do table.insert(allFurnitureNames, itemName) end
-
-    return allFurnitureNames
-end
-
 -- method for placing item on plot
 function Studio.PlaceItemOnPlot(itemType: string, itemInfo: {}, parent: Folder)
     local itemModelToPlace
