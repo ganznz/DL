@@ -85,7 +85,7 @@ function StudioPlaceables.HasFurnitureItem(plr: Player, itemInfo: {}, studioInde
     if itemInInventory and not lookForUUID then return true end
 
     if itemInInventory and lookForUUID then
-        itemInstanceInInventory = table.find(itemInInventory, itemInfo.ItemUUID)
+        itemInstanceInInventory = itemInInventory[itemInfo.ItemUUID]
         if itemInstanceInInventory then return true end
     end
 
@@ -142,7 +142,7 @@ function StudioPlaceables.StoreFurnitureItemData(plr: Player, itemInfo: {}, stud
     local itemData = {}
     itemData.CFrame = DatastoreUtils.CFrameToTable(itemInfo.RelativeCFrame)
 
-    for _i, itemUUID in furnitureItemInstancesInInventory do
+    for itemUUID, _instanceData in furnitureItemInstancesInInventory do
         -- check if there aren't any instances of this item already placed in studio
         -- if not, use current UUID in iteration to store in data
         if not furnitureItemInstancesInStudio then
@@ -193,41 +193,39 @@ function StudioPlaceables.AlreadyPlacedFurnitureData(plr: Player, studioIndex)
     return plrData.Studio.Studios[studioType][studioIndex].Furnishings
 end
 
-function StudioPlaceables.DeleteSingleItem(plr: Player, itemCategory: string, itemName: string, itemUUID: string): string | nil
+-- -> boolean : indicates whether item got deleted or not
+function StudioPlaceables.DeleteItem(plr: Player, itemInfo): boolean
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
-    local uuidToDelete = nil
+    local isLocked = false
+    -- check if item is locked first
+    local succ, err = pcall(function()
+        local instanceData = profile.Data.Inventory.StudioFurnishing[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID]
+        if instanceData.Locked then isLocked = true end
+    end)
 
-    -- if plr is deleting using itemUUID, then that item is placed in one of their studios
-    -- loop through studios until item is found
+    if isLocked then return false end
+
+    -- remove item from studios
     for studioType: "Standard" | "Premium" in profile.Data.Studio.Studios do
         for _studioIndex, studioData in profile.Data.Studio.Studios[studioType] do
-            local instancesOfItemInStudio = studioData.Furnishings[itemCategory][itemName]
+            local instancesOfItemInStudio = studioData.Furnishings[itemInfo.ItemCategory][itemInfo.ItemName]
             
             if instancesOfItemInStudio then
-                local item = instancesOfItemInStudio[itemUUID]
-                -- item to delete not placed in this studio, check next studio
-                if not item then continue end
+                -- check if the item to be deleted is in this studio
+                local itemInStudio = instancesOfItemInStudio[itemInfo.ItemUUID]
+                if not itemInStudio then continue end
 
-                uuidToDelete = itemUUID
-                -- delete item
-                instancesOfItemInStudio[itemUUID] = nil
+                instancesOfItemInStudio[itemInfo.ItemUUID] = nil
             end
         end
     end
 
-    -- check to ensure item WAS in studio for deletion
-    if uuidToDelete then
-        -- delete from plr furniture inventory also
-        profile.Data.Inventory.StudioFurnishing[itemCategory][itemName][itemUUID] = nil
-    end
-    
-    return uuidToDelete
-end
+    -- delete from plr furniture inventory also
+    profile.Data.Inventory.StudioFurnishing[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID] = nil
 
-function StudioPlaceables.DeleteMultipleItems(plr: Player, itemsToDelete)
-
+    return true
 end
 
 return StudioPlaceables

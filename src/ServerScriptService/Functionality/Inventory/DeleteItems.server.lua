@@ -13,14 +13,16 @@ local function deleteStudioItems(plr: Player, itemType: string, itemsToDelete)
             for itemName, itemInstances in itemsInCategory do
                 for _i, itemUUID in itemInstances do
                     local itemInfo = {ItemCategory = category, ItemName = itemName, ItemUUID = itemUUID}
-                    StudioPlaceablesServer.DeleteItem(plr, itemInfo)
-                    
+                    local gotDeleted = StudioPlaceablesServer.DeleteItem(plr, itemInfo)
+ 
                     -- remove item for all plrs in studio
-                    for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
-                        if studioInfo then
-                            if studioInfo.PlrVisitingId == plr.UserId then
-                                local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
-                                Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, "furniture", itemInfo)
+                    if gotDeleted then
+                        for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
+                            if studioInfo then
+                                if studioInfo.PlrVisitingId == plr.UserId then
+                                    local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
+                                    Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, "furniture", itemInfo)
+                                end
                             end
                         end
                     end
