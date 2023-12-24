@@ -91,26 +91,44 @@ local function showFurnitureItemSettings(billboardGui: BillboardGui)
     hideOtherFurnitureItemSettings(billboardGui)
 end
 
+local function disableModelClickConnection(itemType: "furniture", opts: {})
+    if itemType == "furniture" then
+        local itemModel = studioFurnitureFolder:FindFirstChild(opts["ItemUUID"])
+        if not itemModel then return end
+
+        local clickDetector = itemModel:FindFirstChild("ClickDetector", true)
+        if clickDetector then clickDetector:Destroy() end
+
+        local itemSettingsBillboard = existingItemSettingBillboards:FindFirstChild(opts["ItemUUID"])
+        if itemSettingsBillboard then itemSettingsBillboard:Destroy() end
+    
+    elseif itemType == "essential" then
+        if opts["EssentialItemType"] == "Computer" then
+            local clickDetector = computerModel:FindFirstChild("ClickDetector", true)
+            if clickDetector then clickDetector:Destroy() end
+            
+        elseif opts["EssentialItemType"] == "Shelf" then
+            local clickDetector = shelfModel:FindFirstChild("ClickDetector", true)
+            if clickDetector then clickDetector:Destroy() end
+        end
+
+        local itemSettingsBillboard = existingItemSettingBillboards:FindFirstChild(opts["EssentialItemType"])
+        if itemSettingsBillboard then itemSettingsBillboard:Destroy() end
+    end
+end
+
 local function disableAllModelClickConnections()
     -- disable furniture click connections
     for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
-        local clickDetector = itemModel:FindFirstChild("ClickDetector", true)
-        if clickDetector then clickDetector:Destroy() end
+        disableModelClickConnection("furniture", { ItemUUID = itemModel.Name })
     end
 
     -- disable computer & shelf click connections
     if computerModel then
-        local clickDetector = computerModel:FindFirstChild("ClickDetector", true)
-        if clickDetector then clickDetector:Destroy() end
+        disableModelClickConnection("essential", { EssentialItemType = "Computer" })
     end
     if shelfModel then
-        local clickDetector = shelfModel:FindFirstChild("ClickDetector", true)
-        if clickDetector then clickDetector:Destroy() end
-    end
-
-    -- delete all item settings billboards
-    for _i, billboard in existingItemSettingBillboards:GetChildren() do
-        billboard:Destroy()
+        disableModelClickConnection("essential", { EssentialItemType = "Shelf" })
     end
 end
 
@@ -131,12 +149,11 @@ local function registerItemMoveBtn(billboardGui, moveBtn, itemType: "furniture" 
                 ItemName = itemModel.Name
             }
         end
-
         Remotes.Studio.BuildMode.EnterPlaceMode:FireServer(itemType, itemInfo, true)
     end)
 end
 
-local function registerItemDeleteBtn(billboardGui, deleteBtn, itemType: "furniture" | "essential")
+local function registerItemDeleteBtn(billboardGui, deleteBtn, itemType: "furniture")
     deleteBtn.Activated:Connect(function()
         local itemModel = billboardGui.Adornee
         local itemName = itemModel:GetAttribute("Name")
@@ -151,14 +168,16 @@ local function registerItemDeleteBtn(billboardGui, deleteBtn, itemType: "furnitu
 
         -- prompt UI
         local itemToDelete = {}
-        itemToDelete[itemCategory] = {}
-        itemToDelete[itemCategory][itemName] = { Amount = 1, ItemUUID = itemUUID }
+        if itemType == "furniture" then
+            itemToDelete[itemCategory] = {}
+            itemToDelete[itemCategory][itemName] = { itemUUID }
+        end
 
-        Remotes.GUI.Studio.DeleteFurniturePopup:Fire(true, itemToDelete)
+        Remotes.GUI.Inventory.DeleteItemPopup:Fire(itemType, itemToDelete)
     end)
 end
 
-local function registerItemStoreBtn(billboardGui, storeBtn, itemType: "furniture" | "essential")
+local function registerItemStoreBtn(billboardGui, storeBtn, itemType: "furniture")
     storeBtn.Activated:Connect(function()
         local itemModel = billboardGui.Adornee
         local itemInfo
@@ -169,11 +188,9 @@ local function registerItemStoreBtn(billboardGui, storeBtn, itemType: "furniture
                 ItemCategory = itemModel:GetAttribute("Category"),
                 ItemUUID = itemModel.Name
             }
-        
-        elseif itemType == "essential" then
-            itemInfo = {
-                ItemName = itemModel.Name
-            }
+
+            -- remove click connection & settings billboard
+            disableModelClickConnection("furniture", { ItemUUID = itemInfo.ItemUUID })
         end
 
         Remotes.Studio.BuildMode.StoreItem:FireServer(itemType, itemInfo)
@@ -181,21 +198,28 @@ local function registerItemStoreBtn(billboardGui, storeBtn, itemType: "furniture
 end
 
 local function registerFurnitureItemSettingButtons(billboard: BillboardGui)
+    
     local settingsContainer = billboard:FindFirstChild("SettingsContainer")
     local deleteBtn = settingsContainer:FindFirstChild("DeleteBtn")
     local moveBtn = settingsContainer:FindFirstChild("MoveBtn")
     local storeBtn = settingsContainer:FindFirstChild("StoreBtn")
+    
+    local itemModel = billboard.Adornee
+    local itemCategory = itemModel:GetAttribute("Category")
+    local itemName = itemModel:GetAttribute("Name")
+    local itemUUID = itemModel.Name
+    
+    local plrData = Remotes.Data.GetAllData:InvokeServer()
+    local itemLocked = plrData.Inventory.StudioFurnishing[itemCategory][itemName][itemUUID].Locked
 
     registerItemMoveBtn(billboard, moveBtn, "furniture")
-    registerItemDeleteBtn(billboard, deleteBtn, "furniture")
     registerItemStoreBtn(billboard, storeBtn, "furniture")
+    if not itemLocked then registerItemDeleteBtn(billboard, deleteBtn, "furniture") else deleteBtn.Visible = false end
 end
 
 local function registerEssentialItemSettingButtons(billboard: BillboardGui)
     local settingsContainer = billboard:FindFirstChild("SettingsContainer")
-    local deleteBtn = settingsContainer:FindFirstChild("DeleteBtn")
     local moveBtn = settingsContainer:FindFirstChild("MoveBtn")
-    local storeBtn = settingsContainer:FindFirstChild("StoreBtn")
 
     registerItemMoveBtn(billboard, moveBtn, "essential")
 end
@@ -241,6 +265,9 @@ local function registerModelClickConnection(model, modelType: "furniture" | "ess
 end
 
 local function enableAllModelClickConnections()
+    -- clear previous connections to prevent duplication
+    disableAllModelClickConnections()
+
     for _i, itemModel: Model in studioFurnitureFolder:GetChildren() do
         registerModelClickConnection(itemModel, "furniture")
     end
@@ -298,12 +325,6 @@ local function cancelOnTermination(_actionName, inputState, inputObj)
     
     -- reopen build-mode gui & related build-mode functionality declared in other files
     Remotes.Studio.BuildMode.ExitPlaceModeBindable:Fire()
-
-    if localPlr:GetAttribute("InBuildMode") then
-        -- clear all connections to prevent duplicating
-        disableAllModelClickConnections()
-        enableAllModelClickConnections()
-    end
 end
 
 local function bindInputs()
@@ -352,8 +373,6 @@ Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(_studioFur
     localPlr:SetAttribute("InPlaceMode", false)
 
     if localPlr:GetAttribute("InBuildMode") then
-        -- clear all connections to prevent duplicating
-        disableAllModelClickConnections()
         enableAllModelClickConnections()
     end
 end)
