@@ -130,6 +130,13 @@ local Config: { [string]: HungerFurnitureConfig } = {
 
 HungerFurniture.Config = Config
 
+function HungerFurniture.GetAllFurnitureNames(): {}
+    local allFurnitureNames = {}
+    for itemName, _itemInfo in HungerFurniture.Config do table.insert(allFurnitureNames, itemName) end
+
+    return allFurnitureNames
+end
+
 function HungerFurniture.GetConfig(itemName: string): HungerFurnitureConfig
     return HungerFurniture.Config[itemName]
 end

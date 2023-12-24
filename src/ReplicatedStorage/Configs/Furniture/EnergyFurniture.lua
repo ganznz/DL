@@ -130,6 +130,13 @@ local Config: { [string]: EnergyFurnitureConfig } = {
 
 EnergyFurniture.Config = Config
 
+function EnergyFurniture.GetAllFurnitureNames(): {}
+    local allFurnitureNames = {}
+    for itemName, _itemInfo in EnergyFurniture.Config do table.insert(allFurnitureNames, itemName) end
+
+    return allFurnitureNames
+end
+
 function EnergyFurniture.GetConfig(itemName: string): EnergyFurnitureConfig
     return EnergyFurniture.Config[itemName]
 end

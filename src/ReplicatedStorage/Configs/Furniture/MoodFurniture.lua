@@ -130,6 +130,13 @@ local Config: { [string]: MoodFurnitureConfig } = {
 
 MoodFurniture.Config = Config
 
+function MoodFurniture.GetAllFurnitureNames(): {}
+    local allFurnitureNames = {}
+    for itemName, _itemInfo in MoodFurniture.Config do table.insert(allFurnitureNames, itemName) end
+
+    return allFurnitureNames
+end
+
 function MoodFurniture.GetConfig(itemName: string): MoodFurnitureConfig
     return MoodFurniture.Config[itemName]
 end
