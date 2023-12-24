@@ -4,6 +4,7 @@ local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
+local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
@@ -29,8 +30,10 @@ local LeftScreenGui = AllGuiScreenGui.Hud:WaitForChild("Left")
 local RightScreenGui = AllGuiScreenGui.Hud:WaitForChild("Right")
 
 local LeftSideContainer = LeftScreenGui:WaitForChild("LeftBtnContainer")
-local StudioTeleportBtn = LeftSideContainer.StudioTpBtn
-local StudioBuildModeBtn = LeftSideContainer.StudioBuildModeBtn
+local StudioTeleportBtnContainer = LeftSideContainer.StudioTpBtnContainer
+local StudioBuildModeBtnContainer = LeftSideContainer.StudioBuildModeBtnContainer
+local StudioTeleportBtn = StudioTeleportBtnContainer.StudioTpBtn
+local StudioBuildModeBtn = StudioBuildModeBtnContainer.StudioBuildModeBtn
 
 local PlrInfoContainer = LeftScreenGui:WaitForChild("PlrInfoContainer")
 
@@ -67,13 +70,6 @@ local ItemCancelBtnPc = ItemInteractionBtnsPc:WaitForChild("CancelBtn")
 local ItemInteractionBtnsMobile = ItemInteractionButtons:WaitForChild("MobilePlatform")
 local ItemRotateBtnMobile = ItemInteractionBtnsMobile:WaitForChild("RotateBtn")
 local ItemCancelBtnMobile = ItemInteractionBtnsMobile:WaitForChild("CancelBtn")
-
-local DeleteItemsPopup = AllGuiScreenGui.Studio.StudioBuildMode:WaitForChild("DeleteItemsPopup")
-local DeleteItemsScrollingFrame = DeleteItemsPopup:WaitForChild("ScrollingFrame")
-local DeleteItemsTemplate = DeleteItemsScrollingFrame:FindFirstChild("Template")
-local DeleteItemsYesBtn = DeleteItemsPopup:FindFirstChild("YesBtn")
-local DeleteItemsNoBtn = DeleteItemsPopup:FindFirstChild("NoBtn")
-local DeleteItemsTotalRefundText = DeleteItemsPopup:FindFirstChild("TotalRefund")
 
 local GenreTopicViewContainer = AllGuiScreenGui.Studio.StudioGeneral:WaitForChild("GenreTopicView")
 local AllGenresTopicsContainer = GenreTopicViewContainer:WaitForChild("AllGenresTopics")
@@ -114,8 +110,6 @@ local itemInteractionBtnContainerHiddenPos: UDim2 = UDim2.fromScale(0.5, 1.2)
 local WHITELIST_BTN_TEXT_TEMPLATE = "Studio: SETTING"
 local ITEM_STAT_TEXT_TEMPLATE = "+AMT/sec"
 local ITEM_AMOUNT_TEXT_TEMPLATE = "xAMT"
-local DELETE_ITEM_CARD_NAME_TEMPLATE = "ITEM_NAME (xAMT)"
-local DELETE_ITEM_CARD_REFUND_TEMPLATE = "+ AMT CURRENCY_TYPE"
 local KICK_PLRS_COOLDOWN = 1 -- seconds
 
 
@@ -126,7 +120,6 @@ local char = localPlr.Character or localPlr.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
 local studioInteriorModel = nil
 local studioFurnitureInventory = nil
-local currentItemsToDelete = nil -- keeps track of what items have been added/removed when the delete items popup is visible
 local currentViewedBook = nil -- when plr is viewing bookshelf, this holds cframe info for what book is 'pulled' from the shelf at a given time
 
 -- set what item interaction btns are visible by default
@@ -150,11 +143,9 @@ local visitBtnConnections = {}
 local buildModeItemConnections = {}
 
 GuiServices.StoreInCache(StudioListContainer)
-GuiServices.StoreInCache(DeleteItemsPopup)
 GuiServices.StoreInCache(GenreTopicViewContainer)
 
 GuiServices.DefaultMainGuiStyling(StudioListContainer)
-GuiServices.DefaultMainGuiStyling(DeleteItemsPopup)
 GuiServices.DefaultMainGuiStyling(GenreTopicViewContainer)
 
 local function getPlrStudioName(studioIndex: string)
@@ -380,17 +371,17 @@ local function createViewportItem(category: "Mood" | "Energy" | "Hunger" | "Deco
         if category == "Mood" then
             itemModel = MoodFurnitureConfig.GetModel(itemName)
             config = MoodFurnitureConfig.GetConfig(itemName)
-            itemStatsText.Text = ITEM_STAT_TEXT_TEMPLATE:gsub("AMT", config.MoodPerSec)
+            itemStatsText.Text = ITEM_STAT_TEXT_TEMPLATE:gsub("AMT", config.Stats.Base)
 
         elseif category == "Energy" then
             itemModel = EnergyFurnitureConfig.GetModel(itemName)
             config = EnergyFurnitureConfig.GetConfig(itemName)
-            itemStatsText.Text = ITEM_STAT_TEXT_TEMPLATE:gsub("AMT", config.EnergyPerSec)
+            itemStatsText.Text = ITEM_STAT_TEXT_TEMPLATE:gsub("AMT", config.Stats.Base)
 
         elseif category == "Hunger" then
             itemModel = HungerFurnitureConfig.GetModel(itemName)
             config = HungerFurnitureConfig.GetConfig(itemName)
-            itemStatsText.Text = ITEM_STAT_TEXT_TEMPLATE:gsub("AMT", config.HungerPerSec)
+            itemStatsText.Text = ITEM_STAT_TEXT_TEMPLATE:gsub("AMT", config.Stats.Base)
         end
     else
         itemModel = DecorFurnitureConfig.GetModel(itemName)
@@ -411,7 +402,7 @@ end
 local function populateItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor")
     if studioFurnitureInventory then
         for itemName, itemInstances in studioFurnitureInventory[category] do
-            local numOfInstances = #itemInstances
+            local numOfInstances = GeneralUtils.LengthOfDict(itemInstances)
             if numOfInstances <= 0 then continue end
 
             local viewportItem = createViewportItem(category, itemName, numOfInstances)
@@ -425,78 +416,6 @@ local function setupItemDisplay(category: "Mood" | "Energy" | "Hunger" | "Decor"
     populateItemDisplay(category)
     SelectCategoryText.Visible = false
     BuildModeItemViewport.Visible = true
-end
-
-local function clearDeleteItemsPopup()
-    for _i, instance in DeleteItemsScrollingFrame:GetChildren() do
-        if instance.Name == "UIListLayout" or instance.Name == "UIPadding" or instance.Name == "Template" then continue end
-        instance:Destroy()
-    end
-end
-
-local function createDeleteItemCard(itemCategory: string, itemName: string, amtOfItem: number, itemUUID: string)
-    local template = DeleteItemsTemplate:Clone()
-    local itemImage = template:FindFirstChild("ItemImage")
-    local itemNameText = template:FindFirstChild("ItemName")
-    local itemRefundText = template:FindFirstChild("ItemRefund")
-    local removeBtn = template:FindFirstChild("RemoveBtn")
-
-    template.Name = "DeleteItemCard"
-
-    local config
-    if itemCategory == "Mood" then
-        config = MoodFurnitureConfig
-    elseif itemCategory == "Energy" then
-        config = EnergyFurnitureConfig
-    elseif itemCategory == "Hunger" then
-        config = HungerFurnitureConfig
-    elseif itemCategory == "Decor" then
-        config = DecorFurnitureConfig
-    end
-
-    local itemConfig = config.GetConfig(itemName)
-
-    itemNameText.Text = DELETE_ITEM_CARD_NAME_TEMPLATE:gsub("ITEM_NAME", itemName):gsub("AMT", tostring(amtOfItem))
-    itemRefundText.Text = DELETE_ITEM_CARD_REFUND_TEMPLATE:gsub("AMT", tostring(itemConfig.Price)):gsub("CURRENCY_TYPE", itemConfig.Currency)
-
-    removeBtn.Activated:Connect(function()
-        currentItemsToDelete[itemCategory][itemName].Amount -= 1
-        local newAmt = currentItemsToDelete[itemCategory][itemName].Amount
-        
-        if newAmt <= 0 then
-            -- remove item from currentItemsToDelete table
-            currentItemsToDelete[itemCategory][itemName] = nil
-            template:Destroy()
-        end
-
-        itemNameText.Text = DELETE_ITEM_CARD_NAME_TEMPLATE:gsub("ITEM_NAME", itemName):gsub("AMT", tostring(newAmt))
-    end)
-
-    template.Visible = true
-    return template
-end
-
-local function displayDeleteItemPopup(itemToDelete)
-    clearDeleteItemsPopup()
-
-    for itemCategory, itemsInCategory in itemToDelete do
-        for itemName, itemInfo in itemsInCategory do
-            local template = createDeleteItemCard(itemCategory, itemName, itemInfo.Amount, itemInfo.ItemUUID)
-            template.Parent = DeleteItemsScrollingFrame
-        end
-    end
-
-end
-
-local function displayDeleteMultipleItemsPopup()
-    clearDeleteItemsPopup()
-
-    for category, furnitureItems in currentItemsToDelete do
-        for itemName, itemDetails in furnitureItems do
-            local template = createDeleteItemCard(category, itemName, itemDetails.Amount, nil)
-            template.Parent = DeleteItemsScrollingFrame
-        end
-    end
 end
 
 -- when a user switches platform (e.g. attaches controller on PC), this function changes the item interaction buttons visually
@@ -755,24 +674,6 @@ ItemCancelBtnPc.Activated:Connect(function()
     end
 end)
 
-DeleteItemsYesBtn.Activated:Connect(function()
-    GuiServices.HideGuiStandard(DeleteItemsPopup)
-    
-    Remotes.Studio.BuildMode.DeleteItems:FireServer(currentItemsToDelete)
-
-    setupBuildModeGui()
-    Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
-end)
-
-DeleteItemsNoBtn.Activated:Connect(function()
-    currentItemsToDelete = nil
-
-    GuiServices.HideGuiStandard(DeleteItemsPopup)
-    
-    setupBuildModeGui()
-    Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
-end)
-
 GenreTopicViewExitBtn.Activated:Connect(function()
     GuiServices.HideGuiStandard(GenreTopicViewContainer)
     
@@ -794,7 +695,7 @@ end)
 -- REMOTE EVENTS
 Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart, _placedFurnitureData)
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
-        switchStudioBtns(StudioTeleportBtn, StudioBuildModeBtn)
+        switchStudioBtns(StudioTeleportBtnContainer, StudioBuildModeBtnContainer)
     end)
     studioInteriorModel = Workspace.TempAssets.Studios:WaitForChild(localPlr.UserId):WaitForChild("Interior")
 end)
@@ -805,7 +706,7 @@ end)
 
 Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function()
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
-        switchStudioBtns(StudioBuildModeBtn, StudioTeleportBtn)
+        switchStudioBtns(StudioBuildModeBtnContainer, StudioTeleportBtnContainer)
     end)
     if localPlr:GetAttribute("InBuildMode") then disableBuildModeGui() end
     if localPlr:GetAttribute("InPlaceMode") then
@@ -850,25 +751,10 @@ Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(studioInve
     end
 end)
 
-Remotes.GUI.Studio.DeleteFurniturePopup.Event:Connect(function(singleItem: boolean, itemsToDelete)
-    currentItemsToDelete = itemsToDelete
 
-    if localPlr:GetAttribute("InBuildMode") then
-        disableBuildModeGui()
-        localPlr:SetAttribute("InBuildMode", false)
-        localPlr:SetAttribute("InPlaceMode", false)
-    end
-
-    if singleItem then
-        displayDeleteItemPopup(currentItemsToDelete)
-    else
-        -- display potentially multiple items to delete
-        displayDeleteMultipleItemsPopup(currentItemsToDelete)
-    end
-
-    GuiServices.ShowGuiStandard(DeleteItemsPopup, GlobalVariables.Gui.GuiBackdropColourDefault)
+Remotes.GUI.Inventory.DeleteItemPopup.Event:Connect(function(singleItem: boolean, _itemsToDelete)
+    disableBuildModeGui()
 end)
-
 
 -- reopen build mode gui & related functionality
 Remotes.Studio.BuildMode.ExitPlaceModeBindable.Event:Connect(function()

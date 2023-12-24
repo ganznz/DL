@@ -133,8 +133,8 @@ end
 
 -- REMOTES --
 Remotes.GUI.Inventory.DeleteItemPopup.Event:Connect(function(itemType: string, itemsToDelete: {})
-    currentItemsToDelete = itemsToDelete
     itemTypeToDelete = itemType
+    currentItemsToDelete = itemsToDelete
 
     displayDeleteItemPopup()
 
@@ -152,6 +152,4 @@ DeleteItemsNoBtn.Activated:Connect(function()
     currentItemsToDelete = nil
 
     GuiServices.HideGuiStandard(DeleteItemsPopup)
-
-    Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
 end)
