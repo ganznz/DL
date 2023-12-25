@@ -2,8 +2,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
-
-local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
 local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
@@ -21,7 +19,7 @@ local Remotes = ReplicatedStorage.Remotes
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
-local plrPlatformProfile = PlrPlatformManager.GetProfile(localPlr)
+local plrPlatformProfile = Remotes.Player.GetPlrPlatformData:InvokeServer()
 local camera = Workspace:WaitForChild("Camera")
 
 -- GUI REFERENCE VARIABLES
@@ -122,10 +120,6 @@ local studioInteriorModel = nil
 local studioFurnitureInventory = nil
 local currentViewedBook = nil -- when plr is viewing bookshelf, this holds cframe info for what book is 'pulled' from the shelf at a given time
 
--- set what item interaction btns are visible by default
-ItemInteractionBtnsPc.Visible = plrPlatformProfile.Platform == "pc" and true or false
-ItemInteractionBtnsMobile.Visible = plrPlatformProfile.Platform == "mobile" and true or false
-
 -- hide item interaction btns by default
 ItemInteractionButtons.Position = itemInteractionBtnContainerHiddenPos
 ItemInteractionButtons.Visible = false
@@ -147,6 +141,13 @@ GuiServices.StoreInCache(GenreTopicViewContainer)
 
 GuiServices.DefaultMainGuiStyling(StudioListContainer)
 GuiServices.DefaultMainGuiStyling(GenreTopicViewContainer)
+
+local function setItemInteractionBtns()
+    ItemInteractionBtnsPc.Visible = plrPlatformProfile.Platform == "pc" and true or false
+    ItemInteractionBtnsMobile.Visible = plrPlatformProfile.Platform == "mobile" and true or false
+end
+-- set what item interaction btns are visible by default
+setItemInteractionBtns()
 
 local function getPlrStudioName(studioIndex: string)
     local studioConfig = StudioConfig.GetConfig(studioIndex)
@@ -769,6 +770,11 @@ Remotes.GUI.Studio.ViewShelf.Event:Connect(function()
     viewingShelf = true
     populateShelfGui()
     GuiServices.ShowGuiStandard(GenreTopicViewContainer)
+end)
+
+Remotes.Player.PlatformChanged.OnClientEvent:Connect(function(newPlatformProfile)
+    plrPlatformProfile = newPlatformProfile
+    setItemInteractionBtns() -- update item interaction btns
 end)
 
 humanoid.Died:Connect(function()

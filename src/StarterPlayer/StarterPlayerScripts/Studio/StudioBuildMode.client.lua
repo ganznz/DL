@@ -4,7 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local ContextActionService = game:GetService("ContextActionService")
 
-local PlrPlatformManager = require(ReplicatedStorage:WaitForChild("PlrPlatformManager"))
 local PlacementSystem = require(ReplicatedStorage.Libs:WaitForChild("PlacementSystem"))
 local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
 local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
@@ -17,7 +16,7 @@ local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 local mouse = localPlr:GetMouse()
 
-local plrPlatformProfile = PlrPlatformManager.GetProfile(localPlr)
+local plrPlatformProfile = Remotes.Player.GetPlrPlatformData:InvokeServer()
 
 local studioFurnitureModelsFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing
 
@@ -332,6 +331,12 @@ local function bindInputs()
     ContextActionService:BindAction("Cancel", cancelOnTermination, false, Enum.KeyCode.X)
 end
 
+local function applyBuildModeSettings()
+    if plrPlatformProfile.Platform == "pc" then
+        bindInputs()
+    end
+end
+
 Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemType: "furniture" | "essential", itemInfo: {}, movingItem: boolean)
     localPlr:SetAttribute("InPlaceMode", true)
 
@@ -356,9 +361,9 @@ Remotes.Studio.BuildMode.EnterPlaceMode.OnClientEvent:Connect(function(itemType:
         placement:Activate(itemModel, studioInteriorModel)
     end
 
-    if plrPlatformProfile.Platform == "pc" then
-        bindInputs()
+    applyBuildModeSettings()
 
+    if plrPlatformProfile.Platform == "pc" then
         placeItemConnection = mouse.Button1Down:Connect(function()
             placement:place(Remotes.Studio.BuildMode.PlaceItem, itemType, itemInfo, { Action = actionType })
         end)
@@ -403,6 +408,10 @@ end)
 
 Remotes.Studio.BuildMode.FurnitureItemCancel.Event:Connect(function()
     cancelOnTermination(nil, nil, nil)
+end)
+
+Remotes.Player.PlatformChanged.OnClientEvent:Connect(function(newPlatformProfile)
+    plrPlatformProfile = newPlatformProfile
 end)
 
 humanoid.Died:Connect(function()
