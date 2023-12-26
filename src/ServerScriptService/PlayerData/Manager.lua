@@ -81,14 +81,14 @@ local function GetData(plr: Player, directory: string)
 end
 
 -- plrToAdjust parameter for cases when caller wants to retrieve data of another plr
-local function GetAllData(plr: Player, plrToAdjust: Player)
-    if plrToAdjust then
-        repeat task.wait() until Manager.Profiles[plr] ~= nil
+local function GetAllData(plr: Player, plrToFetch: Player)
+    if plrToFetch then
+        repeat task.wait() until Manager.Profiles[plrToFetch] ~= nil
     else
         repeat task.wait() until Manager.Profiles[plr] ~= nil
     end
 
-    local profile = Manager.Profiles[plrToAdjust and plrToAdjust or plr]
+    local profile = Manager.Profiles[plrToFetch and plrToFetch or plr]
     return profile.Data
 end
 
