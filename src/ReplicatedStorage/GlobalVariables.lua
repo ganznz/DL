@@ -34,6 +34,15 @@ GlobalVariables.Gui.InvalidRedColour = Color3.fromRGB(255, 106, 108)
 GlobalVariables.Gui.GuiBackdropColourDefault = Color3.fromRGB(0, 0, 0)
 GlobalVariables.Gui.GuiBackdropColourGreen = Color3.fromRGB(18, 111, 11)
 
+-- rarity colours
+GlobalVariables.Gui.CommonRarityColour = Color3.fromRGB(168, 168, 168) -- unskilled
+GlobalVariables.Gui.UncommonRarityColour = Color3.fromRGB(79, 214, 70) -- trainee
+GlobalVariables.Gui.RareRarityColour = Color3.fromRGB(70, 156, 214) -- regular
+GlobalVariables.Gui.VeryRareRarityColour = Color3.fromRGB(255, 117, 117) -- skilled
+GlobalVariables.Gui.LegendaryRarityColour = Color3.fromRGB(255, 177, 94) -- seasoned
+GlobalVariables.Gui.UltraRarityColour = Color3.fromRGB(216, 184, 255) -- elite
+GlobalVariables.Gui.MythicalRarityColour = Color3.fromRGB(255, 186, 255) -- prodigy
+
 -- text colours
 GlobalVariables.Gui.GuiHeaderTextColour = Color3.fromRGB(66, 66, 66)
 GlobalVariables.Gui.GuiSecondaryTextColour = Color3.fromRGB(126, 126, 126)
@@ -52,5 +61,20 @@ GlobalVariables.Sound.Sfx = {}
 -- gui sound effects
 GlobalVariables.Sound.Sfx.GuiOpen = SoundsFolder.Sfx:FindFirstChild("GuiOpen")
 GlobalVariables.Sound.Sfx.GuiMouseHover = SoundsFolder.Sfx:FindFirstChild("GuiMouseHover")
+
+
+-- IMAGES --
+GlobalVariables.Images = {}
+GlobalVariables.Images.Icons = {}
+
+-- main icons
+GlobalVariables.Images.Icons.CoinIcon = "15695993944"
+GlobalVariables.Images.Icons.GemIcon = "15762047580"
+
+-- stroke icons
+
+-- dropshadow icons
+GlobalVariables.Images.Icons.CoinIconDropshadow = "15762115765"
+GlobalVariables.Images.Icons.GemIconDropshadow = "15762118382"
 
 return GlobalVariables
