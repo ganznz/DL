@@ -26,4 +26,15 @@ function GuiTemplates.CreateButton(btn: Instance, opts: {})
     end)
 end
 
+function GuiTemplates.HeaderText(header: Instance, opts: {})
+    local tweenGoal
+
+    -- if no specification for opts Movement option, then apply default movement (rotate)
+    if not opts then
+        tweenGoal = { Rotation = 4 }
+    end
+
+    TweenService:Create(header, TweenInfo.new(2, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut, 99999999999999, true), tweenGoal):Play()
+end
+
 return GuiTemplates
