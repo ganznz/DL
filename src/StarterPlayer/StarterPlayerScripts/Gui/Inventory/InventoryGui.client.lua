@@ -92,10 +92,7 @@ GuiTemplates.CreateButton(StaffInventoryBtn, { Rotates = true })
 GuiTemplates.CreateButton(FurnitureInventoryBtn, { Rotates = true })
 GuiTemplates.CreateButton(ItemsInventoryBtn, { Rotates = true })
 
--- tween "AMT SELECTED" text
-TweenService:Create(AmtSelectedText, TweenInfo.new(2, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut, 99999999999, true), {
-    Rotation = 4
-}):Play()
+GuiTemplates.HeaderText(AmtSelectedText)
 
 local function clearScrollingFrame()
     for _i, instance in InventoryScrollingFrame:GetChildren() do
