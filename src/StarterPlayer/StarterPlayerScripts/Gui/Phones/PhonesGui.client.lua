@@ -28,8 +28,8 @@ local RewardContainer = PhonePopupContainer.PhoneContainerInner:WaitForChild("Re
 local StaffRewardsContainer = RewardContainer:WaitForChild("StaffRewards")
 local StaffFoodRewardsContainer = RewardContainer:WaitForChild("StaffFoodRewards")
 local MaterialsRewardsContainer = RewardContainer:WaitForChild("MaterialsRewards")
-local PercentageTemplate = StaffRewardsContainer.RewardDisplay:WaitForChild("PercentageTemplate")
-local UndetailedTemplate = StaffRewardsContainer.RewardDisplay:WaitForChild("UndetailedTemplate")
+local PercentageTemplateContainer = StaffRewardsContainer.RewardDisplay:WaitForChild("PercentageTemplateContainer")
+local UndetailedTemplateContainer = StaffRewardsContainer.RewardDisplay:WaitForChild("UndetailedTemplateContainer")
 
 -- CONSTANT VARIABLES --
 local PHONE_GUI_HEADER_TEXT = "NAME Phone!"
@@ -65,7 +65,7 @@ end
 local function applyBuyBtnStyle()
     local phonePrice = phoneConfig.Price
     local plrCurrencyAmt = plrData[phoneConfig.Currency]
-    local canAfford = (phonePrice - plrCurrencyAmt) >= 0
+    local canAfford = (plrCurrencyAmt - phonePrice) >= 0
 
     if phoneConfig.Currency == "Coins" then
         BuyBtnCurrencyImage.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinIcon)
@@ -75,13 +75,28 @@ local function applyBuyBtnStyle()
         BuyBtnCurrencyImageDropshadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemIconDropshadow)
     end
 
+    BuyBtnCostText.Text = BUY_BTN_TEXT:gsub("AMT", phoneConfig.Price):gsub("CURRENCY", phoneConfig.Currency)
+
     if canAfford then
         BuyBtn.BackgroundColor3 = GlobalVariables.Gui.ValidGreenColour
-        BuyBtnCostText.Text = BUY_BTN_TEXT:gsub("AMT", phoneConfig.Price):gsub("CURRENCY", phoneConfig.Currency)
-
         activateBuyBtnConnection()
     else
         BuyBtn.BackgroundColor3 = GlobalVariables.Gui.InvalidGreyColour
+    end
+end
+
+local function clearRewardContainer()
+    for _i, v in StaffRewardsContainer:FindFirstChild("RewardDisplay"):GetChildren() do
+        if v.Name == "UIListLayout" or v.Name == "PercentageTemplateContainer" or v.Name == "UndetailedTemplateContainer" then continue end
+        v:Destroy()
+    end
+    for _i, v in StaffFoodRewardsContainer:FindFirstChild("RewardDisplay"):GetChildren() do
+        if v.Name == "UIListLayout" or v.Name == "PercentageTemplateContainer" or v.Name == "UndetailedTemplateContainer" then continue end
+        v:Destroy()
+    end
+    for _i, v in MaterialsRewardsContainer:FindFirstChild("RewardDisplay"):GetChildren() do
+        if v.Name == "UIListLayout" or v.Name == "PercentageTemplateContainer" or v.Name == "UndetailedTemplateContainer" then continue end
+        v:Destroy()
     end
 end
 
@@ -107,13 +122,16 @@ local function populateRewardContainer()
 
         -- populate reward display
         for unlockableItemName, unlockableItemInfo in unlockableInfo do
+            local templateContainer
             local template
             local icon
             local percentageText
             local templateColour
 
             if unlockableType == "Staff" then
-                template = PercentageTemplate:Clone()
+                StaffRewardsContainer.Visible = true
+                templateContainer = PercentageTemplateContainer:Clone()
+                template = templateContainer:FindFirstChild("PercentageTemplate")
                 icon = template:FindFirstChild("Icon")
 
                 percentageText = template:FindFirstChild("Percentage")
@@ -121,22 +139,32 @@ local function populateRewardContainer()
                 
                 templateColour = StaffMemberConfig.GetRarityColour(unlockableItemName)
                 if templateColour then template.BackgroundColor3 = templateColour end
-                template.Parent = StaffRewardsContainer:FindFirstChild("RewardDisplay")
+
+                templateContainer.LayoutOrder = -unlockableItemInfo.Chance -- makes common items appear first
+                templateContainer.Parent = StaffRewardsContainer:FindFirstChild("RewardDisplay")
                 
             elseif unlockableType == "Consumables" then
-                template = UndetailedTemplate:Clone()
+                StaffFoodRewardsContainer.Visible = true
+                templateContainer = UndetailedTemplateContainer:Clone()
+                template = templateContainer:FindFirstChild("UndetailedTemplate")
                 icon = template:FindFirstChild("Icon")
-                template.Parent = StaffFoodRewardsContainer:FindFirstChild("RewardDisplay")
+
+                templateContainer.LayoutOrder = -unlockableItemInfo.Chance
+                templateContainer.Parent = StaffFoodRewardsContainer:FindFirstChild("RewardDisplay")
             
             elseif unlockableType == "Materials" then
-                template = UndetailedTemplate:Clone()
+                MaterialsRewardsContainer.Visible = true
+                templateContainer = UndetailedTemplateContainer:Clone()
+                template = templateContainer:FindFirstChild("UndetailedTemplate")
                 icon = template:FindFirstChild("Icon")
-                template.Parent = MaterialsRewardsContainer:FindFirstChild("RewardDisplay")
-            
+
+                templateContainer.LayoutOrder = -unlockableItemInfo.Chance
+                templateContainer.Parent = MaterialsRewardsContainer:FindFirstChild("RewardDisplay")
             end
 
+            templateContainer.Name = unlockableItemName
             GuiTemplates.CreateButton(template, { Rotates = true })
-            template.Visible = true
+            templateContainer.Visible = true
         end
     end
 end
@@ -150,6 +178,10 @@ end
 local function resetPhoneGui()
     phoneName = nil
     resetConnection()
+    clearRewardContainer()
+    StaffRewardsContainer.Visible = false
+    StaffFoodRewardsContainer.Visible = false
+    MaterialsRewardsContainer.Visible = false
 end
 
 local function showPhoneGui(name: string)
@@ -166,4 +198,12 @@ local function showPhoneGui(name: string)
     GuiServices.ShowGuiStandard(PhonePopupContainer, GlobalVariables.Gui.GuiBackdropColourDefault)
 end
 
+-- ACTIVATE EVENTS --
+ExitBtn.Activated:Connect(function() GuiServices.HideGuiStandard(PhonePopupContainer) end)
+
+-- REMOTES --
 Remotes.GUI.Phones.PhonePopup.Event:Connect(showPhoneGui)
+
+Remotes.Phones.PurchasePhone.OnClientEvent:Connect(function(_phoneName: string)
+    GuiServices.HideGuiStandard(PhonePopupContainer)
+end)

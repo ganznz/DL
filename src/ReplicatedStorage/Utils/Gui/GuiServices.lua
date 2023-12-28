@@ -92,7 +92,7 @@ local function hideBackdrop()
     guiBackdropTween.Completed:Connect(function(_playbackState) GuiBackdropFrame.Visible = false end)
 end
 
--- switchingGui parameter only present if opening gui while naother gui instance is already open
+-- switchingGui parameter only present if opening gui while another gui instance is already open
 function GuiServices.HideGuiStandard(guiInstance, switchingUI: true | nil)
     GuiStack:Pop()
 

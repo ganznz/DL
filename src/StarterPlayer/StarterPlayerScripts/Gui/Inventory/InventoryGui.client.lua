@@ -424,6 +424,8 @@ end
 
 
 -- ACTIVATE EVENTS --
+InventoryExitBtn.Activated:Connect(function() GuiServices.HideGuiStandard(InventoryContainer) end)
+
 LockModeBtn.Activated:Connect(function() enableEditMode("lock") end)
 
 TrashModeBtn.Activated:Connect(function() enableEditMode("trash") end)

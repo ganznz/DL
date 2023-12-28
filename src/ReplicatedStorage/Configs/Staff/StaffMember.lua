@@ -50,7 +50,6 @@ function StaffMember.GetRarityColour(staffModel: string): StaffMemberConfig | ni
     elseif staffMemberConfig.Rarity == "Prodigy" then
         return GlobalVariables.Gui.MythicalRarityColour
     end
-
 end
 
 -- function NOT used for granting a plr new staff member, but instead used for instantiating a StaffMember object

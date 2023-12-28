@@ -6,7 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
 local Zone = require(ReplicatedStorage.Libs:WaitForChild("Zone"))
 local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
-local CameraControls = require(ReplicatedStorage.Libs:WaitForChild("CameraControls"))
+local CameraControls = require(ReplicatedStorage.Utils.Camera:WaitForChild("CameraControls"))
 local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
 local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
 
