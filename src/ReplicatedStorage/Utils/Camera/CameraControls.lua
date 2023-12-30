@@ -1,5 +1,9 @@
-local TweenService = game:GetService("TweenService")
 -- module required client-side only
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+
+local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
 
 local CameraControls = {}
 
@@ -17,6 +21,8 @@ function CameraControls.SetDefault(plr: Player, camera: Camera, transition: bool
     camera.MaxAxisFieldOfView = 98.639
 
     camera.Focus = CFrame.new(plr.Character.PrimaryPart.Position)
+    local orientation = GeneralUtils.GetCFrameOrientation(camera.CFrame)
+    camera.CFrame = camera.CFrame * CFrame.Angles(orientation.X, orientation.Y, orientation.Z)
 
     -- enable character movement
     local PlrControls = require(plr.PlayerScripts.PlayerModule):GetControls()
