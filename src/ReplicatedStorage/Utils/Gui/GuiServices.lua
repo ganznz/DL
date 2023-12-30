@@ -346,7 +346,7 @@ function GuiServices.CreateConfettiEffect(sparseness: number, effectLength: numb
     end)
 end
 
-function GuiServices.CreateUnlockBeamEffect(beamAmt: number, parent: Instance, effectLength: number)
+function GuiServices.CreateBeamEffect(beamAmt: number, parent: Instance, effectLength: number)
     if effectLength < 1 then return warn("Beam effect has to be longer than 1 second.") end
 
     local random = Random.new()
