@@ -13,9 +13,13 @@ local PlayerGui = localPlr.PlayerGui
 
 local camera = Workspace:FindFirstChild("Camera")
 
-local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
-local GuiBackdropFrame = AllGuiScreenGui.Misc:WaitForChild("GuiBackdrop")
+local AllGuiScreenGui: ScreenGui = PlayerGui:WaitForChild("AllGui")
+local GuiBackdropFrame: Frame = AllGuiScreenGui.Misc:WaitForChild("GuiBackdrop")
 local NotificationPanelFrame = AllGuiScreenGui.Misc.Notification:WaitForChild("NotificationPanel")
+local FlashFrame: Frame = AllGuiScreenGui.Misc:WaitForChild("FlashBg")
+local BeamImage: ImageLabel = AllGuiScreenGui.Particles:WaitForChild("Beam")
+local ConfettiContainer: Frame = AllGuiScreenGui.Misc:WaitForChild("ConfettiContainer")
+local ConfettiParticle: Frame = AllGuiScreenGui.Particles:WaitForChild("ConfettiParticle")
 
 local GuiBlur = Lighting:WaitForChild("GuiBlur")
 
@@ -38,6 +42,13 @@ function GuiServices.StoreInCache(guiInstance)
         Position = guiInstance.Position,
         Size = guiInstance.Size
     }
+end
+
+function GuiServices.GetCachedData(guiInstance)
+    local cachedData = GuiCache[guiInstance]
+    if not cachedData then return nil end
+
+    return cachedData
 end
 
 function GuiServices.EnableUnrelatedButtons(guiInstanceToIgnore)
@@ -295,6 +306,99 @@ function GuiServices.GenerateViewportFrame(vpf: ViewportFrame, vpc: Camera, mode
     vpf.CurrentCamera = vpc
     model.Parent = vpf
     vpc.CFrame = CFrame.new(model.PrimaryPart.Position + posOffset, model.PrimaryPart.Position)
+end
+
+function GuiServices.CreateConfettiEffect(sparseness: number, effectLength: number)
+    if effectLength < 1 then return warn("Confetti effect has to be longer than 1 second.") end
+
+    local random = Random.new()
+    local SIZE_BOUNDS = {0.001, 0.02}
+    local INITIAL_X_POS_BOUNDS = {0.1, 0.9}
+    local FALL_SPEED_BOUNDS = {1, 3}
+    local spawnConfetti = true
+
+    task.delay(effectLength, function() spawnConfetti = false end)
+
+    task.spawn(function()
+        while spawnConfetti do
+            local confettiParticle = ConfettiParticle:Clone()
+            local size = random:NextNumber(SIZE_BOUNDS[1], SIZE_BOUNDS[2])
+            confettiParticle.Size = UDim2.fromScale(size, size)
+            confettiParticle.Position = UDim2.fromScale(random:NextNumber(INITIAL_X_POS_BOUNDS[1], INITIAL_X_POS_BOUNDS[2]), -0.1) -- initial pos
+            confettiParticle.Rotation = math.random(0, 90)
+            confettiParticle.BackgroundColor3 = Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255))
+            confettiParticle.Parent = ConfettiContainer
+            confettiParticle.Visible = true
+    
+            local fallTween = TweenService:Create(confettiParticle, TweenInfo.new(random:NextNumber(FALL_SPEED_BOUNDS[1], FALL_SPEED_BOUNDS[2])), {
+                Position = UDim2.fromScale(random:NextNumber(confettiParticle.Position.X.Scale - 0.2, confettiParticle.Position.X.Scale + 0.2), 1.1),
+                Rotation = math.random(confettiParticle.Rotation - 90, confettiParticle.Rotation + 90)
+            })
+    
+            fallTween:Play()
+            -- cleanup
+            fallTween.Completed:Connect(function()
+                confettiParticle:Destroy()
+            end)
+    
+            task.wait(sparseness / 100)
+        end
+    end)
+end
+
+function GuiServices.CreateUnlockBeamEffect(beamAmt: number, parent: Instance, effectLength: number)
+    if effectLength < 1 then return warn("Beam effect has to be longer than 1 second.") end
+
+    local random = Random.new()
+    local X_SIZE_BOUNDS = {0.4, 0.5}
+    local Y_SIZE_BOUNDS = {0.3, 0.5}
+    local TRANSPARENCY_BOUNDS = {0.4, 0.8}
+
+    for i=0, beamAmt, 1 do
+        local beam = BeamImage:Clone()
+        beam.ImageTransparency = 1
+        beam.Rotation = math.random(0, 180)
+        beam.Size = UDim2.fromScale(random:NextNumber(X_SIZE_BOUNDS[1], X_SIZE_BOUNDS[2]), random:NextNumber(Y_SIZE_BOUNDS[1], Y_SIZE_BOUNDS[2]))
+        beam.Parent = parent
+        beam.Visible = true
+
+        local showTween = TweenService:Create(beam, TweenInfo.new(0.5), { ImageTransparency = random:NextNumber(TRANSPARENCY_BOUNDS[1], TRANSPARENCY_BOUNDS[2]) })
+        showTween:Play()
+
+        local movementTween = TweenService:Create(beam, TweenInfo.new(effectLength), {
+            Rotation = math.random(beam.Rotation - 40, beam.Rotation + 40),
+            Size = UDim2.fromScale(random:NextNumber(beam.Size.X.Scale - 0.1, beam.Size.X.Scale + 0.1), random:NextNumber(beam.Size.Y.Scale - 0.1, beam.Size.Y.Scale + 0.1))
+        })
+        movementTween:Play()
+
+        -- cleanup
+        movementTween.Completed:Connect(function()
+            local makeInvisibleTween = TweenService:Create(beam, TweenInfo.new(0.5), {
+                ImageTransparency = 1,
+                Size = UDim2.fromScale(random:NextNumber(beam.Size.X.Scale - 0.05, beam.Size.X.Scale - 0.2), random:NextNumber(beam.Size.Y.Scale - 0.05, beam.Size.Y.Scale - 0.2))
+                })
+            makeInvisibleTween:Play()
+            makeInvisibleTween.Completed:Connect(function() beam:Destroy() end)
+        end)
+    end
+end
+
+function GuiServices.TriggerFlashFrame(opts: {})
+    if not opts then opts = {} end
+    if not opts then opts["Colour"] = Color3.fromRGB(255, 255, 255) end
+
+    FlashFrame.Visible = true
+
+    local fadeInTween = TweenService:Create(FlashFrame, TweenInfo.new(GlobalVariables.Gui.FlashShowTime), { BackgroundTransparency = 0 })
+    local fadeOutTween = TweenService:Create(FlashFrame, TweenInfo.new(1), { BackgroundTransparency = 1 })
+
+    fadeInTween:Play()
+
+    -- have flash stay on-screen for a bit
+    task.delay(0.75, function()
+        fadeOutTween:Play()
+    end)
+    fadeOutTween.Completed:Connect(function() FlashFrame.Visible = false end)
 end
 
 return GuiServices
