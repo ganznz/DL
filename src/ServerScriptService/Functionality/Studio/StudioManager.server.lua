@@ -6,7 +6,8 @@ local CollectionService = game:GetService("CollectionService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
-local StudioPlaceablesServer = require(ServerScriptService.Functionality.Studio.StudioPlaceablesConfigServer)
+local StudioPlaceablesServer = require(ServerScriptService.Functionality.Studio.StudioPlaceablesServer)
+local FurnitureConfigServer = require(ServerScriptService.Functionality.Furniture.FurnitureConfigServer)
 local StudioConfigServer = require(script.Parent.StudioConfigServer)
 local Zone = require(ReplicatedStorage.Libs.Zone)
 
@@ -64,7 +65,7 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: string)
     local interiorPlayerTpPart = studioExteriorFolder:FindFirstChild("PlrTeleportToPartInterior")
     local exteriorPlayerTpPart = studioExteriorFolder:FindFirstChild("TeleportToPart")
 
-    local alreadyPlacedFurnitureData = StudioPlaceablesServer.AlreadyPlacedFurnitureData(plrToVisit, studioIndex)
+    local alreadyPlacedFurnitureData = FurnitureConfigServer.AlreadyPlacedFurnitureData(plrToVisit, studioIndex)
     if plr == plrToVisit then
         profile.Data.Studio.ActiveStudio = studioIndex
         StudioConfigServer.PlrStudios[plrToVisit.UserId].StudioIndex = profile.Data.Studio.ActiveStudio
@@ -189,13 +190,13 @@ local function placeFurnitureItem(plr, itemInfo, additionalParams)
 
     -- place and store item data as a new item
     if additionalParams.Action == "newItem" then
-        if not StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex, false) then return end
+        if not FurnitureConfigServer.HasFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex, false) then return end
 
-        itemInfo.ItemUUID = StudioPlaceablesServer.StoreFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
+        itemInfo.ItemUUID = FurnitureConfigServer.StoreFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
 
     elseif additionalParams.Action == "move" then
         -- item was previously placed, only update item data
-        StudioPlaceablesServer.UpdateFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
+        FurnitureConfigServer.UpdateFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
     end
 
     local profile = PlrDataManager.Profiles[plr]
@@ -243,10 +244,10 @@ local function storeStudioItem(plr: Player, itemType: string, itemInfo: {})
     if not plrStudioInfo then return end
 
     if itemType == "furniture" then
-        local hasItem = StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex, true)
+        local hasItem = FurnitureConfigServer.HasFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex, true)
         if not hasItem then return end
 
-        StudioPlaceablesServer.StoreFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex)
+        FurnitureConfigServer.StoreFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex)
     end
 
     -- remove item for all plrs in studio
@@ -341,7 +342,7 @@ end)
 
 Remotes.Studio.BuildMode.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemType: "furniture" | "essential", itemInfo: {}, movingItem: boolean)
     if itemType == "furniture" then
-        local hasItem: boolean = StudioPlaceablesServer.HasFurnitureItem(plr, itemInfo, StudioConfigServer.PlrStudios[plr.UserId].StudioIndex, movingItem)
+        local hasItem: boolean = FurnitureConfigServer.HasFurnitureItem(plr, itemInfo, StudioConfigServer.PlrStudios[plr.UserId].StudioIndex, movingItem)
         if not hasItem then return end
 
         Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)

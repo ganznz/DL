@@ -1,7 +1,7 @@
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local StudioPlaceablesServer = require(ServerScriptService.Functionality.Studio.StudioPlaceablesConfigServer)
+local FurnitureConfigServer = require(ServerScriptService.Functionality.Furniture.FurnitureConfigServer)
 
 return function(context, plr: Player, itemCategory: string, itemName: string)
-    return StudioPlaceablesServer.PurchaseFurnitureItem(plr, itemName, itemCategory, context.Executor)
+    return FurnitureConfigServer.PurchaseFurnitureItem(plr, itemName, itemCategory, context.Executor)
 end

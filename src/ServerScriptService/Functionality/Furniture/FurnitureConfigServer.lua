@@ -5,7 +5,6 @@ local HttpService = game:GetService("HttpService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
-local GeneralUtils = require(ReplicatedStorage.Utils.GeneralUtils)
 local DatastoreUtils = require(ReplicatedStorage.Utils.DS.DatastoreUtils)
 local PlrManagerConfigServer = require(ServerScriptService.Functionality.Player.PlayerManager)
 
@@ -160,24 +159,6 @@ function StudioPlaceables.StoreFurnitureItemData(plr: Player, itemInfo: {}, stud
     end
 end
 
--- function for saving a placed essential items (e.g. computer, shelf) data to plr data
-function StudioPlaceables.StoreEssentialItemData(plr: Player, itemInfo: {}, studioIndex)
-    local profile = PlrDataManager.Profiles[plr]
-    if not profile then return end
-
-    local plrData = profile.Data
-
-    local studioConfig = StudioConfig.GetConfig(studioIndex)
-    if not studioConfig then return end
-
-    local studioType: "Standard" | "Premium" = studioConfig.StudioType
-
-    local itemData = {}
-    itemData.CFrame = DatastoreUtils.CFrameToTable(itemInfo.RelativeCFrame)
-
-    plrData.Studio.Studios[studioType][studioIndex].StudioEssentials[itemInfo.ItemName] = itemData
-end
-
 -- function for getting the data of already placed furniture items
 function StudioPlaceables.AlreadyPlacedFurnitureData(plr: Player, studioIndex)
     local profile = PlrDataManager.Profiles[plr]
@@ -194,7 +175,7 @@ function StudioPlaceables.AlreadyPlacedFurnitureData(plr: Player, studioIndex)
 end
 
 -- -> boolean : indicates whether item got deleted or not
-function StudioPlaceables.DeleteItem(plr: Player, itemInfo): boolean
+function StudioPlaceables.DeleteFurnitureItem(plr: Player, itemInfo): boolean
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -202,7 +183,7 @@ function StudioPlaceables.DeleteItem(plr: Player, itemInfo): boolean
     -- check if item is locked first
     local succ, err = pcall(function()
         local instanceData = profile.Data.Inventory.StudioFurnishing[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID]
-        if instanceData.Locked then isLocked = true end
+        isLocked = instanceData.Locked
     end)
 
     if isLocked then return false end
