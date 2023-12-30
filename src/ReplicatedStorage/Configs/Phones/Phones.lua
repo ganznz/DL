@@ -6,17 +6,17 @@ export type PhoneConfig = {
     ImageFront: string,
     ImagePerspective: string,
     Unlockables: {
-        Materials: {
+        ["Materials"]: {
             [string]: { -- consumable name
                 Chance: number
             }
         }?,
-        Consumables: {
+        ["Staff Food"]: {
             [string]: { -- consumable name
                 Chance: number
             }
         }?,
-        Staff: {
+        ["Staff"]: {
             [string]: { -- staff name
                 Chance: number -- e.g. 50 (50% hatch rate)
             }
@@ -32,17 +32,17 @@ local config: { [string]: PhoneConfig } = {
         ImagePerspective = "15776089669",
         Unlockables = {
             -- Chance has to add to 100 across all items
-            Materials = {
+            ["Materials"] = {
                 -- 20% total
                 ["Metal Scrap"] = { Chance = 10 },
                 ["Wire"] = { Chance = 10 },
             },
-            Consumables = {
+            ["Staff Food"] = {
                 -- 30% total
                 ["Coffee"] = { Chance = 15 },
                 ["Pizza"] = { Chance = 15 },
             },
-            Staff = {
+            ["Staff"] = {
                 -- 50% total
                 ["Max"] = { Chance = 15 },
                 ["Cam"] = { Chance = 15 },
@@ -84,7 +84,7 @@ function Phones.GetChanceTable(phoneName: string): {}
     return percentages
 end
 
-function Phones.GetTotalItemChance(phoneName: string, unlockableType: "Staff" | "Consumables" | "Materials"): number
+function Phones.GetTotalItemChance(phoneName: string, unlockableType: "Staff" | "Staff Food" | "Materials"): number
     local totalChance = 0
 
     local phoneConfig = Phones.GetConfig(phoneName)
@@ -95,6 +95,28 @@ function Phones.GetTotalItemChance(phoneName: string, unlockableType: "Staff" | 
     end
     
     return totalChance
+end
+
+function Phones.GetRarestItem(phoneName: string): string
+    local phoneConfig: PhoneConfig = Phones.GetConfig(phoneName)
+    if not phoneConfig then return nil end
+
+    local rarestItem = nil
+    local currentLowestChance = nil
+
+    for _unlockableType, unlockables in phoneConfig.Unlockables do
+        for itemName, itemInfo in unlockables do
+            if not currentLowestChance then
+                rarestItem = itemName
+                currentLowestChance = itemInfo.Chance
+            elseif itemInfo.Chance < currentLowestChance then
+                rarestItem = itemName
+                currentLowestChance = itemInfo.Chance
+            end
+        end
+    end
+
+    return rarestItem
 end
 
 return Phones
