@@ -245,8 +245,11 @@ local function showReward(reward: string)
     end
 
     itemConfig = config.GetConfig(rewardName)
+    local rarityColour = GeneralConfig.GetRarityColour(itemConfig.Rarity)
 
     RewardIconItemImage.Image = GeneralUtils.GetDecalUrl(itemConfig.IconStroke)
+    RewardIcon.BackgroundColor3 = rarityColour
+    RewardIconItemNameText.TextColor3 = rarityColour
 
     PhoneRewardContainer.Visible = true
 end
