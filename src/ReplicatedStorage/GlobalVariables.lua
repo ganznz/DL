@@ -24,6 +24,7 @@ GlobalVariables.Gui.GuiVisibleCameraTime = 0.1
 GlobalVariables.Gui.GuiInvisibleCameraTime = 0.1
 GlobalVariables.Gui.MainGuiCloseTime = 0.1
 GlobalVariables.Gui.LoadingBgTweenTime = 0.5
+GlobalVariables.Gui.FlashShowTime = 0.2 -- time it takes for the flash
 
 -- general gui colours
 GlobalVariables.Gui.StandardBlue = Color3.fromRGB(130, 186, 255)
@@ -35,13 +36,13 @@ GlobalVariables.Gui.GuiBackdropColourDefault = Color3.fromRGB(0, 0, 0)
 GlobalVariables.Gui.GuiBackdropColourGreen = Color3.fromRGB(18, 111, 11)
 
 -- rarity colours
-GlobalVariables.Gui.CommonRarityColour = Color3.fromRGB(168, 168, 168) -- unskilled
-GlobalVariables.Gui.UncommonRarityColour = Color3.fromRGB(79, 214, 70) -- trainee
-GlobalVariables.Gui.RareRarityColour = Color3.fromRGB(70, 156, 214) -- regular
-GlobalVariables.Gui.VeryRareRarityColour = Color3.fromRGB(255, 117, 117) -- skilled
-GlobalVariables.Gui.LegendaryRarityColour = Color3.fromRGB(255, 177, 94) -- seasoned
-GlobalVariables.Gui.UltraRarityColour = Color3.fromRGB(216, 184, 255) -- elite
-GlobalVariables.Gui.MythicalRarityColour = Color3.fromRGB(255, 186, 255) -- prodigy
+GlobalVariables.Gui.Rarity1Colour = Color3.fromRGB(168, 168, 168)
+GlobalVariables.Gui.Rarity2Colour = Color3.fromRGB(79, 214, 70)
+GlobalVariables.Gui.Rarity3Colour = Color3.fromRGB(70, 156, 214)
+GlobalVariables.Gui.Rarity4Colour = Color3.fromRGB(255, 177, 94)
+GlobalVariables.Gui.Rarity5Colour = Color3.fromRGB(255, 80, 80)
+GlobalVariables.Gui.Rarity6Colour = Color3.fromRGB(158, 88, 255)
+GlobalVariables.Gui.Rarity7Colour = Color3.fromRGB(255, 88, 216)
 
 -- text colours
 GlobalVariables.Gui.GuiHeaderTextColour = Color3.fromRGB(66, 66, 66)
@@ -57,6 +58,10 @@ GlobalVariables.Gui.NotificationWarning = Color3.fromRGB(255, 106, 108)
 local SoundsFolder = ReplicatedStorage.Assets.Sounds
 GlobalVariables.Sound = {}
 GlobalVariables.Sound.Sfx = {}
+
+-- general sfx
+GlobalVariables.Sound.Sfx.PhoneOpenNormal = SoundsFolder.Sfx:FindFirstChild("PhoneOpenNormal")
+GlobalVariables.Sound.Sfx.PhoneOpenRare = SoundsFolder.Sfx:FindFirstChild("PhoneOpenRare")
 
 -- gui sound effects
 GlobalVariables.Sound.Sfx.GuiOpen = SoundsFolder.Sfx:FindFirstChild("GuiOpen")
