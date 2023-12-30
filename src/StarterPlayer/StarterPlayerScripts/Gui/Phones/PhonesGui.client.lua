@@ -1,12 +1,16 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local GuiTemplates = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiTemplates"))
 local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
 local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
+local GeneralConfig = require(ReplicatedStorage.Configs:WaitForChild("General"))
 local PhonesConfig = require(ReplicatedStorage.Configs.Phones:WaitForChild("Phones"))
 local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffMember"))
+local StaffFoodConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffFood"))
+local MaterialsConfig = require(ReplicatedStorage.Configs.Materials:WaitForChild("Materials"))
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -31,10 +35,17 @@ local MaterialsRewardsContainer = RewardContainer:WaitForChild("MaterialsRewards
 local PercentageTemplateContainer = StaffRewardsContainer.RewardDisplay:WaitForChild("PercentageTemplateContainer")
 local UndetailedTemplateContainer = StaffRewardsContainer.RewardDisplay:WaitForChild("UndetailedTemplateContainer")
 
+local PhoneRewardContainer = AllGuiScreenGui.Phones:WaitForChild("PhoneRewardContainer")
+local RewardIcon = PhoneRewardContainer:WaitForChild("RewardIcon")
+local RewardIconItemImage = RewardIcon:WaitForChild("ItemImage")
+local RewardIconItemNameText = RewardIcon:WaitForChild("ItemName")
+local RewardIconItemCategoryText = RewardIcon:WaitForChild("ItemCategory")
+
 -- CONSTANT VARIABLES --
 local PHONE_GUI_HEADER_TEXT = "NAME Phone!"
 local REWARDS_CONTAINER_HEADER_TEXT_VERBOSE = "TITLE - PERCENTAGE"
 local BUY_BTN_TEXT = "AMT CURRENCY"
+local REWARD_APPEARANCE_LENGTH = 3.5
 
 -- STATE VARIABLES --
 local plrData = nil
@@ -43,6 +54,7 @@ local phoneConfig = nil -- currently viewed phones config
 local buyBtnConnection = nil
 
 GuiServices.StoreInCache(PhonePopupContainer)
+GuiServices.StoreInCache(PhoneRewardContainer)
 
 GuiServices.DefaultMainGuiStyling(PhonePopupContainer)
 
@@ -100,6 +112,12 @@ local function clearRewardContainer()
     end
 end
 
+local function enableRewardContainerVisibility(categoryUnlockables)
+    if categoryUnlockables["Staff"] then StaffRewardsContainer.Visible = true end
+    if categoryUnlockables["Staff Food"] then StaffFoodRewardsContainer.Visible = true end
+    if categoryUnlockables["Materials"] then MaterialsRewardsContainer.Visible = true end
+end
+
 local function populateRewardContainer()
     for unlockableType, unlockableInfo in phoneConfig.Unlockables do
         local header
@@ -109,7 +127,7 @@ local function populateRewardContainer()
             header = StaffRewardsContainer:FindFirstChild("HeaderText")
             header.Text = "Staff Members"
 
-        elseif unlockableType == "Consumables" then
+        elseif unlockableType == "Staff Food" then
             header = StaffFoodRewardsContainer:FindFirstChild("HeaderText")
             header.Text = REWARDS_CONTAINER_HEADER_TEXT_VERBOSE:gsub("TITLE", "Staff Food")
                                                                :gsub("PERCENTAGE", `<font color="#FFF"><stroke color="#FF9B0B" thickness="3">{PhonesConfig.GetTotalItemChance(phoneName, unlockableType)}%%</stroke></font>`)
@@ -122,51 +140,54 @@ local function populateRewardContainer()
 
         -- populate reward display
         for unlockableItemName, unlockableItemInfo in unlockableInfo do
+            local categoryConfig
+            local itemConfig
             local templateContainer
             local template
-            local icon
             local percentageText
-            local templateColour
 
             if unlockableType == "Staff" then
-                StaffRewardsContainer.Visible = true
+                categoryConfig = StaffMemberConfig
                 templateContainer = PercentageTemplateContainer:Clone()
                 template = templateContainer:FindFirstChild("PercentageTemplate")
-                icon = template:FindFirstChild("Icon")
 
                 percentageText = template:FindFirstChild("Percentage")
                 percentageText.Text = `{unlockableItemInfo.Chance}%`
-                
-                templateColour = StaffMemberConfig.GetRarityColour(unlockableItemName)
-                if templateColour then template.BackgroundColor3 = templateColour end
 
-                templateContainer.LayoutOrder = -unlockableItemInfo.Chance -- makes common items appear first
                 templateContainer.Parent = StaffRewardsContainer:FindFirstChild("RewardDisplay")
                 
-            elseif unlockableType == "Consumables" then
-                StaffFoodRewardsContainer.Visible = true
+            elseif unlockableType == "Staff Food" then
+                categoryConfig = StaffFoodConfig
                 templateContainer = UndetailedTemplateContainer:Clone()
                 template = templateContainer:FindFirstChild("UndetailedTemplate")
-                icon = template:FindFirstChild("Icon")
 
-                templateContainer.LayoutOrder = -unlockableItemInfo.Chance
                 templateContainer.Parent = StaffFoodRewardsContainer:FindFirstChild("RewardDisplay")
             
             elseif unlockableType == "Materials" then
-                MaterialsRewardsContainer.Visible = true
+                categoryConfig = MaterialsConfig
                 templateContainer = UndetailedTemplateContainer:Clone()
                 template = templateContainer:FindFirstChild("UndetailedTemplate")
-                icon = template:FindFirstChild("Icon")
 
-                templateContainer.LayoutOrder = -unlockableItemInfo.Chance
                 templateContainer.Parent = MaterialsRewardsContainer:FindFirstChild("RewardDisplay")
             end
+
+            itemConfig = categoryConfig.GetConfig(unlockableItemName)
+
+            local icon = template:FindFirstChild("Icon")
+            icon.Image = GeneralUtils.GetDecalUrl(itemConfig.IconStroke)
+
+            local templateColour = GeneralConfig.GetRarityColour(itemConfig.Rarity)
+            if templateColour then template.BackgroundColor3 = templateColour end
 
             templateContainer.Name = unlockableItemName
             GuiTemplates.CreateButton(template, { Rotates = true })
             templateContainer.Visible = true
+            templateContainer.LayoutOrder = -unlockableItemInfo.Chance -- makes common items appear first
+
         end
     end
+
+    enableRewardContainerVisibility(phoneConfig.Unlockables)
 end
 
 local function populatePhoneGui()
@@ -176,12 +197,15 @@ local function populatePhoneGui()
 end
 
 local function resetPhoneGui()
+    -- phone display container
     phoneName = nil
     resetConnection()
     clearRewardContainer()
     StaffRewardsContainer.Visible = false
     StaffFoodRewardsContainer.Visible = false
     MaterialsRewardsContainer.Visible = false
+
+    -- reward container
 end
 
 local function showPhoneGui(name: string)
@@ -198,6 +222,50 @@ local function showPhoneGui(name: string)
     GuiServices.ShowGuiStandard(PhonePopupContainer, GlobalVariables.Gui.GuiBackdropColourDefault)
 end
 
+local function showReward(reward: string)
+    local cachedData = GuiServices.GetCachedData(PhoneRewardContainer)
+    PhoneRewardContainer.Position = cachedData.Position
+
+    local rewardCategory = reward[1]
+    local rewardName = reward[2]
+
+    RewardIconItemNameText.Text = rewardName
+    RewardIconItemCategoryText.Text = rewardCategory
+
+    local config
+    local itemConfig
+    if rewardCategory == "Staff" then
+        config = StaffMemberConfig
+        
+    elseif rewardCategory == "Staff Food" then
+        config = StaffFoodConfig
+    
+    elseif rewardCategory == "Materials" then
+        config = MaterialsConfig
+    end
+
+    itemConfig = config.GetConfig(rewardName)
+
+    RewardIconItemImage.Image = GeneralUtils.GetDecalUrl(itemConfig.IconStroke)
+
+    PhoneRewardContainer.Visible = true
+end
+
+local function hideReward()
+    local hideTween = TweenService:Create(PhoneRewardContainer, TweenInfo.new(1, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Position = UDim2.fromScale(PhoneRewardContainer.Position.X.Scale, 2.5)
+    })
+    hideTween:Play()
+    hideTween.Completed:Connect(function()
+        PhoneRewardContainer.Visible = false
+
+        -- reset properties
+        RewardIconItemNameText.Text = ""
+        RewardIconItemCategoryText.Text = ""
+        RewardIconItemImage.Image = ""
+    end)
+end
+
 -- ACTIVATE EVENTS --
 ExitBtn.Activated:Connect(function() GuiServices.HideGuiStandard(PhonePopupContainer) end)
 
@@ -206,4 +274,10 @@ Remotes.GUI.Phones.PhonePopup.Event:Connect(showPhoneGui)
 
 Remotes.Phones.PurchasePhone.OnClientEvent:Connect(function(_phoneName: string)
     GuiServices.HideGuiStandard(PhonePopupContainer)
+end)
+
+Remotes.Phones.OpenPhone.OnClientEvent:Connect(function(reward: string, _rarestItemInPhone: boolean)
+    task.wait(GlobalVariables.Gui.FlashShowTime) -- wait until flash is opaque
+    showReward(reward)
+    task.delay(REWARD_APPEARANCE_LENGTH, function() hideReward() end)
 end)

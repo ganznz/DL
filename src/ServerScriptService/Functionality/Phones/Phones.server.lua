@@ -40,7 +40,7 @@ local function purchasePhone(plr: Player, phoneName: string)
 
     local phoneConfig: PhonesConfig.PhoneConfig = PhonesConfig.GetConfig(phoneName)
     if not phoneConfig then return end
-    
+
     local phoneCurrency = phoneConfig.Currency
     local canAfford = profile.Data[phoneCurrency] - phoneConfig.Price >= 0
     if not canAfford then return end
@@ -66,7 +66,12 @@ Remotes.Phones.PerformOpenClick.OnServerEvent:Connect(function(plr: Player)
         -- open phone
         if plrHatchingInfo[plr.UserId].ClicksPerformed >= CLICKS_TO_OPEN then
             local reward = PhonesServerConfig.GetReward(plr, plrHatchingInfo[plr.UserId].PhoneName)
+            local rarestItemInPhone = PhonesConfig.GetRarestItem(plrHatchingInfo[plr.UserId].PhoneName)
+            local isRarestItem = rarestItemInPhone == reward[2]
+
             plrHatchingInfo[plr.UserId] = false
+
+            Remotes.Phones.OpenPhone:FireClient(plr, reward, isRarestItem)
         end
     end
 end)

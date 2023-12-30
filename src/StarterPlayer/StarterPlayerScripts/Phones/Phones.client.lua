@@ -4,8 +4,11 @@ local CollectionService = game:GetService("CollectionService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 
+local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
 local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
 local CameraControls = require(ReplicatedStorage.Utils.Camera:WaitForChild("CameraControls"))
+local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
+local GuiTemplates = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiTemplates"))
 local PhoneConfig = require(ReplicatedStorage.Configs.Phones:WaitForChild("Phones"))
 
 local Remotes = ReplicatedStorage.Remotes
@@ -18,11 +21,13 @@ local PlayerGui = localPlr.PlayerGui
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
 local PhoneOpeningBg = AllGuiScreenGui.Phones.PhoneUnlockContainer:WaitForChild("Background")
 local PhoneIcon: ImageButton = AllGuiScreenGui.Phones.PhoneUnlockContainer:WaitForChild("PhoneIcon")
+local UnlockBeamContainer = AllGuiScreenGui.Phones.PhoneUnlockContainer:WaitForChild("BeamParent")
 
 local allPhoneFolders = CollectionService:GetTagged("Phone")
 
 -- STATE VARIABLES --
 local currentlyOpeningPhone = false
+local phoneClickConnection = nil
 local phoneAppearTween = nil
 local phoneMovementTween = nil
 local phoneIconMouseClickTween = nil
@@ -37,6 +42,8 @@ local PHONE_ICON_CLICKED_SCALE = UDim2.fromScale(0.25, 0.25)
 local PHONE_TWEEN_ROTATION = 7 -- when the phone icon rotation tween plays, this is the rotation
 
 PhoneIcon.Rotation = -PHONE_TWEEN_ROTATION
+
+GuiTemplates.CreateButton(PhoneIcon)
 
 local function enableAllProxPrompts()
     for _i, phoneFolder in allPhoneFolders do
@@ -53,7 +60,7 @@ local function disableAllProxPrompts()
 end
 
 local function tweenPhone(phoneModel: Model)
-    local rotValue = 0 -- used to determine if tween is moving up or down AND linear or exponential
+    local rotValue = 0 -- used to determine if tween is moving upb or down AND linear or exponential
     local tweenUpIteration = 0
     local tweenDownIteration = 0
 
@@ -121,14 +128,21 @@ local function preparePhoneIcon(phoneName: string)
     phoneAppearTween:Play()
     phoneMovementTween:Play()
 
-    phoneIconMouseClickTween = TweenService:Create(PhoneIcon, TweenInfo.new(0.2, Enum.EasingStyle.Exponential), { Size = PHONE_ICON_CLICKED_SCALE })
-    phoneIconClickResetTween = TweenService:Create(PhoneIcon, TweenInfo.new(0.2, Enum.EasingStyle.Bounce), { Size = PHONE_ICON_SCALE })
+    phoneIconMouseClickTween = TweenService:Create(PhoneIcon, TweenInfo.new(0.05, Enum.EasingStyle.Exponential), { Size = PHONE_ICON_CLICKED_SCALE })
+    phoneIconClickResetTween = TweenService:Create(PhoneIcon, TweenInfo.new(0.15, Enum.EasingStyle.Bounce), { Size = PHONE_ICON_SCALE })
 
-    PhoneIcon.Activated:Connect(function()
-        Remotes.Phones.PerformOpenClick:FireServer()
-        phoneIconMouseClickTween:Play()
-        phoneIconMouseClickTween.Completed:Connect(function() phoneIconClickResetTween:Play() end) -- after clicking tween completed, reset phone to normal size
+    phoneClickConnection = PhoneIcon.Activated:Connect(function()
+        if currentlyOpeningPhone then
+            Remotes.Phones.PerformOpenClick:FireServer()
+
+            phoneIconMouseClickTween:Play()
+            phoneIconMouseClickTween.Completed:Connect(function()
+                if phoneIconClickResetTween then phoneIconClickResetTween:Play() end
+            end) -- after clicking tween completed, reset phone to normal size
+        end
     end)
+
+    GuiServices.CreateBeamEffect(20, UnlockBeamContainer, 1.5)
 end
 
 local function preparePhoneForOpening(phoneName: string)
@@ -144,25 +158,51 @@ local function preparePhoneForOpening(phoneName: string)
     end)
 end
 
--- enable all proximity prompts by default. Should already be enabled but just a safe measure
+-- enable all proximity prompts by default. should already be enabled but just a safe measure
 enableAllProxPrompts()
 
 local function resetPhoneOpeningGui()
+    if phoneIconClickResetTween then phoneIconClickResetTween.Completed:Connect(function() PhoneIcon.Size = UDim2.fromScale(0, 0) end) end
+
+    PhoneIcon.Size = UDim2.fromScale(0, 0)
+    currentlyOpeningPhone = false
     PhoneOpeningBg.BackgroundTransparency = 1
     PhoneOpeningBg.Visible = false
-    PhoneIcon.Image = ""
     PhoneIcon.Visible = false
-    PhoneIcon.Size = UDim2.fromScale(0, 0)
+    PhoneIcon.Image = ""
+    PhoneIcon.Rotation = -PHONE_TWEEN_ROTATION
+
     phoneAppearTween = nil
     phoneIconMouseClickTween = nil
     phoneIconClickResetTween = nil
-    if phoneMovementTween then phoneMovementTween:Cancel() end
+    if phoneMovementTween then phoneMovementTween:Pause() end
     phoneMovementTween = nil
+
+    if phoneClickConnection then phoneClickConnection:Disconnect() end
+    phoneClickConnection = nil
 end
 
+resetPhoneOpeningGui()
+
 Remotes.Phones.PurchasePhone.OnClientEvent:Connect(function(phoneName: string)
-    resetPhoneOpeningGui()
     currentlyOpeningPhone = true
     disableAllProxPrompts()
     preparePhoneForOpening(phoneName)
+end)
+
+Remotes.Phones.OpenPhone.OnClientEvent:Connect(function(_reward: string, rarestItemInPhone: boolean)
+    GuiServices.TriggerFlashFrame()
+
+    task.wait(GlobalVariables.Gui.FlashShowTime) -- wait until flash is opaque
+
+    resetPhoneOpeningGui()
+    GuiServices.CreateConfettiEffect(1, 2)
+    CameraControls.SetDefault(localPlr, camera)
+    if rarestItemInPhone then GlobalVariables.Sound.Sfx.PhoneOpenRare:Play() else GlobalVariables.Sound.Sfx.PhoneOpenNormal:Play() end
+
+    -- wait for reward display icon to disappear
+    -- lazy af code bruh
+    task.delay(5, function()
+        enableAllProxPrompts()
+    end)
 end)
