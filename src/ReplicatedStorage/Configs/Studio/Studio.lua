@@ -155,16 +155,22 @@ function Studio.GetFurnitureAvailableForStudio(plrData)
     return furnitureInInventoryCopy
 end
 
-function Studio.ItemInStudio(plrData, itemName: string, itemCategory: string, itemUUID: string, studioIndex: string, studioType: string): boolean
-    local studioFurnishingData = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemCategory]
+function Studio.ItemInStudio(plrData, inventoryCategory: string, studioType: string, studioIndex: string, itemInfo: {}): boolean
+    if inventoryCategory == "furniture" then
+        local studioFurnishingData = plrData.Studio.Studios[studioType][studioIndex].Furnishings[itemInfo.ItemCategory]
 
-    if studioFurnishingData[itemName] then
-        if studioFurnishingData[itemName][itemUUID] then
-            return true
+        if studioFurnishingData[itemInfo.ItemName] then
+            if studioFurnishingData[itemInfo.ItemName][itemInfo.ItemUUID] then return true end
         end
+
+        return false
+
+    elseif inventoryCategory == "staff" then
+        local studioStaffData = plrData.Studio.Studios[studioType][studioIndex].StaffMembers
+        if studioStaffData and studioStaffData[itemInfo.ItemInstance.UUID] then return true end
+
+        return false
     end
-    
-    return false
 end
 
 function Studio.GetFurnitureItemModel(itemName: string, itemCategory: string)
