@@ -4,6 +4,8 @@ local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"
 
 local Materials = {}
 
+Materials.CategoryImage = "15814491509"
+
 export type MaterialConfig = {
     Rarity: number,
     IconOriginal: string,
@@ -42,6 +44,13 @@ Materials.Config = config
 
 function Materials.GetConfig(materialName: string): MaterialConfig | nil
     return Materials.Config[materialName]
+end
+
+function Materials.GetAllMaterialNames(): {}
+    local allMaterialNames = {}
+    for itemName, _itemInfo in Materials.Config do table.insert(allMaterialNames, itemName) end
+
+    return allMaterialNames
 end
 
 function Materials.GetRarityName(materialName: string): string | nil
