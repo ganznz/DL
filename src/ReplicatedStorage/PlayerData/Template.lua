@@ -1,12 +1,24 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local TeleportAreas = require(ReplicatedStorage.Configs:WaitForChild("TeleportAreas"))
 local GenreConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Genre"))
 local TopicConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Topic"))
-local TeleportAreas = require(ReplicatedStorage.Configs:WaitForChild("TeleportAreas"))
+local StaffFoodConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffFood"))
+local MaterialsConfig = require(ReplicatedStorage.Configs.Materials:WaitForChild("Materials"))
 
 local DEFAULT_UNLOCKABLE_AREAS = {}
 for _i, area in TeleportAreas.UnlockableAreas do
     DEFAULT_UNLOCKABLE_AREAS[area] = false
+end
+
+local ALL_STAFF_FOOD = {}
+for foodName, _foodInfo in StaffFoodConfig.Config do
+    ALL_STAFF_FOOD[foodName] = { Amount = 0 }
+end
+
+local ALL_MATERIALS = {}
+for materialName, _materialInfo in MaterialsConfig.Config do
+    ALL_MATERIALS[materialName] = { Amount = 0 }
 end
 
 -- Template is what empty profiles default to
@@ -54,13 +66,17 @@ local Template = {
 
     Inventory = {
         StudioFurnishing = {
-            -- character need name = { items that fulfill the need }
+            -- e.g.
+            -- Mood = { Basic = { UUID1 = {} } }
             Mood = {},
             Energy = {},
             Hunger = {},
             Decor = {},
             Special = {}
-        }
+        },
+        StaffMembers = {},
+        StaffFood = ALL_STAFF_FOOD,
+        Materials = ALL_MATERIALS
     },
 
     Studio = {
@@ -74,18 +90,19 @@ local Template = {
             Standard = {
                 -- by default player owns the first studio
                 ["1"] = {
+                    -- contain information for placed items in this studio
                     Furnishings = {
-                        -- contain information for placed items in this studio
                         Mood = {},
                         Energy = {},
                         Hunger = {},
                         Decor = {},
                         Special = {}
                     },
+                    StaffMembers = {},
                     StudioEssentials = {
                         Computer = {},
                         Shelf = {}
-                    }
+                    },
                 },
             },
             -- Gamepass studios

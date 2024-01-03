@@ -202,7 +202,7 @@ Remotes.Phones.OpenPhone.OnClientEvent:Connect(function(_reward: string, rarestI
 
     -- wait for reward display icon to disappear
     -- lazy af code bruh
-    task.delay(5, function()
+    task.delay(3.5, function()
         enableAllProxPrompts()
     end)
 end)

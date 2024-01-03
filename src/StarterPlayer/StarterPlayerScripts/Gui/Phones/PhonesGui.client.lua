@@ -45,7 +45,7 @@ local RewardIconItemCategoryText = RewardIcon:WaitForChild("ItemCategory")
 local PHONE_GUI_HEADER_TEXT = "NAME Phone!"
 local REWARDS_CONTAINER_HEADER_TEXT_VERBOSE = "TITLE - PERCENTAGE"
 local BUY_BTN_TEXT = "AMT CURRENCY"
-local REWARD_APPEARANCE_LENGTH = 3.5
+local REWARD_APPEARANCE_LENGTH = 3
 
 -- STATE VARIABLES --
 local plrData = nil

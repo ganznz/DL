@@ -6,7 +6,8 @@ local PhonesConfig = require(ReplicatedStorage.Configs.Phones:WaitForChild("Phon
 
 local Phones = {}
 
-function Phones.GetReward(plr: Player, phoneName: string): {}
+-- returns { rewardCategory, rewardName }
+function Phones.GetRewardInfo(plr: Player, phoneName: string): {}
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 

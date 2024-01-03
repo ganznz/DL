@@ -7,7 +7,8 @@ local EnergyFurniture = {}
 type EnergyFurnitureConfig = {
     Price: number;
     Currency: string,
-    Image: string,
+    IconOriginal: string,
+    IconStroke: string,
     Stats: {}
 }
 
@@ -17,7 +18,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Default = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 1 -- base item stat boost (+1 energy/sec)
         }
@@ -25,7 +27,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Basic = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 2
         }
@@ -33,7 +36,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Modern = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 3
         }
@@ -41,7 +45,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Rustic = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 5
         }
@@ -49,7 +54,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Fancy = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 7
         }
@@ -57,7 +63,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Futuristic = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 9
         }
@@ -65,7 +72,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Greek = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 12
         }
@@ -73,7 +81,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Steampunk = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 15
         }
@@ -81,7 +90,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Tropical = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 18
         }
@@ -89,7 +99,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Space = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 22
         }
@@ -97,7 +108,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Retro = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 26
         }
@@ -105,7 +117,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Rgb = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 30
         }
@@ -113,7 +126,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Prehistoric = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 35
         }
@@ -121,7 +135,8 @@ local Config: { [string]: EnergyFurnitureConfig } = {
     Crystal = {
         Price = 99,
         Currency = "Coins",
-        Image = "",
+        IconOriginal = "",
+        IconStroke = "",
         Stats = {
             Base = 40
         }

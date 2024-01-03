@@ -64,38 +64,44 @@ end
 -- function NOT used for granting a plr new staff member, but instead used for instantiating a StaffMember object
 --          using predefined staff member data that the appropriate class methods can be used on
 function StaffMember.new(uuid: string,
+                        model: string,
                         name: string,
                         rarity: number,
-                        specialisation: "Code" | "Sound" | "Modeling",
+                        specialisation: "Code" | "Sound" | "Artist",
                         currentEnergy: number,
                         codeLevel: number,
                         soundLevel: number,
-                        modelingLevel: number)
+                        artistLevel: number)
 
     local staffMember = {}
     setmetatable(staffMember, StaffMember)
 
     staffMember.UUID = uuid
+    staffMember.Model = model
     staffMember.Name = name
     staffMember.Rarity = rarity
     staffMember.Specialisation = specialisation
     staffMember.CurrentEnergy = currentEnergy
     staffMember.CodeLevel = codeLevel
     staffMember.SoundLevel = soundLevel
-    staffMember.ModelingLevel = modelingLevel
+    staffMember.ArtistLevel = artistLevel
 
     return staffMember
 
 end
 
-function StaffMember:CalcSkillLevelCost(skill: "code" | "sound" | "modeling"): number
+function StaffMember:GetTotalSkillPts()
+    return self.CodeLevel + self.SoundLevel + self.ArtistLevel
+end
+
+function StaffMember:CalcSkillLevelCost(skill: "code" | "sound" | "artist"): number
     local skillLevel
     if skill == "code" then
         skillLevel = self.CodeLevel
     elseif skill == "sound" then
         skillLevel = self.SoundLevel
-    elseif skill == "modeling" then
-        skillLevel = self.ModelingLevel
+    elseif skill == "artist" then
+        skillLevel = self.ArtistLevel
     end
 
     if self.Rarity == 1 then
@@ -105,6 +111,22 @@ function StaffMember:CalcSkillLevelCost(skill: "code" | "sound" | "modeling"): n
     elseif self.Rarity == 3 then
         return math.round( 40 * math.pow(1.5, skillLevel) )
     end
+end
+
+function StaffMember:CalcMaxEnergy()
+    return 99
+end
+
+function StaffMember:CalcCodePts()
+    return 99
+end
+
+function StaffMember:CalcSoundPts()
+    return 99
+end
+
+function StaffMember:CalcArtistPts()
+    return 99
 end
 
 return StaffMember
