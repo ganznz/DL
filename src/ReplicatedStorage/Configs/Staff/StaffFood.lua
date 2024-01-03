@@ -4,6 +4,8 @@ local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"
 
 local StaffFood = {}
 
+StaffFood.CategoryImage = "15814511118"
+
 export type StaffFoodConfig = {
     Rarity: number,
     IconOriginal: string,
@@ -47,6 +49,13 @@ StaffFood.Config = config
 
 function StaffFood.GetConfig(foodName: string): StaffFoodConfig | nil
     return StaffFood.Config[foodName]
+end
+
+function StaffFood.GetAllStaffFoodNames(): {}
+    local allStaffFoodNames = {}
+    for itemName, _itemInfo in StaffFood.Config do table.insert(allStaffFoodNames, itemName) end
+
+    return allStaffFoodNames
 end
 
 function StaffFood.GetRarityName(foodName: string): string | nil
