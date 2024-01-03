@@ -3,8 +3,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
-local PhonesConfig = require(ReplicatedStorage.Configs.Phones:WaitForChild("Phones"))
-local PhonesServerConfig = require(ServerScriptService.Functionality.Phones:WaitForChild("PhonesConfigServer"))
+local PhonesConfig = require(ReplicatedStorage.Configs.Phones.Phones)
+local PhonesServerConfig = require(ServerScriptService.Functionality.Phones.PhonesConfigServer)
+local StaffConfigServer = require(ServerScriptService.Functionality.Staff.StaffConfigServer)
+local StaffFoodConfigServer = require(ServerScriptService.Functionality.Staff.StaffFoodConfigServer)
+local MaterialsConfigServer = require(ServerScriptService.Functionality.Materials.MaterialsConfigServer)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -53,6 +56,27 @@ local function purchasePhone(plr: Player, phoneName: string)
     Remotes.Phones.PurchasePhone:FireClient(plr, phoneName)
 end
 
+local function giveReward(plr: Player)
+    local rewardInfo = PhonesServerConfig.GetRewardInfo(plr, plrHatchingInfo[plr.UserId].PhoneName)
+    local rewardCategory = rewardInfo[1] -- e.g. staff, staff food, materials
+    local rewardName = rewardInfo[2]
+
+    if rewardCategory == "Staff" then
+        StaffConfigServer.GiveStaffMember(plr, rewardName)
+    elseif rewardCategory == "Staff Food" then
+        StaffFoodConfigServer.GiveFood(plr, rewardName)
+    elseif rewardCategory == "Materials" then
+        MaterialsConfigServer.GiveMaterial(plr, rewardName)
+    end
+
+    local rarestItemInPhone: string = PhonesConfig.GetRarestItem(plrHatchingInfo[plr.UserId].PhoneName)
+    local isRarestItem: boolean = rarestItemInPhone == rewardName
+
+    plrHatchingInfo[plr.UserId] = false
+
+    Remotes.Phones.OpenPhone:FireClient(plr, rewardInfo, isRarestItem)
+end
+
 -- REMOTES --
 Remotes.Phones.PurchasePhone.OnServerEvent:Connect(purchasePhone)
 
@@ -63,16 +87,8 @@ Remotes.Phones.PerformOpenClick.OnServerEvent:Connect(function(plr: Player)
         addToClickCooldownTable(plr)
         plrHatchingInfo[plr.UserId].ClicksPerformed += 1
 
-        -- open phone
-        if plrHatchingInfo[plr.UserId].ClicksPerformed >= CLICKS_TO_OPEN then
-            local reward = PhonesServerConfig.GetReward(plr, plrHatchingInfo[plr.UserId].PhoneName)
-            local rarestItemInPhone = PhonesConfig.GetRarestItem(plrHatchingInfo[plr.UserId].PhoneName)
-            local isRarestItem = rarestItemInPhone == reward[2]
-
-            plrHatchingInfo[plr.UserId] = false
-
-            Remotes.Phones.OpenPhone:FireClient(plr, reward, isRarestItem)
-        end
+        -- open phone, give reward
+        if plrHatchingInfo[plr.UserId].ClicksPerformed >= CLICKS_TO_OPEN then giveReward(plr) end
     end
 end)
 
