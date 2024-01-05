@@ -1,9 +1,13 @@
+local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff.StaffMember)
+local StudioConfigServer = require(ServerScriptService.Functionality.Studio.StudioConfigServer)
+
+local Remotes = ReplicatedStorage.Remotes
 
 local StaffServer = {}
 
@@ -42,6 +46,42 @@ function StaffServer.GiveStaffMember(plr: Player, staffName: string)
     }
 
     profile.Data.Inventory.StaffMembers[itemUUID] = instanceData
+end
+
+function StaffServer.DeleteStaffMember(plr: Player, itemInfo: {})
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    if not profile.Data.Inventory.StaffMembers[itemInfo.ItemUUID] then return end
+
+    -- check if item is locked first
+    local isLocked = profile.Data.Inventory.StaffMembers[itemInfo.ItemUUID].Locked
+    if isLocked then return end
+
+    -- remove item from studios
+    for studioType: "Standard" | "Premium" in profile.Data.Studio.Studios do
+        for studioIndex, studioData in profile.Data.Studio.Studios[studioType] do
+            local staffMemberInStudio: boolean = studioData.StaffMembers[itemInfo.ItemUUID]
+            
+            if staffMemberInStudio then
+                -- check if the item to be deleted is in this studio
+                profile.Data.Studio.Studios[studioType][studioIndex].StaffMembers[itemInfo.ItemUUID] = nil
+            end
+        end
+    end
+
+    -- delete from plr inventory also
+    profile.Data.Inventory.StaffMembers[itemInfo.ItemUUID] = nil
+
+    -- remove item visually for all plrs in studio
+    for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
+        if studioInfo then
+            if studioInfo.PlrVisitingId == plr.UserId then
+                local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
+                Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, "staff", itemInfo)
+            end
+        end
+    end
 end
 
 return StaffServer
