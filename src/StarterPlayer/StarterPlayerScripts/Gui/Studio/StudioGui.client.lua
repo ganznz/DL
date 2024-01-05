@@ -743,6 +743,8 @@ end)
 
 -- show build-mode gui again
 Remotes.Studio.BuildMode.ExitPlaceMode.OnClientEvent:Connect(function(studioInventoryData)
+    if not studioInventoryData then return end
+
     hideItemInteractionBtns()
     if localPlr:GetAttribute("InBuildMode") then
         if studioInventoryData then

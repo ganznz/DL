@@ -85,25 +85,8 @@ local Template = {
         StudioStatus = "open", -- "open" | "closed"| "friends"
 
         Studios = {
-            Standard = {
-                -- by default player owns the first studio
-                -- P.S. this all gets overwritten when a plr joins game for first time, I have this here as reference to help me code studio features
-                ["1"] = {
-                    -- contain information for placed items in this studio
-                    Furnishings = {
-                        Mood = {},
-                        Energy = {},
-                        Hunger = {},
-                        Decor = {},
-                        Special = {}
-                    },
-                    StaffMembers = {},
-                    StudioEssentials = {
-                        Computer = {},
-                        Shelf = {}
-                    },
-                },
-            },
+            Standard = {},
+
             -- Gamepass studios
             Premium = {}
         }

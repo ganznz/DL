@@ -3,8 +3,10 @@
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local ContextActionService = game:GetService("ContextActionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+
+local Remotes = ReplicatedStorage.Remotes
 
 local plr: Player = Players.LocalPlayer
 local char: Model = plr.Character or plr.CharacterAdded:Wait()
@@ -143,11 +145,6 @@ local function calculateItemPosition()
     return finalCFrame * CFrame.Angles(0, math.rad(rotation), 0)
 end
 
--- local function unbindInputs()
---     ContextActionService:UnbindAction("Rotate")
---     ContextActionService:UnbindAction("Cancel")
--- end
-
 -- set object position based on pivot
 local function translateObj()
     if objectParent and object.Parent == objectParent then
@@ -164,7 +161,7 @@ local function getInstantCFrame()
     return calculateItemPosition()
 end
 
-function Placement:place(remote: RemoteFunction, itemType, itemInfo: {}, additionalParams: {})
+function Placement:place(itemType, itemInfo: {}, additionalParams: {})
     if not collided and object then
         local placementCFrame = getInstantCFrame()
 
@@ -176,7 +173,7 @@ function Placement:place(remote: RemoteFunction, itemType, itemInfo: {}, additio
         itemInfo["RelativeCFrame"] = relativeOffset
 
         -- additionalParams contain info you want to send to the server that are exclusive to your games functionality (e.g. an items rarity)
-        return remote:FireServer(itemType, itemInfo, additionalParams)
+        Remotes.Studio.BuildMode.PlaceItem:FireServer(itemType, itemInfo, additionalParams)
     end
 end
 

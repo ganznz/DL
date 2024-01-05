@@ -242,6 +242,7 @@ local function determinePlaceBtnSettings(placeBtn: TextButton, itemInfo: {})
 
         placeBtnConnection = placeBtn.Activated:Connect(function()
             Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
+            task.wait(0.2) -- let EnterBuildMode remote do its thing before calling EnterPlaceMode remote (thanks to my shit code)
             Remotes.Studio.BuildMode.EnterPlaceMode:FireServer(inventoryCategory, itemInfo, false)
             GuiServices.HideGuiStandard(InventoryContainer)
         end)
@@ -253,7 +254,7 @@ local function registerPlaceItemBtn(itemInfo: {})
     if inventoryCategory == "furniture" then
         determinePlaceBtnSettings(FurnitureInfoPlaceBtn, itemInfo)
     elseif inventoryCategory == "staff" then
-        determinePlaceBtnSettings(StaffInfoPlaceBtn, itemInfo)
+        determinePlaceBtnSettings(StaffInfoPlaceBtn, itemInfo.ItemInfo)
     end
 end
 
@@ -454,7 +455,11 @@ local function populateScrollingFrame()
         for staffMemberUUID, staffMemberData in plrData.Inventory.StaffMembers do
             local itemInstance = StaffMemberConfig.new(staffMemberUUID, staffMemberData.Model, staffMemberData.Name, staffMemberData.Rarity,
                                  staffMemberData.Specialisation, staffMemberData.CurrentEnergy, staffMemberData.CodeLevel, staffMemberData.SoundLevel, staffMemberData.ArtistLevel)
-            createItemTemplate({ ItemInstance = itemInstance })
+
+            -- this is the table that gets sent w/ remotes. Cannot send itemInstance table as that is cyclic
+            local itemInfo = { ItemUUID = staffMemberUUID, ItemModel = staffMemberData.Model }
+
+            createItemTemplate({ ItemInstance = itemInstance, ItemInfo = itemInfo})
         end
 
     elseif inventoryCategory == "furniture" then

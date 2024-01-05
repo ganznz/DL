@@ -108,7 +108,7 @@ function FurnitureConfig.StoreFurnitureItem(plr: Player, itemInfo: {}, studioInd
     studioPlacedFurnitureData.Furnishings[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID] = nil
 end
 
-function FurnitureConfig.UpdateFurnitureItemData(plr: Player, itemInfo: {}, studioIndex): string
+function FurnitureConfig.UpdateFurnitureItemPlacementData(plr: Player, itemInfo: {}, studioIndex): string
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -127,7 +127,7 @@ function FurnitureConfig.UpdateFurnitureItemData(plr: Player, itemInfo: {}, stud
 end
 
 -- function for saving a placed furniture items data to plr data
-function FurnitureConfig.StoreFurnitureItemData(plr: Player, itemInfo: {}, studioIndex): string
+function FurnitureConfig.StoreFurnitureItemPlacementData(plr: Player, itemInfo: {}, studioIndex): string
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
