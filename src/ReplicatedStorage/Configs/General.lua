@@ -3,8 +3,17 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
+local StaffFoodConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffFood"))
+local MaterialsConfig = require(ReplicatedStorage.Configs.Materials:WaitForChild("Materials"))
 
 local GeneralConfig = {}
+
+-- holds all types of items that fall under the general "Items" category (staff food, materials, etc)
+local allItems = {}
+for foodName, _foodInfo in StaffFoodConfig.Config do allItems[foodName] = { Category = "Staff Food" } end
+for materialName, _materialInfo in MaterialsConfig.Config do allItems[materialName] = { Category = "Material" } end
+
+GeneralConfig.AllItems = allItems
 
 function GeneralConfig.GetRarityColour(itemRarity: number): Color3 | nil
     if itemRarity == 1 then
@@ -22,6 +31,15 @@ function GeneralConfig.GetRarityColour(itemRarity: number): Color3 | nil
     elseif itemRarity == 7 then
         return GlobalVariables.Gui.Rarity7Colour
     end
+end
+
+-- method gets the specific category of an item (staff food, material, etc) that falls under the general "Item" category
+-- items fall under the general "Item" category in areas such as displayed in the inventory GUI
+function GeneralConfig.GetItemCategory(itemName: string): string
+    local itemInfo = GeneralConfig.AllItems[itemName]
+    if not itemInfo then return end
+
+    return itemInfo.Category
 end
 
 return GeneralConfig
