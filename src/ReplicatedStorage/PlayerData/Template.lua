@@ -82,13 +82,12 @@ local Template = {
     Studio = {
         -- index of studio that the player is currently using
         ActiveStudio = "1", -- by default is "1"
-
         StudioStatus = "open", -- "open" | "closed"| "friends"
 
-        -- the tables in this Studios table holds data for the players unlocked studio
         Studios = {
             Standard = {
                 -- by default player owns the first studio
+                -- P.S. this all gets overwritten when a plr joins game for first time, I have this here as reference to help me code studio features
                 ["1"] = {
                     -- contain information for placed items in this studio
                     Furnishings = {

@@ -90,7 +90,7 @@ function StaffMember.new(uuid: string,
 
 end
 
-function StaffMember:GetTotalSkillPts()
+function StaffMember:GetTotalSkillPts(): number
     return self.CodeLevel + self.SoundLevel + self.ArtistLevel
 end
 
@@ -113,19 +113,19 @@ function StaffMember:CalcSkillLevelCost(skill: "code" | "sound" | "artist"): num
     end
 end
 
-function StaffMember:CalcMaxEnergy()
+function StaffMember:CalcMaxEnergy(): number
     return 99
 end
 
-function StaffMember:CalcCodePts()
+function StaffMember:CalcCodePts(): number
     return 99
 end
 
-function StaffMember:CalcSoundPts()
+function StaffMember:CalcSoundPts(): number
     return 99
 end
 
-function StaffMember:CalcArtistPts()
+function StaffMember:CalcArtistPts(): number
     return 99
 end
 

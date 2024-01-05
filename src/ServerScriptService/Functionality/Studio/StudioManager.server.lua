@@ -21,7 +21,10 @@ Players.PlayerAdded:Connect(function(plr: Player)
     if not profile then return end
 
     -- if it's players first time joining the game, establish first studio data
-    StudioConfigServer.InitializeStudioData(plr, "Standard", "1")
+    if not profile.Data.Studio.Studios.Standard["1"] then
+        StudioConfigServer.InitializeStudioData(plr, "Standard", "1")
+        profile.Data.Studio.ActiveStudio = "1"
+    end
 
     StudioConfigServer.PlrStudios[plr.UserId] = {
         StudioIndex = profile.Data.Studio.ActiveStudio,

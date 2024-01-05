@@ -42,7 +42,9 @@ function Studio.InitializeStudioData(plr: Player, studioType: "Standard" | "Prem
         StudioEssentials = {
             Computer = { CFrame = DatastoreUtils.CFrameToTable(plotCFrame:ToObjectSpace(computerCFrame)) },
             Shelf = { CFrame = DatastoreUtils.CFrameToTable(plotCFrame:ToObjectSpace(shelfCFrame)) }
-        }
+        },
+
+        StaffMembers = {},
     }
 end
 
