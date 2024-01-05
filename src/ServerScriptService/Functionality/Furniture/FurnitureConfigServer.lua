@@ -4,6 +4,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local HttpService = game:GetService("HttpService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
+local StudioConfigServer = require(ServerScriptService.Functionality.Studio.StudioConfigServer)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
 local DatastoreUtils = require(ReplicatedStorage.Utils.DS.DatastoreUtils)
 local PlrManagerConfigServer = require(ServerScriptService.Functionality.Player.PlayerManager)
@@ -14,14 +15,16 @@ local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitFo
 local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
 local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("DecorFurniture"))
 
-local StudioPlaceables = {}
+local Remotes = ReplicatedStorage.Remotes
+
+local FurnitureConfig = {}
 
 type FurnitureInstance = {
     Locked: boolean
 }
 
 -- adminCmdExecutor parameter gets passed in ONLY when function called as a cmd.
-function StudioPlaceables.PurchaseFurnitureItem(plr: Player, itemName: string, itemCategory: string, adminCmdExecutor: Player)
+function FurnitureConfig.PurchaseFurnitureItem(plr: Player, itemName: string, itemCategory: string, adminCmdExecutor: Player)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -69,7 +72,7 @@ end
 -- function for checking if a player has a furniture item available
 -- lookForUUID: boolean - if true, search for instance by UUID instead of item name
 --                        if false, search for instance by instance name instead of UUID (e.g. for placing item in Studio)
-function StudioPlaceables.HasFurnitureItem(plr: Player, itemInfo: {}, studioIndex: boolean, lookForUUID: boolean): boolean
+function FurnitureConfig.HasFurnitureItem(plr: Player, itemInfo: {}, studioIndex: boolean, lookForUUID: boolean): boolean
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -92,7 +95,7 @@ function StudioPlaceables.HasFurnitureItem(plr: Player, itemInfo: {}, studioInde
 end
 
 -- remove a furniture item from studio and store back in inventory
-function StudioPlaceables.StoreFurnitureItem(plr: Player, itemInfo: {}, studioIndex: string)
+function FurnitureConfig.StoreFurnitureItem(plr: Player, itemInfo: {}, studioIndex: string)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -105,7 +108,7 @@ function StudioPlaceables.StoreFurnitureItem(plr: Player, itemInfo: {}, studioIn
     studioPlacedFurnitureData.Furnishings[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID] = nil
 end
 
-function StudioPlaceables.UpdateFurnitureItemData(plr: Player, itemInfo: {}, studioIndex): string
+function FurnitureConfig.UpdateFurnitureItemData(plr: Player, itemInfo: {}, studioIndex): string
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -124,7 +127,7 @@ function StudioPlaceables.UpdateFurnitureItemData(plr: Player, itemInfo: {}, stu
 end
 
 -- function for saving a placed furniture items data to plr data
-function StudioPlaceables.StoreFurnitureItemData(plr: Player, itemInfo: {}, studioIndex): string
+function FurnitureConfig.StoreFurnitureItemData(plr: Player, itemInfo: {}, studioIndex): string
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -160,7 +163,7 @@ function StudioPlaceables.StoreFurnitureItemData(plr: Player, itemInfo: {}, stud
 end
 
 -- function for getting the data of already placed furniture items
-function StudioPlaceables.AlreadyPlacedFurnitureData(plr: Player, studioIndex)
+function FurnitureConfig.AlreadyPlacedFurnitureData(plr: Player, studioIndex)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -175,18 +178,17 @@ function StudioPlaceables.AlreadyPlacedFurnitureData(plr: Player, studioIndex)
 end
 
 -- -> boolean : indicates whether item got deleted or not
-function StudioPlaceables.DeleteFurnitureItem(plr: Player, itemInfo): boolean
+function FurnitureConfig.DeleteFurnitureItem(plr: Player, itemInfo: {}): boolean
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
-    local isLocked = false
+    local isLocked = true
     -- check if item is locked first
     local succ, err = pcall(function()
         local instanceData = profile.Data.Inventory.StudioFurnishing[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID]
         isLocked = instanceData.Locked
     end)
-
-    if isLocked then return false end
+    if isLocked then return end
 
     -- remove item from studios
     for studioType: "Standard" | "Premium" in profile.Data.Studio.Studios do
@@ -206,7 +208,15 @@ function StudioPlaceables.DeleteFurnitureItem(plr: Player, itemInfo): boolean
     -- delete from plr furniture inventory also
     profile.Data.Inventory.StudioFurnishing[itemInfo.ItemCategory][itemInfo.ItemName][itemInfo.ItemUUID] = nil
 
-    return true
+    -- remove item visually for all plrs in studio
+    for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
+        if studioInfo then
+            if studioInfo.PlrVisitingId == plr.UserId then
+                local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
+                Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, "furniture", itemInfo)
+            end
+        end
+    end
 end
 
-return StudioPlaceables
+return FurnitureConfig
