@@ -1,10 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
-local EnergyFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("EnergyFurniture"))
-local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
-local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("HungerFurniture"))
-local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("DecorFurniture"))
+local StaffConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffMember"))
 
 local Studio = {}
 
@@ -167,7 +164,7 @@ function Studio.ItemInStudio(plrData, inventoryCategory: string, studioType: str
 
     elseif inventoryCategory == "staff" then
         local studioStaffData = plrData.Studio.Studios[studioType][studioIndex].StaffMembers
-        if studioStaffData and studioStaffData[itemInfo.ItemInstance.UUID] then return true end
+        if studioStaffData[itemInfo.ItemUUID] then return true end
 
         return false
     end
@@ -179,7 +176,7 @@ end
 
 -- method for placing item on plot
 function Studio.PlaceItemOnPlot(itemType: string, itemInfo: {}, parent: Folder)
-    local itemModelToPlace
+    local itemModelToPlace: Model
 
     if itemType == "furniture" then
         itemModelToPlace = Studio.GetFurnitureItemModel(itemInfo.ItemName, itemInfo.ItemCategory)
@@ -188,6 +185,10 @@ function Studio.PlaceItemOnPlot(itemType: string, itemInfo: {}, parent: Folder)
     elseif itemType == "essential" then
         itemModelToPlace = parent:FindFirstChild(itemInfo.ItemName):Clone()
         itemModelToPlace.Name = itemInfo.ItemName
+    
+    elseif itemType == "staff" then
+        itemModelToPlace = StaffConfig.GetStaffMemberModel(itemInfo.ItemModel)
+        itemModelToPlace.Name = itemInfo.ItemUUID
     end
 
     itemModelToPlace.PrimaryPart.Transparency = 1
@@ -195,6 +196,7 @@ function Studio.PlaceItemOnPlot(itemType: string, itemInfo: {}, parent: Folder)
     itemModelToPlace.Parent = parent
 
     for _i, v in itemModelToPlace:GetDescendants() do
+        if v:GetAttribute("IgnoreCanCollide") then continue end
         if v:IsA("BasePart") then v.CanCollide = true end
     end
 end

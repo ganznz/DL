@@ -61,6 +61,10 @@ function StaffMember.GetRarityName(staffModel: string): string | nil
     end
 end
 
+function StaffMember.GetStaffMemberModel(staffMemberName: string): Model | nil
+    return ReplicatedStorage.Assets.Models.StaffMembers[staffMemberName]:Clone()
+end
+
 -- function NOT used for granting a plr new staff member, but instead used for instantiating a StaffMember object
 --          using predefined staff member data that the appropriate class methods can be used on
 function StaffMember.new(uuid: string,

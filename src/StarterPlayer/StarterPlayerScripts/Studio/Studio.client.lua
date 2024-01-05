@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
 local Zone = require(ReplicatedStorage.Libs:WaitForChild("Zone"))
 local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
+local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffMember"))
 local CameraControls = require(ReplicatedStorage.Utils.Camera:WaitForChild("CameraControls"))
 local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
 local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
@@ -27,7 +28,7 @@ local interiorFurnitureData = nil
 local currentStudioIndex = nil
 local studioInteriorFolder = nil
 local studioInteriorPlot = nil
-local studioFurnitureFolder = nil
+local studioItemPlacementFolder = nil
 local studioInteriorModel = nil
 local studioInteriorExitZone = nil
 
@@ -81,7 +82,16 @@ local function placeFurnitureItem(model: Model, itemUUID: string, itemOffsetCFra
 
     model:PivotTo(placementCFrame)
     model.Name = itemUUID
-    model.Parent = studioFurnitureFolder
+    model.Parent = studioItemPlacementFolder
+end
+
+local function placeStaffMember(model: Model, itemUUID: string, itemOffsetCFrame: CFrame)
+        -- convert CFrame from objectspace that is relative to plot, to worldspace.
+        local placementCFrame = studioInteriorPlot.CFrame:ToWorldSpace(itemOffsetCFrame)
+
+        model:PivotTo(placementCFrame)
+        model.Name = itemUUID
+        model.Parent = studioItemPlacementFolder
 end
 
 
@@ -95,6 +105,20 @@ local function loadInteriorFurniture()
                 placeFurnitureItem(itemModel, itemUUID, itemCFrame)
             end
         end
+    end
+end
+
+local function loadInteriorStaffMembers(plrToVisitData: {}, studioType: "Standard" | "Premium")
+    local inventoryStaffMemberData = plrToVisitData.Inventory.StaffMembers
+    local studioStaffMemberData = plrToVisitData.Studio.Studios[studioType][currentStudioIndex].StaffMembers
+
+    for staffMemberUUID, staffMemberData in studioStaffMemberData do
+        local staffMemberModelName = inventoryStaffMemberData[staffMemberUUID].Model
+
+        local itemCFrame = DatastoreUtils.TableToCFrame(staffMemberData.CFrame)
+        local itemModel = StaffMemberConfig.GetStaffMemberModel(staffMemberModelName)
+
+        placeStaffMember(itemModel, staffMemberUUID, itemCFrame)
     end
 end
 
@@ -263,6 +287,7 @@ local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
         replaceComputerModel(plrToVisitData, studioType)
         loadShelfModel(plrToVisitData, studioType)
         loadInteriorFurniture()
+        loadInteriorStaffMembers(plrToVisitData, studioType)
 
         studioExteriorFolder:Destroy() -- hide studio exterior from players view
         studioInteriorFolder.Parent = Workspace.TempAssets.Studios
@@ -318,7 +343,7 @@ Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(studioOwner
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
     studioInteriorFolder.Name = studioOwnerId
-    studioFurnitureFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
+    studioItemPlacementFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
     interiorFurnitureData = placedFurnitureData
 
     local plrToVisit = Players:GetPlayerByUserId(studioOwnerId)
@@ -342,7 +367,7 @@ Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(studioOwn
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
     studioInteriorFolder.Name = studioOwnerId
-    studioFurnitureFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
+    studioItemPlacementFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
     interiorFurnitureData = placedFurnitureData
 
     local plrToVisit = Players:GetPlayerByUserId(studioOwnerId)
@@ -375,8 +400,8 @@ end)
 Remotes.Studio.BuildMode.ReplicatePlaceItem.OnClientEvent:Connect(function(itemType: string, itemInfo)
     local itemParent
 
-    if itemType == "furniture" then
-        itemParent = studioFurnitureFolder
+    if itemType == "furniture" or itemType == "staff" then
+        itemParent = studioItemPlacementFolder
     elseif itemType == "essential" then
         itemParent = studioInteriorModel
     end
@@ -384,14 +409,19 @@ Remotes.Studio.BuildMode.ReplicatePlaceItem.OnClientEvent:Connect(function(itemT
     StudioConfig.PlaceItemOnPlot(itemType, itemInfo, itemParent)
 end)
 
+-- Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, "staff", { ItemUUID = staffMemberUUID })
 Remotes.Studio.BuildMode.RemoveItem.OnClientEvent:Connect(function(itemType: string, itemInfo: {})
     if itemType == "furniture" then
-        local furnitureModel = studioFurnitureFolder:FindFirstChild(itemInfo.ItemUUID)
+        local furnitureModel = studioItemPlacementFolder:FindFirstChild(itemInfo.ItemUUID)
         if furnitureModel then furnitureModel:Destroy() end
 
     elseif itemType == "essential" then
         local itemModel = studioInteriorModel:FindFirstChild(itemInfo.ItemName)
         if itemModel then itemModel:Destroy() end
+    
+    elseif itemType == "staff" then
+        local staffMemberModel = studioItemPlacementFolder:FindFirstChild(itemInfo.ItemUUID)
+        if staffMemberModel then staffMemberModel:Destroy() end
     end
 end)
 

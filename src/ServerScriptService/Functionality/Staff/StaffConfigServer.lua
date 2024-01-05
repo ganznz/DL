@@ -6,6 +6,8 @@ local HttpService = game:GetService("HttpService")
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff.StaffMember)
 local StudioConfigServer = require(ServerScriptService.Functionality.Studio.StudioConfigServer)
+local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
+local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -48,6 +50,14 @@ function StaffServer.GiveStaffMember(plr: Player, staffName: string)
     profile.Data.Inventory.StaffMembers[itemUUID] = instanceData
 end
 
+function StaffServer.OwnsStaffMember(plr: Player, staffMemberUUID: string): boolean
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local staffMemberData = profile.Data.Inventory.StaffMembers[staffMemberUUID]
+    return if staffMemberData then true else false 
+end
+
 function StaffServer.DeleteStaffMember(plr: Player, itemInfo: {})
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
@@ -81,6 +91,51 @@ function StaffServer.DeleteStaffMember(plr: Player, itemInfo: {})
                 Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, "staff", itemInfo)
             end
         end
+    end
+end
+
+-- remove a staff member from studio and store back in inventory
+function StaffServer.StoreStaffMember(plr: Player, itemInfo: {}, studioIndex: string)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local studioConfig = StudioConfig.GetConfig(studioIndex)
+    if not studioConfig then return end
+
+    local studioType: "Standard" | "Premium" = studioConfig.StudioType
+
+    profile.Data.Studio.Studios[studioType][studioIndex].StaffMembers[itemInfo.ItemUUID] = nil
+end
+
+-- function for saving a placed staff members items data to plr data
+function StaffServer.StoreStaffItemPlacementData(plr: Player, itemInfo: {}, studioIndex)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local studioConfig = StudioConfig.GetConfig(studioIndex)
+    if not studioConfig then return end
+    
+    local studioType: "Standard" | "Premium" = studioConfig.StudioType
+
+    local itemData = {}
+    itemData.CFrame = DatastoreUtils.CFrameToTable(itemInfo.RelativeCFrame)
+
+    profile.Data.Studio.Studios[studioType][studioIndex].StaffMembers[itemInfo.ItemUUID] = itemData
+end
+
+function StaffServer.UpdateStaffItemPlacementData(plr: Player, itemInfo: {}, studioIndex)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local studioConfig = StudioConfig.GetConfig(studioIndex)
+    if not studioConfig then return end
+
+    local studioType: "Standard" | "Premium" = studioConfig.StudioType
+
+    local staffMemberInstance = profile.Data.Studio.Studios[studioType][studioIndex].StaffMembers[itemInfo.ItemUUID]
+    if staffMemberInstance then
+        -- update data
+        profile.Data.Studio.Studios[studioType][studioIndex].StaffMembers[itemInfo.ItemUUID].CFrame = DatastoreUtils.CFrameToTable(itemInfo.RelativeCFrame)
     end
 end
 

@@ -9,6 +9,7 @@ local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
 local StudioPlaceablesServer = require(ServerScriptService.Functionality.Studio.StudioPlaceablesServer)
 local FurnitureConfigServer = require(ServerScriptService.Functionality.Furniture.FurnitureConfigServer)
 local StudioConfigServer = require(script.Parent.StudioConfigServer)
+local StaffConfigServer = require(ServerScriptService.Functionality.Staff.StaffConfigServer)
 local Zone = require(ReplicatedStorage.Libs.Zone)
 
 local Remotes = ReplicatedStorage.Remotes
@@ -184,7 +185,7 @@ local function replicatePlaceItem(studioOwner: Player, action: "newItem" | "move
     end
 end
 
-local function placeFurnitureItem(plr, itemInfo, additionalParams)
+local function storeFurnitureItemPlacementData(plr, itemInfo, additionalParams)
     local modelCategoryFolder = ReplicatedStorage.Assets.Models.Studio.StudioFurnishing[itemInfo.ItemCategory]
     if not modelCategoryFolder then return end
 
@@ -194,48 +195,56 @@ local function placeFurnitureItem(plr, itemInfo, additionalParams)
     -- place and store item data as a new item
     if additionalParams.Action == "newItem" then
         if not FurnitureConfigServer.HasFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex, false) then return end
-
-        itemInfo.ItemUUID = FurnitureConfigServer.StoreFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
+        itemInfo.ItemUUID = FurnitureConfigServer.StoreFurnitureItemPlacementData(plr, itemInfo, plrStudioInfo.StudioIndex)
 
     elseif additionalParams.Action == "move" then
-        -- item was previously placed, only update item data
-        FurnitureConfigServer.UpdateFurnitureItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
+        FurnitureConfigServer.UpdateFurnitureItemPlacementData(plr, itemInfo, plrStudioInfo.StudioIndex)
     end
-
-    local profile = PlrDataManager.Profiles[plr]
-    if not profile then return end
-
-    -- data that gets sent to client to populate build mode gui with
-    local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
-
-    Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, "furniture", itemInfo)
-    Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr, studioFurnitureInventory)
-
-    -- replicate to others in studio
-    replicatePlaceItem(plr, additionalParams.Action, "furniture", itemInfo)
 end
 
-local function placeEssentialItem(plr, itemInfo, additionalParams)
+local function storeStaffMemberPlacementData(plr, itemInfo, additionalParams)
+    local plrStudioInfo = StudioConfigServer.PlrStudios[plr.UserId]
+    if not plrStudioInfo then return end
+
+    if additionalParams.Action == "newItem" then
+        if not StaffConfigServer.OwnsStaffMember(plr, itemInfo.ItemUUID) then return end
+        StaffConfigServer.StoreStaffItemPlacementData(plr, itemInfo, plrStudioInfo.StudioIndex)
+
+    elseif additionalParams.Action == "move" then
+        StaffConfigServer.UpdateStaffItemPlacementData(plr, itemInfo, plrStudioInfo.StudioIndex)
+    end
+end
+
+local function storeEssentialItemPlacementData(plr, itemInfo, additionalParams)
     local plrStudioInfo = StudioConfigServer.PlrStudios[plr.UserId]
     if not plrStudioInfo then return end
 
     StudioPlaceablesServer.StoreEssentialItemData(plr, itemInfo, plrStudioInfo.StudioIndex)
-
-    Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, "essential", itemInfo)
-    Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr)
-
-    -- replicate to others in studio
-    replicatePlaceItem(plr, additionalParams.Action, "essential", itemInfo)
 end
 
 -- STUDIO BUILD MODE FUNCTIONALITY
 local function placeStudioItem(plr: Player, itemType: "furniture" | "essential", itemInfo, additionalParams): boolean
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
     if itemType == "furniture" then
-        placeFurnitureItem(plr, itemInfo, additionalParams)
+        storeFurnitureItemPlacementData(plr, itemInfo, additionalParams)
     
     elseif itemType == "essential" then
-        placeEssentialItem(plr, itemInfo, additionalParams)
+        storeEssentialItemPlacementData(plr, itemInfo, additionalParams)
+    
+    elseif itemType == "staff" then
+        storeStaffMemberPlacementData(plr, itemInfo, additionalParams)
     end
+
+    -- data that gets sent to client to populate build mode gui with
+    local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
+
+    Remotes.Studio.BuildMode.PlaceItem:FireClient(plr, itemType, itemInfo)
+    Remotes.Studio.BuildMode.ExitPlaceMode:FireClient(plr, studioFurnitureInventory) -- disable place mode gui
+
+    -- replicate to others in studio
+    replicatePlaceItem(plr, additionalParams.Action, itemType, itemInfo)
 end
 
 -- function stores placed item back in inventory
@@ -251,6 +260,12 @@ local function storeStudioItem(plr: Player, itemType: string, itemInfo: {})
         if not hasItem then return end
 
         FurnitureConfigServer.StoreFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex)
+    
+    elseif itemType == "staff" then
+        local hasItem = StaffConfigServer.OwnsStaffMember(plr, itemInfo.ItemUUID)
+        if not hasItem then return end
+
+        StaffConfigServer.StoreStaffMember(plr, itemInfo, plrStudioInfo.StudioIndex)
     end
 
     -- remove item for all plrs in studio
@@ -343,15 +358,20 @@ Remotes.Studio.BuildMode.EnterBuildMode.OnServerEvent:Connect(function(plr: Play
     end
 end)
 
-Remotes.Studio.BuildMode.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemType: "furniture" | "essential", itemInfo: {}, movingItem: boolean)
+Remotes.Studio.BuildMode.EnterPlaceMode.OnServerEvent:Connect(function(plr: Player, itemType: string, itemInfo: {}, movingItem: boolean)
     if itemType == "furniture" then
         local hasItem: boolean = FurnitureConfigServer.HasFurnitureItem(plr, itemInfo, StudioConfigServer.PlrStudios[plr.UserId].StudioIndex, movingItem)
         if not hasItem then return end
 
         Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)
-    end
+    
+    elseif itemType == "essential" then
+        Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)
+    
+    elseif itemType == "staff" then
+        local hasItem: boolean = StaffConfigServer.OwnsStaffMember(plr, itemInfo.ItemUUID)
+        if not hasItem then return end
 
-    if itemType == "essential" then
         Remotes.Studio.BuildMode.EnterPlaceMode:FireClient(plr, itemType, itemInfo, movingItem)
     end
 end)
