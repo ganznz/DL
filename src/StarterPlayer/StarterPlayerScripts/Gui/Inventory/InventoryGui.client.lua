@@ -598,7 +598,10 @@ end
 
 
 -- ACTIVATE EVENTS --
-InventoryExitBtn.Activated:Connect(function() GuiServices.HideGuiStandard(InventoryContainer) end)
+InventoryExitBtn.Activated:Connect(function()
+    GuiServices.HideGuiStandard(InventoryContainer)
+    Remotes.GUI.ToggleBottomHUD:Fire()
+end)
 
 LockModeBtn.Activated:Connect(function() enableEditMode("lock") end)
 
@@ -648,7 +651,6 @@ Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, _op
             disableEditMode()
             populateInventoryFrame()
             GuiServices.ShowGuiStandard(InventoryContainer, GlobalVariables.Gui.GuiBackdropColourDefault)
-
         else
             GuiServices.HideGuiStandard(InventoryContainer)
         end

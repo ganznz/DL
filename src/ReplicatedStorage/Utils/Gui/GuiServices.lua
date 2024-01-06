@@ -8,6 +8,7 @@ local GuiTransparency = require(ReplicatedStorage.Libs:WaitForChild("GUITranspar
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
 local Stack = require(ReplicatedStorage.Utils.DataStructures:WaitForChild("Stack"))
 
+local Remotes = ReplicatedStorage.Remotes
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
@@ -104,21 +105,32 @@ local function hideBackdrop()
 end
 
 -- switchingGui parameter only present if opening gui while another gui instance is already open
-function GuiServices.HideGuiStandard(guiInstance, switchingUI: true | nil)
+function GuiServices.HideGuiStandard(guiInstanceToClose, opts: {})
+    local guiToOpen = if opts then opts["GuiToOpen"] else nil
+
+    local switchingUI = false
+    if guiInstanceToClose and guiToOpen then
+        -- UI about to be opened is different to UI that is currently opened
+        if guiInstanceToClose ~= guiToOpen then
+            switchingUI = true
+        else
+        end
+    end
+
     GuiStack:Pop()
 
     local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime, Enum.EasingStyle.Linear)
 
-    local guiPosition = GuiCache[guiInstance].Position
-    local guiSize = GuiCache[guiInstance].Size
+    local guiPosition = GuiCache[guiInstanceToClose].Position
+    local guiSize = GuiCache[guiInstanceToClose].Size
 
-    local guiTween = TweenService:Create(guiInstance, tweenInfo, {
+    local guiTween = TweenService:Create(guiInstanceToClose, tweenInfo, {
         Position = UDim2.fromScale(guiPosition.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXOffset, guiPosition.Y.Scale + GlobalVariables.Gui.MainGuiInvisibleYOffset),
         Size = UDim2.fromScale(guiSize.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXSize, guiSize.Y.Scale - GlobalVariables.Gui.MainGuiInvisibleYSize)
     })
     guiTween:Play()
     guiTween.Completed:Connect(function(_playbackState)
-        guiInstance.Visible = false
+        guiInstanceToClose.Visible = false
     end)
 
     -- only hide backdrop & revert camera settings if closing gui, not if switching between gui instances
@@ -136,17 +148,17 @@ function GuiServices.HideGuiStandard(guiInstance, switchingUI: true | nil)
 end
 
 function GuiServices.ShowGuiStandard(guiInstance, backdropColour: Color3)
-    -- check if other GUI is open already
+    -- hide any potential open UI
     local previousInstance = GuiStack:Peek()
-
     if previousInstance and previousInstance ~= "" then
-        if previousInstance == guiInstance then
-            GuiServices.HideGuiStandard(previousInstance)
-            return
-        else
-            GuiServices.HideGuiStandard(previousInstance, true)
-        end
+        GuiServices.HideGuiStandard(previousInstance, { GuiToOpen = guiInstance })
+        
+        if previousInstance == guiInstance then return end
     end
+
+    -- event Connects in file *BottomBtnsGui.client.lua*, where the logic for the HUDs bottom bar is
+    -- argument is the guiInstance that is being opened
+    Remotes.GUI.ToggleBottomHUD:Fire(guiInstance)
 
     -- push new visible GUI onto stack
     GuiStack:Push("")

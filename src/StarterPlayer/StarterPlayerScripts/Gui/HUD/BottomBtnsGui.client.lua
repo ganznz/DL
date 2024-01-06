@@ -24,8 +24,14 @@ local AchievementsBtn = AchievementsBtnContainer:WaitForChild("AchievementsBtn")
 local TradingBtn = TradingBtnContainer:WaitForChild("TradingBtn")
 local SettingsBtn = SettingsBtnContainer:WaitForChild("SettingsBtn")
 
+local InventoryFrame = AllGuiScreenGui.Inventory:WaitForChild("InventoryContainerOuter")
+
 -- these are the btns that can be shown and hidden
 local hideableBtns = {ShopBtnContainer, AchievementsBtnContainer, TradingBtnContainer, SettingsBtnContainer}
+
+-- STATIC VARIABLES
+-- all frames that are opened as a result of activating bottom HUD btns
+local HUD_FRAMES = {InventoryFrame}
 
 -- STATE VARIABLES
 local currentFrame = nil -- used to track which UI window is open ("inventory" | "shop" | "achievements" | "trading" | "settings" | nil)
@@ -51,6 +57,7 @@ end
 
 local function minimiseBtnsContainer()
     BottomBtnsContainer:SetAttribute("Expanded", false)
+    currentFrame = nil
 
     for _i, btn in hideableBtns do
         local tween = TweenService:Create(btn, btnTweenInfo, { Size = UDim2.fromScale(0, 0) })
@@ -59,20 +66,13 @@ local function minimiseBtnsContainer()
         tween.Completed:Connect(function() btn.Visible = false end)
     end
 end
-
-local function hideBottomBtnsAndGui()
-    minimiseBtnsContainer()
-    Remotes.GUI.ChangeGuiStatusBindable:Fire(currentFrame, false, nil)
-    currentFrame = nil
-end
-
-
 InventoryBtn.Activated:Connect(function()
     local isExpanded = BottomBtnsContainer:GetAttribute("Expanded")
 
     -- if isExpanded and current open UI window is inventory, minimise btns and close GUI
     if isExpanded and currentFrame == "inventory" then
-        hideBottomBtnsAndGui()
+        minimiseBtnsContainer()
+        GuiServices.HideGuiStandard(InventoryFrame)
 
     -- if isExpanded but current open UI is NOT inventory, keep expanded and switch to inventory GUI
     elseif currentFrame then
@@ -83,5 +83,12 @@ InventoryBtn.Activated:Connect(function()
         expandBtnsContainer()
         currentFrame = "inventory"
         Remotes.GUI.ChangeGuiStatusBindable:Fire(currentFrame, true, nil)
+    end
+end)
+
+Remotes.GUI.ToggleBottomHUD.Event:Connect(function(guiDisplayed: string | nil)
+    -- if (no gui being displayed or gui being displayed isn't a bottom HUD frame)
+    if (not guiDisplayed or not table.find(HUD_FRAMES, guiDisplayed)) then
+        minimiseBtnsContainer()
     end
 end)
