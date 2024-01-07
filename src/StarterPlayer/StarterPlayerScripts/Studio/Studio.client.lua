@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
+local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local Zone = require(ReplicatedStorage.Libs:WaitForChild("Zone"))
 local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
 local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffMember"))
@@ -134,6 +135,8 @@ end
 
 local function registerShelfViewBtn(viewBtn)
     shelfInteractionBtnConnection = viewBtn.Activated:Connect(function()
+        GuiServices.HideHUD({ HideGuiFrames = true })
+
         local cameraPos: Vector3 = shelfModel:FindFirstChild("CameraPositionPart").Position
         local cameraLookAt: Vector3 = shelfModel:FindFirstChild("CameraLookAt").Position
 
@@ -268,6 +271,7 @@ local function replaceComputerModel(plrData, studioType: "Standard" | "Premium")
 end
 
 local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
+    plr:SetAttribute("InStudio", true)
     local plrToVisitData = Remotes.Data.GetAllData:InvokeServer(plrToVisit)
 
     -- tp plr into studio interior
@@ -337,8 +341,7 @@ Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(studioOwner
         regenerateExterior()
         resetStudioVariables()
     end
-    
-    plr:SetAttribute("InStudio", true)
+
     studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
@@ -362,7 +365,6 @@ Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(studioOwn
         resetStudioVariables()
     end
 
-    plr:SetAttribute("InStudio", true)
     studioExteriorTpPart = exteriorPlrTpPart
     currentStudioIndex = studioIndex
     studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
@@ -444,6 +446,7 @@ end)
 
 humanoid.Died:Connect(function()
     if plr:GetAttribute("InStudio") then
+        plr:SetAttribute("InStudio", false)
         destroyInterior()
         regenerateExterior()
         resetStudioVariables()
@@ -457,6 +460,7 @@ plr.CharacterAdded:Connect(function(character: Model)
 
     humanoid.Died:Connect(function()
         if plr:GetAttribute("InStudio") then
+            plr:SetAttribute("InStudio", false)
             destroyInterior()
             regenerateExterior()
             resetStudioVariables()

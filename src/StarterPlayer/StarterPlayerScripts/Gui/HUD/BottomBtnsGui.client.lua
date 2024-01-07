@@ -39,6 +39,8 @@ local currentFrame = nil -- used to track which UI window is open ("inventory" |
 -- OTHER VARIABLES
 local btnTweenInfo = TweenInfo.new(0.15)
 
+GuiServices.StoreInCache(BottomBtnsContainer)
+
 GuiTemplates.CreateButton(InventoryBtn, { Rotates = true })
 GuiTemplates.CreateButton(ShopBtn, { Rotates = true })
 GuiTemplates.CreateButton(AchievementsBtn, { Rotates = true })

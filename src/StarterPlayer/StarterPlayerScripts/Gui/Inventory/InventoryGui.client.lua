@@ -600,7 +600,7 @@ end
 -- ACTIVATE EVENTS --
 InventoryExitBtn.Activated:Connect(function()
     GuiServices.HideGuiStandard(InventoryContainer)
-    Remotes.GUI.ToggleBottomHUD:Fire()
+    Remotes.GUI.ToggleBottomHUD:Fire(nil)
 end)
 
 LockModeBtn.Activated:Connect(function() enableEditMode("lock") end)

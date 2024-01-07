@@ -290,42 +290,14 @@ local function hideBuildModeGui()
 end
 
 local function setupBuildModeGui()
-    -- hide unrelated gui
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-    local hideLeftGuiTween = TweenService:Create(LeftSideContainer, tweenInfo, { Position = UDim2.fromScale(-leftSideContainerVisibleSize.X.Scale, leftSideContainerVisiblePos.Y.Scale) })
-    local hideRightGuiTween = TweenService:Create(RightSideContainer, tweenInfo, { Position = UDim2.fromScale(rightSideContainerVisibleSize.X.Scale + 1, rightSideContainerVisiblePos.Y.Scale) })
-    local hidePlrInfoTween = TweenService:Create(PlrInfoContainer, tweenInfo, { Position = UDim2.fromScale(-plrInfoContainerVisibleSize.X.Scale, plrInfoContainerVisiblePos.Y.Scale) })
-    
-    hideLeftGuiTween:Play()
-    hideLeftGuiTween.Completed:Connect(function(_playbackState) LeftSideContainer.Visible = false end)
-
-    hideRightGuiTween:Play()
-    hideRightGuiTween.Completed:Connect(function(_playbackState) RightSideContainer.Visible = false end)
-    
-    hidePlrInfoTween:Play()
-    hidePlrInfoTween.Completed:Connect(function(_playbackState) PlrInfoContainer.Visible = false end)
-    
     showBuildModeGui()
-    
+
     BuildModeItemViewport.Visible = false
     SelectCategoryText.Visible = true
 end
 
 local function disableBuildModeGui()
-    -- show unrelated gui
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-    local showLeftGuiTween = TweenService:Create(LeftSideContainer, tweenInfo, { Position = leftSideContainerVisiblePos })
-    local showRightGuiTween = TweenService:Create(RightSideContainer, tweenInfo, { Position = rightSideContainerVisiblePos })
-    local showPlrInfoTween = TweenService:Create(PlrInfoContainer, tweenInfo, { Position = plrInfoContainerVisiblePos })
-    
-    LeftSideContainer.Visible = true
-    RightSideContainer.Visible = true
-    PlrInfoContainer.Visible = true
-    
-    showLeftGuiTween:Play()
-    showRightGuiTween:Play()
-    showPlrInfoTween:Play()
-
+    GuiServices.ShowHUD()
     hideBuildModeGui()
 end
 
@@ -680,6 +652,7 @@ GenreTopicViewExitBtn.Activated:Connect(function()
     
     -- stop viewing shelf
     Remotes.GUI.Studio.StopViewingShelf:Fire()
+    GuiServices.ShowHUD()
     viewingShelf = false
 end)
 
@@ -732,6 +705,7 @@ end)
 Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(studioInventoryData)
     localPlr:SetAttribute("InBuildMode", true)
     studioFurnitureInventory = studioInventoryData
+    GuiServices.HideHUD({ HideGuiFrames = true })
 end)
 
 -- when plr enters place mode, hide build mode gui

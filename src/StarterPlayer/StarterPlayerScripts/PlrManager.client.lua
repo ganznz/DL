@@ -1,4 +1,7 @@
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 
 local localPlr = Players.LocalPlayer
 
@@ -14,9 +17,9 @@ localPlr:SetAttribute("InPlaceMode", false)
 
 humanoid.Died:Connect(function()
     localPlr:SetAttribute("IsAlive", false)
-    localPlr:SetAttribute("InStudio", false)
     localPlr:SetAttribute("InBuildMode", false)
     localPlr:SetAttribute("InPlaceMode", false)
+    GuiServices.ShowHUD()
 end)
 
 localPlr.CharacterAdded:Connect(function(character: Model)
@@ -26,8 +29,8 @@ localPlr.CharacterAdded:Connect(function(character: Model)
 
     humanoid.Died:Connect(function()
         localPlr:SetAttribute("IsAlive", false)
-        localPlr:SetAttribute("InStudio", false)
         localPlr:SetAttribute("InBuildMode", false)
         localPlr:SetAttribute("InPlaceMode", false)
+        GuiServices.ShowHUD()
     end)
 end)

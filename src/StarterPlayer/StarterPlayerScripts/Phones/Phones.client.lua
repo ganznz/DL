@@ -187,14 +187,15 @@ resetPhoneOpeningGui()
 Remotes.Phones.PurchasePhone.OnClientEvent:Connect(function(phoneName: string)
     currentlyOpeningPhone = true
     disableAllProxPrompts()
+    GuiServices.HideHUD({ HideGuiFrames = true })
     preparePhoneForOpening(phoneName)
 end)
 
 Remotes.Phones.OpenPhone.OnClientEvent:Connect(function(_reward: string, rarestItemInPhone: boolean)
     GuiServices.TriggerFlashFrame()
-
     task.wait(GlobalVariables.Gui.FlashShowTime) -- wait until flash is opaque
 
+    GuiServices.ShowHUD()
     resetPhoneOpeningGui()
     GuiServices.CreateConfettiEffect(1, 2)
     CameraControls.SetDefault(localPlr, camera)
