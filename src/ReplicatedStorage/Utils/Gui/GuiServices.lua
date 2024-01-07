@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
@@ -21,6 +22,18 @@ local FlashFrame: Frame = AllGuiScreenGui.Misc:WaitForChild("FlashBg")
 local BeamImage: ImageLabel = AllGuiScreenGui.Particles:WaitForChild("Beam")
 local ConfettiContainer: Frame = AllGuiScreenGui.Misc:WaitForChild("ConfettiContainer")
 local ConfettiParticle: Frame = AllGuiScreenGui.Particles:WaitForChild("ConfettiParticle")
+
+local HudFolder = AllGuiScreenGui.Hud
+-- left HUD containers
+local LeftHudFolder = HudFolder:WaitForChild("Left")
+local LeftHudBtnContainer = LeftHudFolder:WaitForChild("LeftBtnContainer")
+local LeftHudPlrInfoContainer = LeftHudFolder:WaitForChild("PlrInfoContainer")
+-- right HUD containers
+local RightHudFolder = HudFolder:WaitForChild("Right")
+local RightHudBtnContainer = RightHudFolder:WaitForChild("RightBtnContainer")
+-- bottom HUD containers
+local BottomHudFolder = HudFolder:WaitForChild("Bottom")
+local BottomHudBtns = BottomHudFolder:WaitForChild("BottomBtns")
 
 local GuiBlur = Lighting:WaitForChild("GuiBlur")
 
@@ -68,12 +81,6 @@ function GuiServices.DisableUnrelatedButtons(guiInstanceToIgnore)
     end
 end
 
-function GuiServices.HideHUD()
-end
-
-function GuiServices.ShowHUD()
-end
-
 function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, xOffset: number, yOffset: number)
     local xPos = GuiCache[guiInstance].Position.X.Scale + (xOffset and xOffset or 0)
     local yPos = GuiCache[guiInstance].Position.Y.Scale + (yOffset and yOffset or GlobalVariables.Gui.MainGuiInvisibleYOffset)
@@ -104,23 +111,10 @@ local function hideBackdrop()
     guiBackdropTween.Completed:Connect(function(_playbackState) GuiBackdropFrame.Visible = false end)
 end
 
--- switchingGui parameter only present if opening gui while another gui instance is already open
-function GuiServices.HideGuiStandard(guiInstanceToClose, opts: {})
-    local guiToOpen = if opts then opts["GuiToOpen"] else nil
-
-    local switchingUI = false
-    if guiInstanceToClose and guiToOpen then
-        -- UI about to be opened is different to UI that is currently opened
-        if guiInstanceToClose ~= guiToOpen then
-            switchingUI = true
-        else
-        end
-    end
-
+local function hideGuiTweens(guiInstanceToClose, opts: {})
     GuiStack:Pop()
 
     local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime, Enum.EasingStyle.Linear)
-
     local guiPosition = GuiCache[guiInstanceToClose].Position
     local guiSize = GuiCache[guiInstanceToClose].Size
 
@@ -134,7 +128,7 @@ function GuiServices.HideGuiStandard(guiInstanceToClose, opts: {})
     end)
 
     -- only hide backdrop & revert camera settings if closing gui, not if switching between gui instances
-    if switchingUI then return guiTween end
+    if opts and opts["SwitchingGui"] then return guiTween end
 
     local cameraTween = TweenService:Create(camera, TweenInfo.new(GlobalVariables.Gui.GuiInvisibleCameraTime), { FieldOfView = GlobalVariables.Gui.GuiInvisibleCameraFOV })
     cameraTween:Play()
@@ -143,6 +137,34 @@ function GuiServices.HideGuiStandard(guiInstanceToClose, opts: {})
 
     local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 0 })
     guiBlurTween:Play()
+
+    return guiTween
+end
+
+-- switchingGui parameter only present if opening gui while another gui instance is already open
+function GuiServices.HideGuiStandard(guiInstanceToClose, opts: {})
+    -- if no args are passed, then hide whatever GUI screen is open, if any
+    -- use cases include features in-game that when interacted with, require any visible GUI frame to no longer be visible (e.g. entering studio build mode)
+    if not guiInstanceToClose then
+        local previousInstance = GuiStack:Peek()
+        if previousInstance and previousInstance ~= "" then
+            hideGuiTweens(previousInstance)
+            Remotes.GUI.ToggleBottomHUD:Fire(nil)
+            return
+        else return end
+    end
+
+    local guiToOpen = if opts then opts["GuiToOpen"] else nil
+
+    local switchingUI = false
+    if guiInstanceToClose and guiToOpen then
+        -- UI about to be opened is different to UI that is currently opened
+        if guiInstanceToClose ~= guiToOpen then
+            switchingUI = true
+        end
+    end
+
+    local guiTween = hideGuiTweens(guiInstanceToClose, { SwitchingGui = switchingUI })
 
     return guiTween
 end
@@ -185,6 +207,62 @@ function GuiServices.ShowGuiStandard(guiInstance, backdropColour: Color3)
     guiTween:Play()
 
     return guiTween
+end
+
+-- opts:
+-- ----> HideGuiFrames: When this option is declared, close any gui frame that may be open
+function GuiServices.HideHUD(opts: {})
+    -- hide any window that may be open
+    if opts and opts["HideGuiFrames"] then
+        GuiServices.HideGuiStandard()
+    end
+
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+
+    -- left-side HUD items
+    for _i, guiInstance in { LeftHudBtnContainer, LeftHudPlrInfoContainer } do
+        local cachedData = GuiServices.GetCachedData(guiInstance)
+        local tween = TweenService:Create(guiInstance, tweenInfo, { Position = UDim2.fromScale(0 - cachedData.Size.X.Scale, cachedData.Position.Y.Scale) })
+        tween:Play()
+        tween.Completed:Connect(function() guiInstance.Visible = false end)
+    end
+    -- right-side HUD items
+    for _i, guiInstance in { RightHudBtnContainer } do
+        local cachedData = GuiServices.GetCachedData(guiInstance)
+        local tween = TweenService:Create(guiInstance, tweenInfo, { Position = UDim2.fromScale(1 + cachedData.Size.X.Scale, cachedData.Position.Y.Scale) })
+        tween:Play()
+        tween.Completed:Connect(function() guiInstance.Visible = false end)
+    end
+    -- bottom HUD items
+    for _i, guiInstance in { BottomHudBtns } do
+        local cachedData = GuiServices.GetCachedData(guiInstance)
+        local tween = TweenService:Create(guiInstance, tweenInfo, { Position = UDim2.fromScale(cachedData.Position.X.Scale, 1 + cachedData.Size.Y.Scale) })
+        tween:Play()
+        tween.Completed:Connect(function() guiInstance.Visible = false end)
+    end
+end
+
+function GuiServices.ShowHUD()
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+
+    -- left-side HUD items
+    for _i, guiInstance in { LeftHudBtnContainer, LeftHudPlrInfoContainer } do
+        local cachedData = GuiServices.GetCachedData(guiInstance)
+        guiInstance.Visible = true
+        TweenService:Create(guiInstance, tweenInfo, { Position = cachedData.Position }):Play()
+    end
+    -- right-side HUD items
+    for _i, guiInstance in { RightHudBtnContainer } do
+        local cachedData = GuiServices.GetCachedData(guiInstance)
+        guiInstance.Visible = true
+        TweenService:Create(guiInstance, tweenInfo, { Position = cachedData.Position }):Play()
+    end
+    -- bottom HUD items
+    for _i, guiInstance in { BottomHudBtns } do
+        local cachedData = GuiServices.GetCachedData(guiInstance)
+        guiInstance.Visible = true
+        TweenService:Create(guiInstance, tweenInfo, { Position = cachedData.Position }):Play()
+    end
 end
 
 function GuiServices.AdjustTransparency(guiInstance, transparencyValue, tweenInfo)
