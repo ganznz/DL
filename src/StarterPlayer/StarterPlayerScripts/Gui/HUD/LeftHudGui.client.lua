@@ -1,26 +1,31 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local GuiTemplates = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiTemplates"))
-
-local Remotes = ReplicatedStorage.Remotes
 
 local localPlr = Players.LocalPlayer
 local PlayerGui = localPlr.PlayerGui
 
 -- GUI VARIABLES
-local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
-local LeftSideContainer = AllGuiScreenGui.Hud.Left:WaitForChild("LeftBtnContainer")
+local AllGuiScreenGui: ScreenGui = PlayerGui:WaitForChild("AllGui")
+local HudFolder = AllGuiScreenGui.Hud
+
+-- left HUD containers
+local LeftHudFolder = HudFolder:WaitForChild("Left")
+local LeftHudBtnContainer = LeftHudFolder:WaitForChild("LeftBtnContainer")
+local LeftHudPlrInfoContainer = LeftHudFolder:WaitForChild("PlrInfoContainer")
+
+GuiServices.StoreInCache(LeftHudBtnContainer)
+GuiServices.StoreInCache(LeftHudPlrInfoContainer)
 
 -- functionality for these btns in StudioGui.client.lua
-local StudioTeleportBtnContainer = LeftSideContainer.StudioTpBtnContainer
+local StudioTeleportBtnContainer = LeftHudBtnContainer.StudioTpBtnContainer
 local StudioTeleportBtn = StudioTeleportBtnContainer.StudioTpBtn
-local StudioBuildModeBtnContainer = LeftSideContainer.StudioBuildModeBtnContainer
+local StudioBuildModeBtnContainer = LeftHudBtnContainer.StudioBuildModeBtnContainer
 local StudioBuildModeBtn = StudioBuildModeBtnContainer.StudioBuildModeBtn
 
-local ShopBtnContainer = LeftSideContainer.ShopBtnContainer
+local ShopBtnContainer = LeftHudBtnContainer.ShopBtnContainer
 local ShopBtn = ShopBtnContainer.ShopBtn
 
 GuiTemplates.CreateButton(StudioTeleportBtn, { Rotates = true })
