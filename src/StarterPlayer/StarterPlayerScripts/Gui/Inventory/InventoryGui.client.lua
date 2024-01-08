@@ -304,9 +304,9 @@ local function populateStaffInfoPanel(itemInfo: {})
     StaffInfoItemIcon.Image = GeneralUtils.GetDecalUrl(itemInfo.ItemConfig.IconStroke)
     StaffInfoRarity.Text = itemInfo.CategoryConfig.GetRarityName(itemInfo.ItemInstance.Model)
     StaffInfoItemName.Text = itemInfo.ItemInstance.Name
-    CodingPtsAmt.Text = tostring(itemInfo.ItemInstance:GetCodePoints())
-    SoundPtsAmt.Text = tostring(itemInfo.ItemInstance:GetSoundPoints())
-    ArtistPtsAmt.Text = tostring(itemInfo.ItemInstance:GetArtPoints())
+    CodingPtsAmt.Text = tostring(itemInfo.ItemInstance:GetSpecificSkillPoints("code"))
+    SoundPtsAmt.Text = tostring(itemInfo.ItemInstance:GetSpecificSkillPoints("sound"))
+    ArtistPtsAmt.Text = tostring(itemInfo.ItemInstance:GetSpecificSkillPoints("art"))
 
     -- register place btn
     registerPlaceItemBtn(itemInfo)
