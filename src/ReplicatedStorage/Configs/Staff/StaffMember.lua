@@ -67,35 +67,87 @@ end
 
 -- function NOT used for granting a plr new staff member, but instead used for instantiating a StaffMember object
 --          using predefined staff member data that the appropriate class methods can be used on
-function StaffMember.new(uuid: string,
-                        model: string,
-                        name: string,
-                        rarity: number,
-                        specialisation: "Code" | "Sound" | "Artist",
-                        currentEnergy: number,
-                        codeLevel: number,
-                        soundLevel: number,
-                        artistLevel: number)
+function StaffMember.new(staffMemberUUID: string, staffMemberData: {})
 
     local staffMember = {}
     setmetatable(staffMember, StaffMember)
 
-    staffMember.UUID = uuid
-    staffMember.Model = model
-    staffMember.Name = name
-    staffMember.Rarity = rarity
-    staffMember.Specialisation = specialisation
-    staffMember.CurrentEnergy = currentEnergy
-    staffMember.CodeLevel = codeLevel
-    staffMember.SoundLevel = soundLevel
-    staffMember.ArtistLevel = artistLevel
+    staffMember.UUID = staffMemberUUID
+    staffMember.Model = staffMemberData.Model
+    staffMember.Name = staffMemberData.Name
+    staffMember.Rarity = staffMemberData.Rarity
+    staffMember.Specialisation = staffMemberData.Specialisation
+    staffMember.CurrentEnergy = staffMemberData.CurrentEnergy
+    staffMember.CodeLevel = staffMemberData.CodeLevel
+    staffMember.SoundLevel = staffMemberData.SoundLevel
+    staffMember.ArtistLevel = staffMemberData.ArtistLevel
 
     return staffMember
 
 end
 
+function StaffMember:GetCodePoints(): number
+    if self.Rarity == 1 then
+        return self.CodeLevel
+    elseif self.Rarity == 2 then
+        return self.CodeLevel * 2
+    elseif self.Rarity == 3 then
+        return self.CodeLevel * 5
+    elseif self.Rarity == 4 then
+        return self.CodeLevel * 10
+    elseif self.Rarity == 5 then
+        return self.CodeLevel * 20
+    elseif self.Rarity == 6 then
+        return self.CodeLevel * 50
+    elseif self.Rarity == 7 then
+        return self.CodeLevel * 125
+    end
+
+    return 0
+end
+
+function StaffMember:GetSoundPoints(): number
+    if self.Rarity == 1 then
+        return self.SoundLevel
+    elseif self.Rarity == 2 then
+        return self.SoundLevel * 2
+    elseif self.Rarity == 3 then
+        return self.SoundLevel * 5
+    elseif self.Rarity == 4 then
+        return self.SoundLevel * 10
+    elseif self.Rarity == 5 then
+        return self.SoundLevel * 20
+    elseif self.Rarity == 6 then
+        return self.SoundLevel * 50
+    elseif self.Rarity == 7 then
+        return self.SoundLevel * 125
+    end
+
+    return 0
+end
+
+function StaffMember:GetArtPoints(): number
+    if self.Rarity == 1 then
+        return self.ArtistLevel
+    elseif self.Rarity == 2 then
+        return self.ArtistLevel * 2
+    elseif self.Rarity == 3 then
+        return self.ArtistLevel * 5
+    elseif self.Rarity == 4 then
+        return self.ArtistLevel * 10
+    elseif self.Rarity == 5 then
+        return self.ArtistLevel * 20
+    elseif self.Rarity == 6 then
+        return self.ArtistLevel * 50
+    elseif self.Rarity == 7 then
+        return self.ArtistLevel * 125
+    end
+
+    return 0
+end
+
 function StaffMember:GetTotalSkillPts(): number
-    return self.CodeLevel + self.SoundLevel + self.ArtistLevel
+    return self:GetCodePoints() + self:GetSoundPoints() + self:GetArtPoints()
 end
 
 function StaffMember:CalcSkillLevelCost(skill: "code" | "sound" | "artist"): number
@@ -121,15 +173,8 @@ function StaffMember:CalcMaxEnergy(): number
     return 99
 end
 
-function StaffMember:CalcCodePts(): number
-    return 99
-end
-
-function StaffMember:CalcSoundPts(): number
-    return 99
-end
-
-function StaffMember:CalcArtistPts(): number
+-- method returns seconds until staff member energy is full
+function StaffMember:CalcTimeUntilFullEnergy()
     return 99
 end
 
