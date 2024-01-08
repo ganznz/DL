@@ -1,3 +1,5 @@
+local TweenService = game:GetService("TweenService")
+
 -- // this file contains methods that can be used anywhere without dependancy on gameplay code // --
 
 local GeneralUtils = {}
@@ -56,6 +58,34 @@ function GeneralUtils.GetCFrameOrientation(cframe: CFrame): {}
     orientation["Z"] = z
 
     return orientation
+end
+
+-- opts:
+-- -- Tween -> boolean. Tweens transparency
+function GeneralUtils.HideModel(model: Model, opts: {})
+    for _i, v in model:GetDescendants() do
+        local success, _ = pcall(function()
+            if opts and opts["Tween"] then
+                TweenService:Create(v, TweenInfo.new(0.3), { Transparency = 1 }):Play()
+            else
+                v.Transparency = 1
+            end
+        end)
+    end
+end
+
+-- opts:
+-- -- Tween -> boolean. Tweens transparency
+function GeneralUtils.ShowModel(model: Model, opts: {})
+    for _i, v in model:GetDescendants() do
+        local success, _ = pcall(function()
+            if opts and opts["Tween"] then
+                TweenService:Create(v, TweenInfo.new(0.3), { Transparency = 0 }):Play()
+            else
+                v.Transparency = 0
+            end
+        end)
+    end
 end
 
 return GeneralUtils
