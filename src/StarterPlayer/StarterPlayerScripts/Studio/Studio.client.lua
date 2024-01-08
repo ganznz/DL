@@ -20,7 +20,10 @@ local camera = Workspace:WaitForChild("Camera")
 local StudioExteriorsFolder = Workspace:WaitForChild("Map").Buildings.Studios
 local StudioInteriorsFolder = ReplicatedStorage:WaitForChild("Assets").Models.Studio.Studios
 
--- state variables
+-- CONSTANT VARIABLES --
+local INTERACTION_BILLBOARDS_VIEWING_DIST = 15 -- studs
+
+-- STATE VARIABLES --
 local char = plr.Character or plr.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
 
@@ -29,14 +32,15 @@ local interiorFurnitureData = nil
 local currentStudioIndex = nil
 local studioInteriorFolder = nil
 local studioInteriorPlot = nil
+local studioInteriorPlacedItems = nil
 local studioItemPlacementFolder = nil
 local studioInteriorModel = nil
 local studioInteriorExitZone = nil
-
 local computerModel = nil
 local shelfModel = nil
 local genreIterationIndex = 1 -- vars for book model placement on shelf
 local topicIterationIndex = 1
+local presentInteractionBillboards = {} -- holds all existing interaction billboards
 
 -- connections
 local shelfInteractionBtnConnection = nil
@@ -60,8 +64,10 @@ end
 local function resetStudioVariables()
     currentStudioIndex = nil
     studioInteriorFolder = nil
+    studioInteriorPlacedItems = nil
     studioInteriorExitZone = nil
     studioExteriorTpPart = nil
+    presentInteractionBillboards = {}
     genreIterationIndex = 1
     topicIterationIndex = 1
 end
@@ -123,13 +129,24 @@ local function loadInteriorStaffMembers(plrToVisitData: {}, studioType: "Standar
     end
 end
 
+local function deleteStaffInteractionBillboards()
+    for _i, billboardGuiInstance in PlayerGui.AllGui.Studio.StudioInteractionBillboards:GetChildren() do
+        -- don't delete template billboard
+        if billboardGuiInstance.Name == "StaffInteractionSettings" then continue end
+        if billboardGuiInstance:GetAttribute("ItemType") == "staff" then
+            billboardGuiInstance:Destroy()
+        end
+    end
+end
+
 local function disableInteractionBtns()
     resetStudioConnections()
+    deleteStaffInteractionBillboards()
     
-    local shelfInteractionBillboard = PlayerGui.AllGui.Studio:FindFirstChild("ShelfInteractionSettings")
+    -- computer & shelf
+    local shelfInteractionBillboard = PlayerGui.AllGui.Studio.StudioInteractionBillboards:FindFirstChild("ShelfInteractionSettings")
+    local computerInteractionBillboard = PlayerGui.AllGui.Studio.StudioInteractionBillboards:FindFirstChild("ComputerInteractionSettings")
     if shelfInteractionBillboard then shelfInteractionBillboard.Enabled = false end
-
-    local computerInteractionBillboard = PlayerGui.AllGui.Studio:FindFirstChild("ComputerInteractionSettings")
     if computerInteractionBillboard then computerInteractionBillboard.Enabled = false end
 end
 
@@ -148,24 +165,64 @@ local function registerShelfViewBtn(viewBtn)
     end)
 end
 
-local function registerInteractionBtns()
-    local VIEWING_DISTANCE = 15 -- studs
+local function registerShelfInteractionBtns()
+    local shelfInteractionBillboard = PlayerGui.AllGui.Studio.StudioInteractionBillboards:FindFirstChild("ShelfInteractionSettings")
+    local shelfViewBtn = shelfInteractionBillboard:FindFirstChild("View", true)
 
+    registerShelfViewBtn(shelfViewBtn)
+    shelfInteractionBillboard.Adornee = shelfModel.PrimaryPart
+    table.insert(presentInteractionBillboards, shelfInteractionBillboard)
+
+    return shelfInteractionBillboard
+end
+
+local function registerComputerInteractionBtns()
+    local computerInteractionBillboard = PlayerGui.AllGui.Studio.StudioInteractionBillboards:FindFirstChild("ComputerInteractionSettings")
+    local computerMakeGameBtn = computerInteractionBillboard:FindFirstChild("MakeGame", true)
+    local computerUpgradeBtn = computerInteractionBillboard:FindFirstChild("Upgrade", true)
+
+    computerInteractionBillboard.Adornee = computerModel.PrimaryPart
+    table.insert(presentInteractionBillboards, computerInteractionBillboard)
+
+    return computerInteractionBillboard
+end
+
+local function registerStaffInteractionBtns()
+    for _i, placedItem in studioInteriorPlacedItems:GetChildren() do
+        local itemType = placedItem:GetAttribute("ItemType")
+        if itemType ~= "staff" then return end
+
+        local staffMemberUUID = placedItem.Name
+
+        local staffInteractionBillboard = PlayerGui.AllGui.Studio.StudioInteractionBillboards:FindFirstChild("StaffInteractionSettings"):Clone()
+        local viewStaffMemberBtn = staffInteractionBillboard:FindFirstChild("View", true)
+        local trainStaffMemberBtn = staffInteractionBillboard:FindFirstChild("Train", true)
+        
+        staffInteractionBillboard.Name = staffMemberUUID
+        staffInteractionBillboard.Adornee = placedItem
+        staffInteractionBillboard.Enabled = true
+        staffInteractionBillboard.Parent = PlayerGui.AllGui.Studio.StudioInteractionBillboards
+        table.insert(presentInteractionBillboards, staffInteractionBillboard)
+
+        viewStaffMemberBtn.Activated:Connect(function()
+            disableInteractionBtns()
+            Remotes.GUI.ChangeGuiStatusBindable:Fire("viewStaffMemberStudio", true, { StaffMemberUUID = staffMemberUUID })
+        end)
+    end
+end
+
+-- this function determines which interaction billboard is visible (among billboards for the shelf, computer, staff members, etc)
+local function determineVisibleInteractionBillboard()
+end
+
+
+local function registerInteractionBtns()
     computerModel = studioInteriorModel:FindFirstChild("Computer")
     shelfModel = studioInteriorModel:FindFirstChild("Shelf")
 
-    local shelfInteractionBillboard = PlayerGui.AllGui.Studio:FindFirstChild("ShelfInteractionSettings")
-    local shelfViewBtn = shelfInteractionBillboard:FindFirstChild("View", true)
-    local shelfViewDistance = VIEWING_DISTANCE
-    shelfInteractionBillboard.Adornee = shelfModel.PrimaryPart
-
-    local computerInteractionBillboard = PlayerGui.AllGui.Studio:FindFirstChild("ComputerInteractionSettings")
-    local computerMakeGameBtn = computerInteractionBillboard:FindFirstChild("MakeGame", true)
-    local computerUpgradeBtn = computerInteractionBillboard:FindFirstChild("Upgrade", true)
-    local computerViewDistance = VIEWING_DISTANCE
-    computerInteractionBillboard.Adornee = computerModel.PrimaryPart
-
-    registerShelfViewBtn(shelfViewBtn)
+    local shelfInteractionBillboard = registerShelfInteractionBtns()
+    local computerInteractionBillboard = registerComputerInteractionBtns()
+    registerStaffInteractionBtns()
 
     -- if computer and shelf are near eachother, only show interaction btns for whichever item is closer to plr
     studioEssentialsProximityConnection = RunService.Stepped:Connect(function()
@@ -174,8 +231,8 @@ local function registerInteractionBtns()
         local computerDistanceFromPlr = (char:FindFirstChild("HumanoidRootPart").Position - computerInteractionBillboard.Adornee.Position).Magnitude
         
         -- check if plr is within viewing distance
-        local isShelfInteractable = shelfDistanceFromPlr <= shelfViewDistance and (shelfDistanceFromPlr < computerDistanceFromPlr)
-        local isComputerInteractable = computerDistanceFromPlr <= computerViewDistance and (computerDistanceFromPlr < shelfDistanceFromPlr)
+        local isShelfInteractable = shelfDistanceFromPlr <= INTERACTION_BILLBOARDS_VIEWING_DIST and (shelfDistanceFromPlr < computerDistanceFromPlr)
+        local isComputerInteractable = computerDistanceFromPlr <= INTERACTION_BILLBOARDS_VIEWING_DIST and (computerDistanceFromPlr < shelfDistanceFromPlr)
         
         if isShelfInteractable then
             shelfInteractionBillboard.Enabled = true
@@ -280,6 +337,7 @@ local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
     local studioExteriorFolder = StudioExteriorsFolder:FindFirstChild(currentStudioIndex)
     local interiorTpPart = studioExteriorFolder:FindFirstChild("InteriorTeleportPart")
     studioInteriorModel = studioInteriorFolder:FindFirstChild("Interior")
+    studioInteriorPlacedItems = studioInteriorModel:FindFirstChild("PlacedObjects")
     studioInteriorPlot = studioInteriorModel:FindFirstChild("Plot")
     
     local yOffset = calculateYOffset(studioInteriorModel)
@@ -317,6 +375,12 @@ local function regenerateExterior()
     replacedStudioExterior.Parent = Workspace.Map.Buildings.Studios
 end
 
+local function studioInteriorCleanup()
+    destroyInterior()
+    regenerateExterior()
+    resetStudioVariables()
+end
+
 local function studioInteriorExitListener()
     local studioInteriorExitHitbox = studioInteriorFolder:FindFirstChild("TeleportHitboxZone", true)
 
@@ -327,56 +391,39 @@ local function studioInteriorExitListener()
         plr:SetAttribute("InStudio", false)
 
         task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
-            destroyInterior()
-            regenerateExterior()
-            resetStudioVariables()
+            studioInteriorCleanup()
         end)
     end)
 end
 
-Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
-    -- if plr was already in a studio (their own or someone elses)
-    if plr:GetAttribute("InStudio") then
-        destroyInterior()
-        regenerateExterior()
-        resetStudioVariables()
-    end
+local visitOwnStudioRemote = Remotes.Studio.General.VisitOwnStudio
+local visitOtherStudioRemote = Remotes.Studio.General.VisitOtherStudio
+for _i, remote in { visitOwnStudioRemote, visitOtherStudioRemote } do
+    remote.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
+        -- if plr was already in a studio (their own or someone elses)
+        if plr:GetAttribute("InStudio") then
+            studioInteriorCleanup()
+        end
+    
+        studioExteriorTpPart = exteriorPlrTpPart
+        currentStudioIndex = studioIndex
+        studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
+        studioInteriorFolder.Name = studioOwnerId
+        studioItemPlacementFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
+        interiorFurnitureData = placedFurnitureData
+    
+        local plrToVisit = Players:GetPlayerByUserId(studioOwnerId)
+        enterStudio(interiorPlrTpPart, plrToVisit)
+    
+        -- listener for when player exits studio
+        studioInteriorExitListener()
+    
+    end)
+end
 
-    studioExteriorTpPart = exteriorPlrTpPart
-    currentStudioIndex = studioIndex
-    studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
-    studioInteriorFolder.Name = studioOwnerId
-    studioItemPlacementFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
-    interiorFurnitureData = placedFurnitureData
-
-    local plrToVisit = Players:GetPlayerByUserId(studioOwnerId)
-    enterStudio(interiorPlrTpPart, plrToVisit)
-
-    -- listener for when player exits studio
-    studioInteriorExitListener()
-
-end)
-
-Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
-    -- if plr was already in a studio (their own or someone elses)
-    if plr:GetAttribute("InStudio") then
-        destroyInterior()
-        regenerateExterior()
-        resetStudioVariables()
-    end
-
-    studioExteriorTpPart = exteriorPlrTpPart
-    currentStudioIndex = studioIndex
-    studioInteriorFolder = StudioInteriorsFolder:FindFirstChild(currentStudioIndex):Clone()
-    studioInteriorFolder.Name = studioOwnerId
-    studioItemPlacementFolder = studioInteriorFolder:FindFirstChild("Interior"):FindFirstChild("PlacedObjects")
-    interiorFurnitureData = placedFurnitureData
-
-    local plrToVisit = Players:GetPlayerByUserId(studioOwnerId)
-    enterStudio(interiorPlrTpPart, plrToVisit)
-
-    -- listener for when player exits studio
-    studioInteriorExitListener()
+-- leave studio
+Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function()
+    disableInteractionBtns()
 end)
 
 -- exit place mode
@@ -393,9 +440,7 @@ Remotes.Studio.General.KickFromStudio.OnClientEvent:Connect(function()
 
     Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
-        destroyInterior()
-        regenerateExterior()
-        resetStudioVariables()
+        studioInteriorCleanup()
     end)
 end)
 
@@ -437,19 +482,15 @@ Remotes.GameDev.UnlockTopic.OnClientEvent:Connect(function(topicName)
     if plr:GetAttribute("InStudio") then addBookModelToShelf("topic", topicName) end
 end)
 
--- plr stopped viewing shelf
-Remotes.GUI.Studio.StopViewingShelf.Event:Connect(function()
-    PlayerServices.ShowPlayer(plr, true)
-    CameraControls.SetDefault(plr, camera, true)
+-- re-enables placed item interaction btns (e.g. stop viewing shelf, training staff member, etc)
+Remotes.Player.StopInspecting.Event:Connect(function()
     registerInteractionBtns()
 end)
 
 humanoid.Died:Connect(function()
     if plr:GetAttribute("InStudio") then
         plr:SetAttribute("InStudio", false)
-        destroyInterior()
-        regenerateExterior()
-        resetStudioVariables()
+        studioInteriorCleanup()
         Remotes.Studio.General.LeaveStudio:FireServer()
     end
 end)
@@ -461,9 +502,7 @@ plr.CharacterAdded:Connect(function(character: Model)
     humanoid.Died:Connect(function()
         if plr:GetAttribute("InStudio") then
             plr:SetAttribute("InStudio", false)
-            destroyInterior()
-            regenerateExterior()
-            resetStudioVariables()
+            studioInteriorCleanup()
             Remotes.Studio.General.LeaveStudio:FireServer()
         end
     end)
