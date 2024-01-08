@@ -208,6 +208,11 @@ local function registerStaffInteractionBtns()
             disableInteractionBtns()
             Remotes.GUI.ChangeGuiStatusBindable:Fire("viewStaffMemberStudio", true, { StaffMemberUUID = staffMemberUUID })
         end)
+        
+        trainStaffMemberBtn.Activated:Connect(function()
+            disableInteractionBtns()
+            Remotes.GUI.ChangeGuiStatusBindable:Fire("trainStaffMemberStudio", true, { StaffMemberUUID = staffMemberUUID })
+        end)
     end
 end
 
