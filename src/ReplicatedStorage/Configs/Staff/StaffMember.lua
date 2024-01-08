@@ -1,6 +1,10 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
 local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
+
+local Remotes = ReplicatedStorage.Remotes
 
 local StaffMember = {}
 StaffMember.__index = StaffMember
@@ -35,6 +39,19 @@ local config: { [string]: StaffMemberConfig } = {
 }
 
 StaffMember.Config = config
+
+StaffMember.Constants = {
+    -- these are the multipliers that are used when calculating how many points of a skill a staff member has
+    SkillLevelMultipliers = {
+        Rarity1 = 1,
+        Rarity2 = 2,
+        Rarity3 = 5,
+        Rarity4 = 10,
+        Rarity5 = 20,
+        Rarity6 = 50,
+        Rarity7 = 125,
+    }
+}
 
 function StaffMember.GetConfig(staffModel: string): StaffMemberConfig | nil
     return StaffMember.Config[staffModel]
@@ -86,71 +103,10 @@ function StaffMember.new(staffMemberUUID: string, staffMemberData: {})
 
 end
 
-function StaffMember:GetCodePoints(): number
-    if self.Rarity == 1 then
-        return self.CodeLevel
-    elseif self.Rarity == 2 then
-        return self.CodeLevel * 2
-    elseif self.Rarity == 3 then
-        return self.CodeLevel * 5
-    elseif self.Rarity == 4 then
-        return self.CodeLevel * 10
-    elseif self.Rarity == 5 then
-        return self.CodeLevel * 20
-    elseif self.Rarity == 6 then
-        return self.CodeLevel * 50
-    elseif self.Rarity == 7 then
-        return self.CodeLevel * 125
-    end
-
-    return 0
-end
-
-function StaffMember:GetSoundPoints(): number
-    if self.Rarity == 1 then
-        return self.SoundLevel
-    elseif self.Rarity == 2 then
-        return self.SoundLevel * 2
-    elseif self.Rarity == 3 then
-        return self.SoundLevel * 5
-    elseif self.Rarity == 4 then
-        return self.SoundLevel * 10
-    elseif self.Rarity == 5 then
-        return self.SoundLevel * 20
-    elseif self.Rarity == 6 then
-        return self.SoundLevel * 50
-    elseif self.Rarity == 7 then
-        return self.SoundLevel * 125
-    end
-
-    return 0
-end
-
-function StaffMember:GetArtPoints(): number
-    if self.Rarity == 1 then
-        return self.ArtistLevel
-    elseif self.Rarity == 2 then
-        return self.ArtistLevel * 2
-    elseif self.Rarity == 3 then
-        return self.ArtistLevel * 5
-    elseif self.Rarity == 4 then
-        return self.ArtistLevel * 10
-    elseif self.Rarity == 5 then
-        return self.ArtistLevel * 20
-    elseif self.Rarity == 6 then
-        return self.ArtistLevel * 50
-    elseif self.Rarity == 7 then
-        return self.ArtistLevel * 125
-    end
-
-    return 0
-end
-
-function StaffMember:GetTotalSkillPts(): number
-    return self:GetCodePoints() + self:GetSoundPoints() + self:GetArtPoints()
-end
-
-function StaffMember:CalcSkillLevelCost(skill: "code" | "sound" | "artist"): number
+-- returns the LEVEL (not points) of a specific skill
+-- opts
+-- -- MaxAffordableLevel -> boolean: When specified, calculates how the skills max level that the player can currently afford
+function StaffMember:GetSpecificSkillLevel(skill: "code" | "sound" | "art", opts: {}): number
     local skillLevel
     if skill == "code" then
         skillLevel = self.CodeLevel
@@ -160,21 +116,156 @@ function StaffMember:CalcSkillLevelCost(skill: "code" | "sound" | "artist"): num
         skillLevel = self.ArtistLevel
     end
 
-    if self.Rarity == 1 then
-        return math.round( 10 * math.pow(1.2, skillLevel) )
-    elseif self.Rarity == 2 then
-        return math.round( 20 * math.pow(1.3, skillLevel) )
-    elseif self.Rarity == 3 then
-        return math.round( 40 * math.pow(1.5, skillLevel) )
+    -- if MaxAffordableLevel option not specified
+    if not opts then return skillLevel end
+
+    local plrData
+    if RunService:IsClient() then
+        plrData = Remotes.Data.GetAllData:InvokeServer()
+    else
+        plrData = game:GetService("ServerScriptService").PlayerData.Manager.Profiles[Players.LocalPlayer].Data
     end
+
+    local plrCoins = plrData.Coins
+    local totalCost = 0
+
+    -- calculate the cost for the maximum amt of upgrades the player can afford
+
+    while totalCost <= plrCoins do
+        if self.Rarity == 1 then
+            totalCost += math.round( 10 * math.pow(1.2, skillLevel) )
+        elseif self.Rarity == 2 then
+            totalCost += math.round( 20 * math.pow(1.3, skillLevel) )
+        elseif self.Rarity == 3 then
+            totalCost += math.round( 40 * math.pow(1.5, skillLevel) )
+        end
+        skillLevel += 1
+    end
+
+    return skillLevel
+end
+
+-- opts
+-- -- SpecifiedSkillLevel -> number: When specified, calculates how many skill points there'll be for that specific skill level
+function StaffMember:GetSpecificSkillPoints(skill: "code" | "sound" | "art", opts: {}): number
+    local skillLevel
+    if opts and opts["SpecifiedSkillLevel"] then
+        skillLevel = opts["SpecifiedSkillLevel"]
+    else
+        if skill == "code" then
+            skillLevel = self.CodeLevel
+        elseif skill == "sound" then
+            skillLevel = self.SoundLevel
+        elseif skill == "art" then
+            skillLevel = self.ArtistLevel
+        end
+    end
+
+    if self.Rarity == 1 then
+        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity2
+    elseif self.Rarity == 2 then
+        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity2
+    elseif self.Rarity == 3 then
+        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity3
+    elseif self.Rarity == 4 then
+        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity4
+    elseif self.Rarity == 5 then
+        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity5
+    elseif self.Rarity == 6 then
+        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity6
+    elseif self.Rarity == 7 then
+        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity7
+    end
+
+    return 0
+end
+
+function StaffMember:GetTotalSkillPts(): number
+    return self:GetSpecificSkillPoints("code") + self:GetSpecificSkillPoints("sound") + self:GetSpecificSkillPoints("art")
+end
+
+-- opts
+-- -- AmountOfUpgrades -> number: Calculates the total cost across the amount of upgrades specified
+function StaffMember:CalcSkillLevelUpgradeCost(skill: "code" | "sound" | "artist", opts: {}): number
+    local amtOfUpgrades
+    if opts and opts["AmountOfUpgrades"] then amtOfUpgrades = opts["AmountOfUpgrades"] else amtOfUpgrades = 1 end
+    if amtOfUpgrades < -1 or amtOfUpgrades < 0 then return 0 end
+
+    local plrData
+    if RunService:IsClient() then
+        plrData = Remotes.Data.GetAllData:InvokeServer()
+    else
+        plrData = game:GetService("ServerScriptService").PlayerData.Manager.Profiles[Players.LocalPlayer].Data
+    end
+
+    local skillLevel
+    if skill == "code" then
+        skillLevel = self.CodeLevel
+    elseif skill == "sound" then
+        skillLevel = self.SoundLevel
+    elseif skill == "artist" then
+        skillLevel = self.ArtistLevel
+    end
+
+    local plrCoins = plrData.Coins
+    local totalCost = 0
+
+    for _i = 1, amtOfUpgrades, 1 do
+        if self.Rarity == 1 then
+            totalCost += math.round( 10 * math.pow(1.2, skillLevel) )
+        elseif self.Rarity == 2 then
+            totalCost += math.round( 20 * math.pow(1.3, skillLevel) )
+        elseif self.Rarity == 3 then
+            totalCost += math.round( 40 * math.pow(1.5, skillLevel) )
+        end
+        skillLevel += 1
+    end
+
+    -- calculate the cost for the maximum amt of upgrades the player can afford
+    -- if amtOfUpgrades == -1 then
+    --     while totalCost <= plrCoins do
+    --         if self.Rarity == 1 then
+    --             totalCost += math.round( 10 * math.pow(1.2, skillLevel) )
+    --         elseif self.Rarity == 2 then
+    --             totalCost += math.round( 20 * math.pow(1.3, skillLevel) )
+    --         elseif self.Rarity == 3 then
+    --             totalCost += math.round( 40 * math.pow(1.5, skillLevel) )
+    --         end
+    --         skillLevel += 1
+    --     end
+
+    -- -- calculate the cost for the amount of upgrades specified
+    -- else
+    --     for _i = 1, amtOfUpgrades, 1 do
+    --         if self.Rarity == 1 then
+    --             totalCost += math.round( 10 * math.pow(1.2, skillLevel) )
+    --         elseif self.Rarity == 2 then
+    --             totalCost += math.round( 20 * math.pow(1.3, skillLevel) )
+    --         elseif self.Rarity == 3 then
+    --             totalCost += math.round( 40 * math.pow(1.5, skillLevel) )
+    --         end
+    --         skillLevel += 1
+    --     end
+    -- end
+
+    return totalCost
 end
 
 function StaffMember:CalcMaxEnergy(): number
     return 99
 end
 
+-- calculates how much of a skill point a staff member will have after training that skill
+-- timesUpgraded arg is how many times the skill is being upgraded at once
+function StaffMember:CalcSpecificSkillPtsAfterUpgrade(skill: "code" | "sound" | "art", timesUpgraded: number): number
+    timesUpgraded = timesUpgraded or 1
+
+    local skillLevelAfterUpgrade = self:GetSpecificSkillLevel(skill) + timesUpgraded
+    local skillPtsAfterUpgrade = self:GetSpecificSkillPoints(skill, { SpecifiedSkillLevel = skillLevelAfterUpgrade })
+end
+
 -- method returns seconds until staff member energy is full
-function StaffMember:CalcTimeUntilFullEnergy()
+function StaffMember:CalcTimeUntilFullEnergy(): number
     return 99
 end
 
