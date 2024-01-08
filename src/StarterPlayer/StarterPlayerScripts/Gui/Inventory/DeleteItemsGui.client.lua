@@ -53,8 +53,7 @@ local function createStaffItemCard(itemInfo: {})
     local rarityBg = template:FindFirstChild("RarityColour")
 
     local staffMemberData = plrData.Inventory.StaffMembers[itemInfo.ItemUUID]
-    local staffInstance = StaffMemberConfig.new(itemInfo.ItemUUID, staffMemberData.Model, staffMemberData.Name, staffMemberData.Rarity, staffMemberData.Specialisation,
-                                                staffMemberData.CurrentEnergy, staffMemberData.CodeLevel, staffMemberData.SoundLevel, staffMemberData.ArtistLevel)
+    local staffInstance = StaffMemberConfig.new(itemInfo.ItemUUID, staffMemberData)
     local staffMemberConfig = StaffMemberConfig.GetConfig(staffInstance.Model)
 
     itemNameText.Text = `{staffInstance.Name} - {StaffMemberConfig.GetRarityName(staffInstance.Model)}`

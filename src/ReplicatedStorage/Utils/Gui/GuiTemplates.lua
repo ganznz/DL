@@ -9,7 +9,7 @@ function GuiTemplates.CreateButton(btn: Instance, opts: {})
     opts = opts or {}
 
     local originalRotation = btn.Rotation
-    local tweenMouseEnter = TweenService:Create(btn, TweenInfo.new(0.2), { Rotation = 5 })
+    local tweenMouseEnter = TweenService:Create(btn, TweenInfo.new(0.2), { Rotation = originalRotation + 5 })
     local tweenMouseLeave = TweenService:Create(btn, TweenInfo.new(0.2), { Rotation = originalRotation })
 
     btn.MouseEnter:Connect(function()
@@ -28,10 +28,12 @@ end
 
 function GuiTemplates.HeaderText(header: Instance, opts: {})
     local tweenGoal
+    local ROTATION = 4
+    header.Rotation = -ROTATION
 
     -- if no specification for opts Movement option, then apply default movement (rotate)
     if not opts then
-        tweenGoal = { Rotation = 4 }
+        tweenGoal = { Rotation = ROTATION }
     end
 
     TweenService:Create(header, TweenInfo.new(2, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut, 99999999999999, true), tweenGoal):Play()

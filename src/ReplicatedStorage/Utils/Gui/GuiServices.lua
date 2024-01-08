@@ -111,6 +111,8 @@ local function hideBackdrop()
     guiBackdropTween.Completed:Connect(function(_playbackState) GuiBackdropFrame.Visible = false end)
 end
 
+-- opts
+-- -- SwitchingGui -> boolean: This is enabled if the player has opened a GUI frame while another was already open.
 local function hideGuiTweens(guiInstanceToClose, opts: {})
     GuiStack:Pop()
 
@@ -141,17 +143,19 @@ local function hideGuiTweens(guiInstanceToClose, opts: {})
     return guiTween
 end
 
--- switchingGui parameter only present if opening gui while another gui instance is already open
-function GuiServices.HideGuiStandard(guiInstanceToClose, opts: {})
+-- opts
+-- -- GuiToOpen -> Instance: This is enabled if the player has opened a GUI frame while another was already open.
+function GuiServices.HideGuiStandard(guiInstanceToClose, opts: {}): Tween
     -- if no args are passed, then hide whatever GUI screen is open, if any
     -- use cases include features in-game that when interacted with, require any visible GUI frame to no longer be visible (e.g. entering studio build mode)
     if not guiInstanceToClose then
         local previousInstance = GuiStack:Peek()
         if previousInstance and previousInstance ~= "" then
-            hideGuiTweens(previousInstance)
+            local guiTween = hideGuiTweens(previousInstance)
             Remotes.GUI.ToggleBottomHUD:Fire(nil)
-            return
-        else return end
+            return guiTween
+        end
+        return
     end
 
     local guiToOpen = if opts then opts["GuiToOpen"] else nil

@@ -651,9 +651,11 @@ GenreTopicViewExitBtn.Activated:Connect(function()
     GuiServices.HideGuiStandard(GenreTopicViewContainer)
     
     -- stop viewing shelf
-    Remotes.GUI.Studio.StopViewingShelf:Fire()
     GuiServices.ShowHUD()
+    PlayerServices.ShowPlayer(localPlr, true)
+    CameraControls.SetDefault(localPlr, camera, true)
     viewingShelf = false
+    Remotes.Player.StopInspecting:Fire()
 end)
 
 GenreTopicInfoBackBtn.Activated:Connect(function()

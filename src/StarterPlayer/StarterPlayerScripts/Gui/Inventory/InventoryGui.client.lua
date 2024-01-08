@@ -304,9 +304,9 @@ local function populateStaffInfoPanel(itemInfo: {})
     StaffInfoItemIcon.Image = GeneralUtils.GetDecalUrl(itemInfo.ItemConfig.IconStroke)
     StaffInfoRarity.Text = itemInfo.CategoryConfig.GetRarityName(itemInfo.ItemInstance.Model)
     StaffInfoItemName.Text = itemInfo.ItemInstance.Name
-    CodingPtsAmt.Text = tostring(itemInfo.ItemInstance:CalcCodePts())
-    SoundPtsAmt.Text = tostring(itemInfo.ItemInstance:CalcSoundPts())
-    ArtistPtsAmt.Text = tostring(itemInfo.ItemInstance:CalcArtistPts())
+    CodingPtsAmt.Text = tostring(itemInfo.ItemInstance:GetCodePoints())
+    SoundPtsAmt.Text = tostring(itemInfo.ItemInstance:GetSoundPoints())
+    ArtistPtsAmt.Text = tostring(itemInfo.ItemInstance:GetArtPoints())
 
     -- register place btn
     registerPlaceItemBtn(itemInfo)
@@ -453,8 +453,7 @@ end
 local function populateScrollingFrame()
     if inventoryCategory == "staff" then
         for staffMemberUUID, staffMemberData in plrData.Inventory.StaffMembers do
-            local itemInstance = StaffMemberConfig.new(staffMemberUUID, staffMemberData.Model, staffMemberData.Name, staffMemberData.Rarity,
-                                 staffMemberData.Specialisation, staffMemberData.CurrentEnergy, staffMemberData.CodeLevel, staffMemberData.SoundLevel, staffMemberData.ArtistLevel)
+            local itemInstance = StaffMemberConfig.new(staffMemberUUID, staffMemberData)
 
             -- this is the table that gets sent w/ remotes. Cannot send itemInstance table as that is cyclic
             local itemInfo = { ItemUUID = staffMemberUUID, ItemModel = staffMemberData.Model }
