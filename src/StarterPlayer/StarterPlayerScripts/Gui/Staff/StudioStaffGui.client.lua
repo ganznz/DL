@@ -30,7 +30,7 @@ local StaffViewSpecialty = StaffViewContainer.StaffViewContainerInner:FindFirstC
 local StaffViewEnergyContainer = StaffViewContainer.StaffViewContainerInner:FindFirstChild("EnergyContainer")
 local StaffViewEnergyText = StaffViewEnergyContainer:FindFirstChild("Energy", true)
 local StaffViewEnergyBarProg = StaffViewEnergyContainer:FindFirstChild("EnergyProg", true)
-local StaffViewEnergyTimer = StaffViewEnergyContainer:FindFirstChild("EnergyTimer")
+local StaffViewEnergyTimer = StaffViewContainer.StaffViewContainerInner:FindFirstChild("EnergyTimer")
 -- -- skill pts
 local StaffViewSkillPtsContainer = StaffViewContainer.StaffViewContainerInner:FindFirstChild("SkillPtsContainer")
 local StaffViewCodingPtsAmt = StaffViewSkillPtsContainer.CodingPts:FindFirstChild("PtsAmt")
@@ -46,18 +46,25 @@ local StaffTrainSpecialtyText = StaffTrainContainer.StaffTrainContainerInner:Fin
 local StaffTrainEnergyContainer = StaffTrainContainer.StaffTrainContainerInner:FindFirstChild("EnergyContainer")
 local StaffTrainEnergyText = StaffTrainEnergyContainer:FindFirstChild("Energy", true)
 local StaffTrainEnergyBarProg = StaffTrainEnergyContainer:FindFirstChild("EnergyProg", true)
+
 -- train stats
 local StaffTrainSkillPtsContainer = StaffTrainContainer.StaffTrainContainerInner:FindFirstChild("SkillPtsContainer")
-local StaffTrainCodingPtsText = StaffTrainSkillPtsContainer.CodingPts:FindFirstChild("PtsAmount")
+local StaffTrainCodePtsContainer = StaffTrainSkillPtsContainer.CodingPts
+local StaffTrainCodingPtsText = StaffTrainCodePtsContainer:FindFirstChild("PtsAmount")
 local StaffTrainCodingPtsBuyBtn = StaffTrainSkillPtsContainer.CodingPts:FindFirstChild("BuyBtn")
-local StaffTrainSoundPtsText = StaffTrainSkillPtsContainer.SoundPts:FindFirstChild("PtsAmount")
+
+local StaffTrainSoundPtsContainer = StaffTrainSkillPtsContainer.SoundPts
+local StaffTrainSoundPtsText = StaffTrainSoundPtsContainer:FindFirstChild("PtsAmount")
 local StaffTrainSoundPtsBuyBtn = StaffTrainSkillPtsContainer.SoundPts:FindFirstChild("BuyBtn")
-local StaffTrainArtPtsText = StaffTrainSkillPtsContainer.ArtPts:FindFirstChild("PtsAmount")
+
+local StaffTrainArtPtsContainer = StaffTrainSkillPtsContainer.ArtPts
+local StaffTrainArtPtsText = StaffTrainArtPtsContainer:FindFirstChild("PtsAmount")
 local StaffTrainArtPtsBuyBtn = StaffTrainSkillPtsContainer.ArtPts:FindFirstChild("BuyBtn")
-local StaffTrainAllStatsBtn = StaffTrainContainer.StaffTrainContainerInner:FindFirstChild("TrainAllStatsBtn")
+
 local StaffTrainUpgradeOneBtn = StaffTrainContainer.StaffTrainContainerInner.UpgradeAmtBtns:FindFirstChild("Upgrade1")
 local StaffTrainUpgradeFiveBtn = StaffTrainContainer.StaffTrainContainerInner.UpgradeAmtBtns:FindFirstChild("Upgrade5")
 local StaffTrainUpgradeMaxBtn = StaffTrainContainer.StaffTrainContainerInner.UpgradeAmtBtns:FindFirstChild("UpgradeMax")
+local StaffTrainUpgradeAllBtn = StaffTrainContainer.StaffTrainContainerInner:FindFirstChild("TrainAllStatsBtn")
 
 -- STATIC VARIABLES --
 local ENERGY_TEXT = "CURRENT / MAX"
@@ -65,33 +72,40 @@ local SPECIALTY_TEXT = "Specialty: SPECIALTY"
 local ENERGY_FULL_IN_TEXT = "Full in: FORMATTED_TIME"
 
 -- STATE VARIABLES --
+local plrData = nil
 local currentlyViewedStaffUUID: string | nil = nil -- uuid of the staff member currently being viewed (or trained)
 local currentlyViewedStaffInstance: {} | nil = nil -- instance object of the staff member currently being viewed (or trained)
 local currentlyViewedStaffPcModel: Model | nil = nil -- the PC model of the placed staff member model being viewed\
 local selectedUpgradeBtn = "1" -- how many staff member skill upgrades occur at once ("1"=1, "2"=5, "3"=max)
+local currentBtnPrices: {[string]: {}} = {} -- e.g. { ["code"]={ Level=5, Price=100 }, ["sound"]={..}, ["art"]={..} }
 
 GuiServices.StoreInCache(StaffViewContainer)
+GuiServices.StoreInCache(StaffTrainContainer)
 GuiServices.DefaultMainGuiStyling(StaffViewContainer)
+GuiServices.DefaultMainGuiStyling(StaffTrainContainer)
 
 GuiTemplates.HeaderText(StaffViewHeader)
 GuiTemplates.HeaderText(StaffTrainHeader)
 GuiTemplates.CreateButton(StaffViewExitBtn, { Rotates = true })
 GuiTemplates.CreateButton(StaffTrainExitBtn, { Rotates = true })
-
-local function getAmtOfUpgrades(): number
-    if selectedUpgradeBtn == "1" then
-        return 1
-    elseif selectedUpgradeBtn == "2" then
-        return 5
-    elseif selectedUpgradeBtn == "3" then
-        return -1
-    end
-end
+GuiTemplates.CreateButton(StaffTrainCodingPtsBuyBtn)
+GuiTemplates.CreateButton(StaffTrainSoundPtsBuyBtn)
+GuiTemplates.CreateButton(StaffTrainArtPtsBuyBtn)
+GuiTemplates.CreateButton(StaffTrainUpgradeOneBtn)
+GuiTemplates.CreateButton(StaffTrainUpgradeFiveBtn)
+GuiTemplates.CreateButton(StaffTrainUpgradeMaxBtn)
+GuiTemplates.CreateButton(StaffTrainUpgradeAllBtn)
 
 local function resetViewedStaffVariables()
     currentlyViewedStaffUUID = nil
     currentlyViewedStaffInstance = nil
+end
+
+local function resetTrainStaffVariables()
+    currentlyViewedStaffUUID = nil
+    currentlyViewedStaffInstance = nil
     selectedUpgradeBtn = "1"
+    currentBtnPrices = {}
 end
 
 local function populateStaffViewGui()
@@ -122,6 +136,7 @@ local function prepareStaffViewGui()
     GeneralUtils.HideModel(currentlyViewedStaffPcModel, { Tween = true })
     CameraControls.FocusOnObject(localPlr, camera, cameraPosPart.Position, cameraLookAtPart.Position, true, true)
 
+    GuiServices.HideHUD()
     GuiServices.ShowGuiStandard(StaffViewContainer)
 end
 
@@ -146,39 +161,118 @@ local function styleUpgradeAmtBtns()
     end
 end
 
+-- helper functions to styleUpgradeBuyBtns function
+local function styleUpgradeBtnAfford(btn: TextButton)
+    local btnUIStroke: UIStroke = btn:FindFirstChild("UIStroke")
+    local CurrencyImageDropshadow: ImageLabel = btn:FindFirstChild("CurrencyImageDropshadow", true)
+    btn.BackgroundColor3 = Color3.fromRGB(93, 217, 91)
+    btnUIStroke.Color = Color3.fromRGB(61, 149, 41)
+    CurrencyImageDropshadow.ImageColor3 = Color3.fromRGB(61, 149, 41)
+end
+local function styleUpgradeBtnCantAfford(btn: TextButton)
+    local btnUIStroke: UIStroke = btn:FindFirstChild("UIStroke")
+    local CurrencyImageDropshadow: ImageLabel = btn:FindFirstChild("CurrencyImageDropshadow", true)
+    btn.BackgroundColor3 = Color3.fromRGB(168, 168, 168)
+    btnUIStroke.Color = Color3.fromRGB(126, 126, 126)
+    CurrencyImageDropshadow.ImageColor3 = Color3.fromRGB(126, 126, 126)
+end
+
+local function styleUpgradeBuyBtns()
+    local plrCoins = plrData.Coins
+
+    for _i, btn in {StaffTrainCodingPtsBuyBtn, StaffTrainSoundPtsBuyBtn, StaffTrainArtPtsBuyBtn} do
+        if btn.Parent == StaffTrainCodePtsContainer then
+            local upgradeCost = currentBtnPrices["code"].Price
+            if upgradeCost <= plrCoins then styleUpgradeBtnAfford(btn) else styleUpgradeBtnCantAfford(btn) end
+
+        elseif btn.Parent == StaffTrainSoundPtsContainer then
+            local upgradeCost = currentBtnPrices["sound"].Price
+            if upgradeCost <= plrCoins then styleUpgradeBtnAfford(btn) else styleUpgradeBtnCantAfford(btn) end
+        
+        elseif btn.Parent == StaffTrainArtPtsContainer then
+            local upgradeCost = currentBtnPrices["art"].Price
+            if upgradeCost <= plrCoins then styleUpgradeBtnAfford(btn) else styleUpgradeBtnCantAfford(btn) end 
+        end
+    end
+end
+
 local function populateStaffTrainSkillUpgradeContainer()
-    local specifiedCodeLevel
-    local specifiedSoundLevel
-    local specifiedArtLevel
+    local amtOfCodeUpgrades
+    local amtOfSoundUpgrades
+    local amtOfArtUpgrades
 
     if selectedUpgradeBtn == "1" then
-        specifiedCodeLevel = 1
-        specifiedSoundLevel = 1
-        specifiedArtLevel = 1
+        amtOfCodeUpgrades = 1
+        amtOfSoundUpgrades = 1
+        amtOfArtUpgrades = 1
+        currentBtnPrices["code"].Level = currentlyViewedStaffInstance:GetSpecificSkillLevel("code") + 1
+        currentBtnPrices["sound"].Level = currentlyViewedStaffInstance:GetSpecificSkillLevel("sound") + 1
+        currentBtnPrices["art"].Level = currentlyViewedStaffInstance:GetSpecificSkillLevel("art") + 1
     elseif selectedUpgradeBtn == "2" then
-        specifiedCodeLevel = 5
-        specifiedSoundLevel = 5
-        specifiedArtLevel = 5
+        amtOfCodeUpgrades = 5
+        amtOfSoundUpgrades = 5
+        amtOfArtUpgrades = 5
+        currentBtnPrices["code"].Level = currentlyViewedStaffInstance:GetSpecificSkillLevel("code") + 5
+        currentBtnPrices["sound"].Level = currentlyViewedStaffInstance:GetSpecificSkillLevel("sound") + 5
+        currentBtnPrices["art"].Level = currentlyViewedStaffInstance:GetSpecificSkillLevel("art") + 5
     elseif selectedUpgradeBtn == "3" then
-        specifiedCodeLevel = currentlyViewedStaffInstance:GetSpecificSkillLevel("code", { MaxAffordableLevel = true })
-        specifiedSoundLevel = currentlyViewedStaffInstance:GetSpecificSkillLevel("sound", { MaxAffordableLevel = true })
-        specifiedArtLevel = currentlyViewedStaffInstance:GetSpecificSkillLevel("art", { MaxAffordableLevel = true })
+        local currentCodeLvl = currentlyViewedStaffInstance:GetSpecificSkillLevel("code")
+        local currentSoundLvl = currentlyViewedStaffInstance:GetSpecificSkillLevel("sound")
+        local currentArtLvl = currentlyViewedStaffInstance:GetSpecificSkillLevel("art")
+        local maxAffordableCodeLvl = currentlyViewedStaffInstance:GetSpecificSkillLevel("code", { MaxAffordableLevel = true })
+        local maxAffordableSoundLvl = currentlyViewedStaffInstance:GetSpecificSkillLevel("sound", { MaxAffordableLevel = true })
+        local maxAffordableArtLvl = currentlyViewedStaffInstance:GetSpecificSkillLevel("art", { MaxAffordableLevel = true })
+        -- when on "MAX" option and plr can't afford any extra levels, display the next level upgrade (even though it cannot be afforded)
+        if maxAffordableCodeLvl <= currentCodeLvl then
+            currentBtnPrices["code"].Level = currentCodeLvl + 1
+            amtOfCodeUpgrades = 1
+        else
+            currentBtnPrices["code"].Level = maxAffordableCodeLvl
+            amtOfCodeUpgrades = maxAffordableCodeLvl - currentCodeLvl
+        end
+        
+        if maxAffordableSoundLvl <= currentSoundLvl then
+            currentBtnPrices["sound"].Level = currentSoundLvl + 1
+            amtOfSoundUpgrades = 1
+        else
+            currentBtnPrices["sound"].Level = maxAffordableSoundLvl
+            amtOfSoundUpgrades = maxAffordableSoundLvl - currentSoundLvl
+        end
+        
+        if maxAffordableArtLvl <= currentArtLvl then
+            currentBtnPrices["art"].Level = currentArtLvl + 1
+            amtOfArtUpgrades = 1
+        else
+            currentBtnPrices["art"].Level = maxAffordableArtLvl
+            amtOfArtUpgrades = maxAffordableArtLvl - currentArtLvl
+        end
     end
+    
+    print(amtOfCodeUpgrades)
+    print(amtOfSoundUpgrades)
+    print(amtOfArtUpgrades)
+    print("-")
 
+    local codeUpgradeCost = currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("code", { AmountOfUpgrades = amtOfCodeUpgrades })
+    currentBtnPrices["code"].Price = codeUpgradeCost
     local currentCodePts = currentlyViewedStaffInstance:GetSpecificSkillPoints("code")
-    local upgradedCodePts = currentlyViewedStaffInstance:GetSpecificSkillPoints("code", { SpecifiedSkillLevel = specifiedCodeLevel })
-    StaffTrainCodingPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentCodePts}%%</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedCodePts}%%</stroke></font>`
-    StaffTrainCodingPtsBuyBtn.Text = tostring(currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("code", { AmountOfUpgrades = specifiedCodeLevel }))
+    local upgradedCodePts = currentlyViewedStaffInstance:GetSpecificSkillPoints("code", { SpecifiedSkillLevel = currentBtnPrices["code"].Level })
+    StaffTrainCodingPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentCodePts}</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedCodePts}</stroke></font>`
+    StaffTrainCodingPtsBuyBtn:FindFirstChild("CostText").Text = tostring(codeUpgradeCost)
 
+    local soundUpgradeCost = currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("sound", { AmountOfUpgrades = amtOfSoundUpgrades })
+    currentBtnPrices["sound"].Price = soundUpgradeCost
     local currentSoundPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("sound")
-    local upgradedSoundPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("sound", { SpecifiedSkillLevel = specifiedSoundLevel })
-    StaffTrainSoundPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentSoundPts}%%</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedSoundPts}%%</stroke></font>`
-    StaffTrainSoundPtsBuyBtn.Text = tostring(currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("sound", { AmountOfUpgrades = specifiedSoundLevel }))
+    local upgradedSoundPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("sound", { SpecifiedSkillLevel = currentBtnPrices["sound"].Level })
+    StaffTrainSoundPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentSoundPts}</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedSoundPts}</stroke></font>`
+    StaffTrainSoundPtsBuyBtn:FindFirstChild("CostText").Text = tostring(soundUpgradeCost)
 
+    local artUpgradeCost = currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("art", { AmountOfUpgrades = amtOfArtUpgrades })
+    currentBtnPrices["art"].Price = artUpgradeCost
     local currentArtPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("art")
-    local upgradedArtPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("art", { SpecifiedSkillLevel = specifiedArtLevel })
-    StaffTrainArtPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentArtPts}%%</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedArtPts}%%</stroke></font>`
-    StaffTrainArtPtsBuyBtn.Text = tostring(currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("art", { AmountOfUpgrades = specifiedArtLevel }))
+    local upgradedArtPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("art", { SpecifiedSkillLevel = currentBtnPrices["art"].Level })
+    StaffTrainArtPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentArtPts}</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedArtPts}</stroke></font>`
+    StaffTrainArtPtsBuyBtn:FindFirstChild("CostText").Text = tostring(artUpgradeCost)
 end
 
 local function populateStaffTrainGui()
@@ -191,12 +285,23 @@ local function populateStaffTrainGui()
 end
 
 local function prepareStaffTrainGui()
+    local studioPlacedItemsFolder = Workspace.TempAssets.Studios:FindFirstChild("PlacedObjects", true)
+    local placedItem = studioPlacedItemsFolder:FindFirstChild(currentlyViewedStaffUUID)
+    local cameraPosPart = placedItem:FindFirstChild("CameraPositionPart")
+    local cameraLookAtPart = placedItem:FindFirstChild("CameraLookAt")
+
     styleUpgradeAmtBtns()
     populateStaffTrainGui()
+    styleUpgradeBuyBtns()
+
+    PlayerServices.HidePlayer(localPlr, true)
+    CameraControls.FocusOnObject(localPlr, camera, cameraPosPart.Position, cameraLookAtPart.Position, true, true)
+
+    GuiServices.HideHUD()
+    GuiServices.ShowGuiStandard(StaffTrainContainer)
 end
 
 local function hideStaffViewGui()
-    resetViewedStaffVariables()
     PlayerServices.ShowPlayer(localPlr, true)
     GeneralUtils.ShowModel(currentlyViewedStaffPcModel, { Tween = true })
     CameraControls.SetDefault(localPlr, camera, true)
@@ -205,7 +310,6 @@ local function hideStaffViewGui()
 end
 
 local function hideStaffTrainGui()
-    resetViewedStaffVariables()
     PlayerServices.ShowPlayer(localPlr, true)
     CameraControls.SetDefault(localPlr, camera, true)
     GuiServices.ShowHUD()
@@ -217,6 +321,7 @@ StaffViewExitBtn.Activated:Connect(function()
     local hideTween = GuiServices.HideGuiStandard(StaffViewContainer)
     hideTween.Completed:Connect(function()
         hideStaffViewGui()
+        resetViewedStaffVariables() -- reset gui dependant variables before opening
     end)
 end)
 
@@ -224,25 +329,38 @@ StaffTrainExitBtn.Activated:Connect(function()
     local hideTween = GuiServices.HideGuiStandard(StaffTrainContainer)
     hideTween.Completed:Connect(function()
         hideStaffTrainGui()
+        resetTrainStaffVariables()
     end)
 end)
 
 -- upgrade amt btns
 for _i, btn in {StaffTrainUpgradeOneBtn, StaffTrainUpgradeFiveBtn, StaffTrainUpgradeMaxBtn} do
-    local btnID: string = btn:GetAttribute("ID")
-    selectedUpgradeBtn = btnID
-    styleUpgradeAmtBtns()
-end
+    btn.Activated:Connect(function()
+        local btnID: string = btn:GetAttribute("ID")
+        if selectedUpgradeBtn == btnID then return end -- if selecting the upgrade amt btn that is already selected
 
+        selectedUpgradeBtn = btnID
+        styleUpgradeAmtBtns()
+        populateStaffTrainSkillUpgradeContainer()
+        styleUpgradeBuyBtns()
+    end)
+end
 
 -- REMOTES --
 Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, options)
+    plrData = Remotes.Data.GetAllData:InvokeServer()
+
     if showGui then
         if guiName == "viewStaffMemberStudio" or guiName == "trainStaffMemberStudio" then
             currentlyViewedStaffUUID = options.StaffMemberUUID
             local staffMemberData = Remotes.Staff.GetStaffMemberData:InvokeServer(currentlyViewedStaffUUID)
+            currentBtnPrices["code"] = { Price = nil, Level = nil } -- define
+            currentBtnPrices["sound"] = { Price = nil, Level = nil }
+            currentBtnPrices["art"] = { Price = nil, Level = nil }
+
             if not staffMemberData then
                 resetViewedStaffVariables()
+                resetTrainStaffVariables()
                 return
             end
             currentlyViewedStaffInstance = StaffMemberConfig.new(currentlyViewedStaffUUID, staffMemberData)
@@ -255,3 +373,22 @@ Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, opt
         end
     end
 end)
+
+-- when plr earns more coins
+Remotes.Character.AdjustPlrCoins.OnClientEvent:Connect(function(_newCoinAmt: number)
+    if StaffTrainContainer.Visible then
+        plrData = Remotes.Data.GetAllData:InvokeServer()
+        styleUpgradeAmtBtns()
+        populateStaffTrainSkillUpgradeContainer()
+        styleUpgradeBuyBtns()
+    end
+end)
+
+StaffTrainCodingPtsBuyBtn.Activated:Connect(function()
+    if plrData.Coins < currentBtnPrices["code"].Price then return end
+
+    Remotes.Staff.UpgradeSkill:FireServer()
+end)
+
+-- TO DO!!!!!!111!
+-- call reset variables on plr death here!!!!!!!!
