@@ -49,7 +49,7 @@ local function purchasePhone(plr: Player, phoneName: string)
     if not canAfford then return end
 
     -- CAN BUY PHONE
-    profile.Data[phoneCurrency] -= phoneConfig.Price
+    PlrDataManager.AdjustPlrCoins(plr, -phoneConfig.Price)
     plrHatchingInfo[plr.UserId] = { PhoneName = phoneName, ClicksPerformed = 0 }
 
     -- display phone for opening

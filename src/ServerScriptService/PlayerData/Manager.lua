@@ -14,11 +14,10 @@ function Manager.AdjustPlrCoins(plr: Player, adjustBy: number)
     
     if profile.Data.Coins + adjustBy < 0 then
         profile.Data.Coins = 0
-        leaderstats.Coins.Value = 0
     else
         profile.Data.Coins += adjustBy
-        leaderstats.Coins.Value += adjustBy
     end
+    leaderstats.Coins.Value = profile.Data.Coins
 
     Remotes.Character.AdjustPlrCoins:FireClient(plr, profile.Data.Coins)
 
