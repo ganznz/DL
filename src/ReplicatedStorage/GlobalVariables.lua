@@ -79,7 +79,7 @@ GlobalVariables.Images.Icons.GemIcon = "15762047580"
 -- stroke icons
 
 -- dropshadow icons
-GlobalVariables.Images.Icons.CoinIconDropshadow = "15762115765"
-GlobalVariables.Images.Icons.GemIconDropshadow = "15762118382"
+GlobalVariables.Images.Icons.CoinIconDropshadow = "15903157010"
+GlobalVariables.Images.Icons.GemIconDropshadow = "15903158721"
 
 return GlobalVariables
