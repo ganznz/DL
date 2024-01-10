@@ -11,6 +11,7 @@ StaffMember.__index = StaffMember
 
 export type StaffMemberConfig = {
     Rarity: number,
+    UpgradeCurrency: string,
     IconOriginal: string,
     IconStroke: string,
 }
@@ -18,21 +19,25 @@ export type StaffMemberConfig = {
 local config: { [string]: StaffMemberConfig } = {
     ["Max"] = {
         Rarity = 1,
+        UpgradeCurrency = "Coins",
         IconOriginal = "15803863472",
         IconStroke = "15803865261",
     },
     ["Cam"] = {
         Rarity = 1,
+        UpgradeCurrency = "Coins",
         IconOriginal = "15803860031",
         IconStroke = "15803861381",
     },
     ["Sophie"] = {
         Rarity = 1,
+        UpgradeCurrency = "Coins",
         IconOriginal = "15804094588",
         IconStroke = "15804095897",
     },
     ["Logan"] = {
         Rarity = 2,
+        UpgradeCurrency = "Coins",
         IconOriginal = "15803866632",
         IconStroke = "15803868605",
     },
@@ -126,23 +131,24 @@ function StaffMember:GetSpecificSkillLevel(skill: "code" | "sound" | "art", opts
         plrData = game:GetService("ServerScriptService").PlayerData.Manager.Profiles[Players.LocalPlayer].Data
     end
 
-    local plrCoins = plrData.Coins
+    local staffMemberConfig = StaffMember.GetConfig(self.Model)
+    local plrCurrencyAmt = plrData[staffMemberConfig.UpgradeCurrency]
     local totalCost = 0
 
     -- calculate the cost for the maximum amt of upgrades the player can afford
 
 
-    while totalCost <= plrCoins do
+    while totalCost <= plrCurrencyAmt do
         local temp
         if self.Rarity == 1 then
             temp = totalCost + (10 * math.pow(1.2, skillLevel + 1))
-            if temp > plrCoins then break end
+            if temp > plrCurrencyAmt then break end
         elseif self.Rarity == 2 then
-            temp = totalCost + ( 20 * math.pow(1.3, skillLevel + 1))
-            if temp > plrCoins then break end
+            temp = totalCost + ( 20 * math.pow(1.5, skillLevel + 1))
+            if temp > plrCurrencyAmt then break end
         elseif self.Rarity == 3 then
-            temp = totalCost + ( 40 * math.pow(1.5, skillLevel + 1))
-            if temp > plrCoins then break end
+            temp = totalCost + ( 40 * math.pow(1.7, skillLevel + 1))
+            if temp > plrCurrencyAmt then break end
         end
         totalCost = temp
         skillLevel += 1
@@ -190,18 +196,12 @@ function StaffMember:GetTotalSkillPts(): number
     return self:GetSpecificSkillPoints("code") + self:GetSpecificSkillPoints("sound") + self:GetSpecificSkillPoints("art")
 end
 
--- opts
--- -- AmountOfUpgrades -> number: Calculates the total cost across the amount of upgrades specified
-function StaffMember:CalcSkillLevelUpgradeCost(skill: "code" | "sound" | "art", opts: {}): number
-    local amtOfUpgrades
-    if opts and opts["AmountOfUpgrades"] then amtOfUpgrades = opts["AmountOfUpgrades"] else amtOfUpgrades = 1 end
 
-    local plrData
-    if RunService:IsClient() then
-        plrData = Remotes.Data.GetAllData:InvokeServer()
-    else
-        plrData = game:GetService("ServerScriptService").PlayerData.Manager.Profiles[Players.LocalPlayer].Data
-    end
+-- -- amtOfLvlUps -> number: The number of skill level-ups to perform on the staff member
+function StaffMember:CalcSkillLevelUpgradeCost(skill: "code" | "sound" | "art", amtOfLvlUps: number): number
+    if amtOfLvlUps and amtOfLvlUps < 1 then return end
+
+    amtOfLvlUps = amtOfLvlUps or 1
 
     local skillLevel
     if skill == "code" then
@@ -212,16 +212,15 @@ function StaffMember:CalcSkillLevelUpgradeCost(skill: "code" | "sound" | "art", 
         skillLevel = self.ArtistLevel
     end
 
-    local plrCoins = plrData.Coins
     local totalCost = 0
-    
-    for _i = 1, amtOfUpgrades, 1 do
+
+    for _i = 1, amtOfLvlUps, 1 do
         if self.Rarity == 1 then
             totalCost += math.round( 10 * math.pow(1.2, skillLevel + 1) )
         elseif self.Rarity == 2 then
-            totalCost += math.round( 20 * math.pow(1.3, skillLevel + 1) )
+            totalCost += math.round( 20 * math.pow(1.5, skillLevel + 1) )
         elseif self.Rarity == 3 then
-            totalCost += math.round( 40 * math.pow(1.5, skillLevel + 1) )
+            totalCost += math.round( 40 * math.pow(1.7, skillLevel + 1) )
         end
         skillLevel += 1
     end
