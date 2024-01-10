@@ -232,7 +232,7 @@ local function determinePlaceBtnSettings(placeBtn: TextButton, itemInfo: {})
 
         placeBtnConnection = placeBtn.Activated:Connect(function()
             Remotes.Studio.BuildMode.StoreItem:FireServer(inventoryCategory, itemInfo)
-            GuiServices.HideGuiStandard(InventoryContainer)
+            GuiServices.HideGuiStandard()
         end)
 
     -- btn when activated should enter place mode w that item
@@ -244,7 +244,7 @@ local function determinePlaceBtnSettings(placeBtn: TextButton, itemInfo: {})
             Remotes.Studio.BuildMode.EnterBuildMode:FireServer()
             task.wait(0.2) -- let EnterBuildMode remote do its thing before calling EnterPlaceMode remote (thanks to my shit code)
             Remotes.Studio.BuildMode.EnterPlaceMode:FireServer(inventoryCategory, itemInfo, false)
-            GuiServices.HideGuiStandard(InventoryContainer)
+            GuiServices.HideGuiStandard()
         end)
     end
 end

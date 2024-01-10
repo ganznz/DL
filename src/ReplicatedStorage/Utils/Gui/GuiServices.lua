@@ -153,6 +153,9 @@ function GuiServices.HideGuiStandard(guiInstanceToClose, opts: {}): Tween
         if previousInstance and previousInstance ~= "" then
             local guiTween = hideGuiTweens(previousInstance)
             Remotes.GUI.ToggleBottomHUD:Fire(nil)
+
+            -- arg is the guiInstance that is being opened
+            Remotes.GUI.ToggleBottomHUD:Fire(previousInstance)
             return guiTween
         end
         return
@@ -182,8 +185,7 @@ function GuiServices.ShowGuiStandard(guiInstance, backdropColour: Color3)
         if previousInstance == guiInstance then return end
     end
 
-    -- event Connects in file *BottomBtnsGui.client.lua*, where the logic for the HUDs bottom bar is
-    -- argument is the guiInstance that is being opened
+    -- arg is the guiInstance that is being opened
     Remotes.GUI.ToggleBottomHUD:Fire(guiInstance)
 
     -- push new visible GUI onto stack
