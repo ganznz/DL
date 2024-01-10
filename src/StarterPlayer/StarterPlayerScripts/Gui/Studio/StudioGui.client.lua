@@ -114,8 +114,6 @@ local KICK_PLRS_COOLDOWN = 1 -- seconds
 -- STATE VARIABLES
 local plrData = Remotes.Data.GetAllData:InvokeServer()
 local viewingShelf = false
-local char = localPlr.Character or localPlr.CharacterAdded:Wait()
-local humanoid = char:WaitForChild("Humanoid")
 local studioInteriorModel = nil
 local studioFurnitureInventory = nil
 local currentViewedBook = nil -- when plr is viewing bookshelf, this holds cframe info for what book is 'pulled' from the shelf at a given time
@@ -755,40 +753,27 @@ Remotes.Player.PlatformChanged.OnClientEvent:Connect(function(newPlatformProfile
     setItemInteractionBtns() -- update item interaction btns
 end)
 
-humanoid.Died:Connect(function()
-    if localPlr:GetAttribute("InPlaceMode") then
-        hideItemInteractionBtns()
-    end
+local function onDeath()
 
-    if localPlr:GetAttribute("InBuildMode") then
-        disableBuildModeGui()
-    end
+end
 
-    if viewingShelf then
-        GuiServices.HideGuiStandard(GenreTopicViewContainer)
-        resetGenreTopicGuiView()
-        bookViewDebounce = true
-        CameraControls.SetDefault(localPlr, camera, true)
-    end
-end)
-
-localPlr.CharacterAdded:Connect(function(character: Model)
-    char = character
-    humanoid = char:WaitForChild("Humanoid")
+-- on plr spawn & death
+local function characterAdded(char: Model)
+    local humanoid = char:WaitForChild("Humanoid")
     humanoid.Died:Connect(function()
         if localPlr:GetAttribute("InPlaceMode") then
             hideItemInteractionBtns()
         end
-
+    
         if localPlr:GetAttribute("InBuildMode") then
             disableBuildModeGui()
         end
-
-        if viewingShelf then
-            GuiServices.HideGuiStandard(GenreTopicViewContainer)
-            resetGenreTopicGuiView()
-            bookViewDebounce = true
-            CameraControls.SetDefault(localPlr, camera, true)
-        end
+    
+        resetGenreTopicGuiView()
+        bookViewDebounce = true
     end)
-end)
+end
+
+if localPlr.Character then characterAdded(localPlr.Character) end
+
+localPlr.CharacterAdded:Connect(characterAdded)

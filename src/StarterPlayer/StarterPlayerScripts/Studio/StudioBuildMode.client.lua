@@ -29,8 +29,6 @@ local existingItemSettingBillboards = BuildModeGuiFolder:WaitForChild("ExistingI
 
 -- STATE VARIABLES
 local plrData
-local char = localPlr.Character or localPlr.CharacterAdded:Wait()
-local humanoid = char:WaitForChild("Humanoid")
 local placement
 local studioInteriorFolder
 local placedObjectsFolder
@@ -462,7 +460,7 @@ Remotes.Player.PlatformChanged.OnClientEvent:Connect(function(newPlatformProfile
     plrPlatformProfile = newPlatformProfile
 end)
 
-humanoid.Died:Connect(function()
+local function characterAdded(char: Model)
     if localPlr:GetAttribute("InBuildMode") then
         placement:DestroyGrid()
         disableAllModelClickConnections()
@@ -471,19 +469,8 @@ humanoid.Died:Connect(function()
     if localPlr:GetAttribute("InPlaceMode") then
         exitPlaceMode()
     end
-end)
+end
 
-localPlr.CharacterAdded:Connect(function(character: Model)
-    char = character
-    humanoid = char:WaitForChild("Humanoid")
-    humanoid.Died:Connect(function()
-        if localPlr:GetAttribute("InBuildMode") then
-            placement:DestroyGrid()
-            disableAllModelClickConnections()
-        end
-    
-        if localPlr:GetAttribute("InPlaceMode") then
-            exitPlaceMode()
-        end
-    end)
-end)
+if localPlr.Character then characterAdded(localPlr.Character) end
+
+localPlr.CharacterAdded:Connect(characterAdded)

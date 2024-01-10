@@ -15,6 +15,7 @@ local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Play
 local Remotes = ReplicatedStorage.Remotes
 
 local localPlr = Players.LocalPlayer
+
 local PlayerGui = localPlr.PlayerGui
 local camera = Workspace:WaitForChild("Camera")
 
@@ -418,5 +419,19 @@ Remotes.Character.AdjustPlrCoins.OnClientEvent:Connect(function(_newCoinAmt: num
     end
 end)
 
--- TO DO!!!!!!111!
--- call reset variables on plr death here!!!!!!!!
+-- on plr spawn & death
+local function characterAdded(char: Model)
+    local humanoid = char:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        if StaffViewContainer.Visible then
+            resetViewedStaffVariables()
+        end
+        if StaffTrainContainer.Visible then
+            resetTrainStaffVariables()
+        end
+    end)
+end
+
+if localPlr.Character then characterAdded(localPlr.Character) end
+
+localPlr.CharacterAdded:Connect(characterAdded)

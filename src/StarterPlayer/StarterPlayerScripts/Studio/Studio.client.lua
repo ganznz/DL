@@ -13,8 +13,8 @@ local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Play
 local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
 
 local Remotes = ReplicatedStorage.Remotes
-local plr = Players.LocalPlayer
-local PlayerGui = plr.PlayerGui
+local localPlr = Players.LocalPlayer
+local PlayerGui = localPlr.PlayerGui
 local camera = Workspace:WaitForChild("Camera")
 
 local StudioExteriorsFolder = Workspace:WaitForChild("Map").Buildings.Studios
@@ -24,9 +24,6 @@ local StudioInteriorsFolder = ReplicatedStorage:WaitForChild("Assets").Models.St
 local INTERACTION_BILLBOARDS_VIEWING_DIST = 15 -- studs
 
 -- STATE VARIABLES --
-local char = plr.Character or plr.CharacterAdded:Wait()
-local humanoid = char:WaitForChild("Humanoid")
-
 local studioExteriorTpPart = nil
 local interiorFurnitureData = nil
 local currentStudioIndex = nil
@@ -157,8 +154,8 @@ local function registerShelfViewBtn(viewBtn)
         local cameraPos: Vector3 = shelfModel:FindFirstChild("CameraPositionPart").Position
         local cameraLookAt: Vector3 = shelfModel:FindFirstChild("CameraLookAt").Position
 
-        PlayerServices.HidePlayer(plr, true)
-        CameraControls.FocusOnObject(plr, camera, cameraPos, cameraLookAt, true, true)
+        PlayerServices.HidePlayer(localPlr, true)
+        CameraControls.FocusOnObject(localPlr, camera, cameraPos, cameraLookAt, true, true)
 
         disableInteractionBtns()
         Remotes.GUI.Studio.ViewShelf:Fire()
@@ -232,8 +229,8 @@ local function registerInteractionBtns()
     -- if computer and shelf are near eachother, only show interaction btns for whichever item is closer to plr
     studioEssentialsProximityConnection = RunService.Stepped:Connect(function()
 
-        local shelfDistanceFromPlr = (char:FindFirstChild("HumanoidRootPart").Position - shelfInteractionBillboard.Adornee.Position).Magnitude
-        local computerDistanceFromPlr = (char:FindFirstChild("HumanoidRootPart").Position - computerInteractionBillboard.Adornee.Position).Magnitude
+        local shelfDistanceFromPlr = (localPlr.Character:FindFirstChild("HumanoidRootPart").Position - shelfInteractionBillboard.Adornee.Position).Magnitude
+        local computerDistanceFromPlr = (localPlr.Character:FindFirstChild("HumanoidRootPart").Position - computerInteractionBillboard.Adornee.Position).Magnitude
         
         -- check if plr is within viewing distance
         local isShelfInteractable = shelfDistanceFromPlr <= INTERACTION_BILLBOARDS_VIEWING_DIST and (shelfDistanceFromPlr < computerDistanceFromPlr)
@@ -333,7 +330,7 @@ local function replaceComputerModel(plrData, studioType: "Standard" | "Premium")
 end
 
 local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
-    plr:SetAttribute("InStudio", true)
+    localPlr:SetAttribute("InStudio", true)
     local plrToVisitData = Remotes.Data.GetAllData:InvokeServer(plrToVisit)
 
     -- tp plr into studio interior
@@ -360,7 +357,7 @@ local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
         studioInteriorFolder.Parent = Workspace.TempAssets.Studios
         
         -- set up computer & shelf interaction buttons if the player whose studio is being visited is the same as LocalPlayer
-        if plrToVisit == plr then
+        if plrToVisit == localPlr then
             registerInteractionBtns()
         end
     end)
@@ -393,7 +390,7 @@ local function studioInteriorExitListener()
     studioInteriorExitZone.localPlayerEntered:Connect(function(_plr: Player)
         Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
         Remotes.Studio.General.LeaveStudio:FireServer()
-        plr:SetAttribute("InStudio", false)
+        localPlr:SetAttribute("InStudio", false)
 
         task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
             studioInteriorCleanup()
@@ -406,7 +403,7 @@ local visitOtherStudioRemote = Remotes.Studio.General.VisitOtherStudio
 for _i, remote in { visitOwnStudioRemote, visitOtherStudioRemote } do
     remote.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
         -- if plr was already in a studio (their own or someone elses)
-        if plr:GetAttribute("InStudio") then
+        if localPlr:GetAttribute("InStudio") then
             studioInteriorCleanup()
         end
     
@@ -441,7 +438,7 @@ Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioIn
 end)
 
 Remotes.Studio.General.KickFromStudio.OnClientEvent:Connect(function()
-    plr:SetAttribute("InStudio", false)
+    localPlr:SetAttribute("InStudio", false)
 
     Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
@@ -477,14 +474,12 @@ Remotes.Studio.BuildMode.RemoveItem.OnClientEvent:Connect(function(itemType: str
     end
 end)
 
--- add genre book to shelf
+-- add books to shelves
 Remotes.GameDev.UnlockGenre.OnClientEvent:Connect(function(genreName)
-    if plr:GetAttribute("InStudio") then addBookModelToShelf("genre", genreName) end
+    if localPlr:GetAttribute("InStudio") then addBookModelToShelf("genre", genreName) end
 end)
-
--- add topic book to shelf
 Remotes.GameDev.UnlockTopic.OnClientEvent:Connect(function(topicName)
-    if plr:GetAttribute("InStudio") then addBookModelToShelf("topic", topicName) end
+    if localPlr:GetAttribute("InStudio") then addBookModelToShelf("topic", topicName) end
 end)
 
 -- re-enables placed item interaction btns (e.g. stop viewing shelf, training staff member, etc)
@@ -492,27 +487,20 @@ Remotes.Player.StopInspecting.Event:Connect(function()
     registerInteractionBtns()
 end)
 
-humanoid.Died:Connect(function()
-    if plr:GetAttribute("InStudio") then
-        plr:SetAttribute("InStudio", false)
-        studioInteriorCleanup()
-        Remotes.Studio.General.LeaveStudio:FireServer()
-    end
-end)
-
-plr.CharacterAdded:Connect(function(character: Model)
-    char = character
-    humanoid = char:WaitForChild("Humanoid")
-
+-- on plr spawn & death
+local function characterAdded(char: Model)
+    local humanoid = char:WaitForChild("Humanoid")
     humanoid.Died:Connect(function()
-        if plr:GetAttribute("InStudio") then
-            plr:SetAttribute("InStudio", false)
+        if localPlr:GetAttribute("InStudio") then
             studioInteriorCleanup()
             Remotes.Studio.General.LeaveStudio:FireServer()
         end
     end)
-end)
+end
 
+if localPlr.Character then characterAdded(localPlr.Character) end
+
+localPlr.CharacterAdded:Connect(characterAdded)
 
 
 
