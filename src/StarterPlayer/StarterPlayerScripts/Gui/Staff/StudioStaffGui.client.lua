@@ -1,3 +1,4 @@
+local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -69,6 +70,7 @@ local StaffTrainUpgradeMaxBtn = StaffTrainContainer.StaffTrainContainerInner.Upg
 local StaffTrainUpgradeAllBtn = StaffTrainContainer.StaffTrainContainerInner:FindFirstChild("TrainAllStatsBtn")
 
 -- STATIC VARIABLES --
+local PARTICLE_EFFECT_LENGTH = 0.5
 local ENERGY_TEXT = "CURRENT / MAX"
 local SPECIALTY_TEXT = "Specialty: SPECIALTY"
 local ENERGY_FULL_IN_TEXT = "Full in: FORMATTED_TIME"
@@ -77,9 +79,19 @@ local ENERGY_FULL_IN_TEXT = "Full in: FORMATTED_TIME"
 local plrData = nil
 local currentlyViewedStaffUUID: string | nil = nil -- uuid of the staff member currently being viewed (or trained)
 local currentlyViewedStaffInstance: {} | nil = nil -- instance object of the staff member currently being viewed (or trained)
-local currentlyViewedStaffPcModel: Model | nil = nil -- the PC model of the placed staff member model being viewed\
+local currentlyViewedStaffPcModel: Model | nil = nil -- the PC model of the placed staff member model being viewed
 local selectedUpgradeBtn = "1" -- how many staff member skill upgrades occur at once ("1"=1, "2"=5, "3"=max)
 local currentBtnPrices: {[string]: {}} = {} -- e.g. { ["code"]={ Level=5, Price=100 }, ["sound"]={..}, ["art"]={..} }
+
+local studioPlacedItemsFolder = nil
+local placedStaffMember: Model = nil
+local staffMemberHrp = nil
+-- particle instances
+local flameParticle: ParticleEmitter = nil
+local starsParticle = nil
+local sparksParticle = nil
+local circleParticle = nil
+local groundParticle: ParticleEmitter = nil
 
 GuiServices.StoreInCache(StaffViewContainer)
 GuiServices.StoreInCache(StaffTrainContainer)
@@ -98,16 +110,19 @@ GuiTemplates.CreateButton(StaffTrainUpgradeFiveBtn)
 GuiTemplates.CreateButton(StaffTrainUpgradeMaxBtn)
 GuiTemplates.CreateButton(StaffTrainUpgradeAllBtn)
 
-local function resetViewedStaffVariables()
-    currentlyViewedStaffUUID = nil
-    currentlyViewedStaffInstance = nil
-end
-
-local function resetTrainStaffVariables()
+local function resetVariables()
     currentlyViewedStaffUUID = nil
     currentlyViewedStaffInstance = nil
     selectedUpgradeBtn = "1"
     currentBtnPrices = {}
+    studioPlacedItemsFolder = nil
+    placedStaffMember = nil
+    staffMemberHrp = nil
+    flameParticle = nil
+    starsParticle = nil
+    sparksParticle = nil
+    circleParticle = nil
+    groundParticle = nil
 end
 
 local function populateStaffViewGui()
@@ -124,12 +139,12 @@ local function populateStaffViewGui()
 end
 
 local function prepareStaffViewGui()
-    local studioPlacedItemsFolder = Workspace.TempAssets.Studios:FindFirstChild("PlacedObjects", true)
-    local placedItem = studioPlacedItemsFolder:FindFirstChild(currentlyViewedStaffUUID)
-    currentlyViewedStaffPcModel = placedItem:FindFirstChild("Pc")
+    studioPlacedItemsFolder = Workspace.TempAssets.Studios:FindFirstChild("PlacedObjects", true)
+    placedStaffMember = studioPlacedItemsFolder:FindFirstChild(currentlyViewedStaffUUID)
+    currentlyViewedStaffPcModel = placedStaffMember:FindFirstChild("Pc")
 
-    local cameraPosPart = placedItem:FindFirstChild("CameraPositionPart")
-    local cameraLookAtPart = placedItem:FindFirstChild("CameraLookAt")
+    local cameraPosPart = placedStaffMember:FindFirstChild("CameraPositionPart")
+    local cameraLookAtPart = placedStaffMember:FindFirstChild("CameraLookAt")
 
     GuiServices.HideHUD({ HideGuiFrames = true })
 
@@ -216,7 +231,6 @@ local function styleUpgradeBuyBtns()
 end
 
 local function populateStaffTrainSkillUpgradeContainer()
-    print(currentlyViewedStaffInstance)
     if selectedUpgradeBtn == "1" then
         currentBtnPrices["code"].AmtOfUpgrades = 1
         currentBtnPrices["sound"].AmtOfUpgrades = 1
@@ -296,10 +310,8 @@ local function populateStaffTrainGui()
 end
 
 local function prepareStaffTrainGui()
-    local studioPlacedItemsFolder = Workspace.TempAssets.Studios:FindFirstChild("PlacedObjects", true)
-    local placedItem = studioPlacedItemsFolder:FindFirstChild(currentlyViewedStaffUUID)
-    local cameraPosPart = placedItem:FindFirstChild("CameraPositionPart")
-    local cameraLookAtPart = placedItem:FindFirstChild("CameraLookAt")
+    local cameraPosPart = placedStaffMember:FindFirstChild("CameraPositionPart")
+    local cameraLookAtPart = placedStaffMember:FindFirstChild("CameraLookAt")
     
     determineUpgradeBtnCurrency()
     styleUpgradeAmtBtns()
@@ -346,7 +358,7 @@ StaffViewExitBtn.Activated:Connect(function()
     local hideTween = GuiServices.HideGuiStandard(StaffViewContainer)
     hideTween.Completed:Connect(function()
         hideStaffViewGui()
-        resetViewedStaffVariables() -- reset gui dependant variables before opening
+        resetVariables() -- reset gui dependant variables before opening
     end)
 end)
 
@@ -354,7 +366,7 @@ StaffTrainExitBtn.Activated:Connect(function()
     local hideTween = GuiServices.HideGuiStandard(StaffTrainContainer)
     hideTween.Completed:Connect(function()
         hideStaffTrainGui()
-        resetTrainStaffVariables()
+        resetVariables()
     end)
 end)
 
@@ -383,13 +395,22 @@ Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, opt
         if guiName == "viewStaffMemberStudio" or guiName == "trainStaffMemberStudio" then
             currentlyViewedStaffUUID = options.StaffMemberUUID
             local staffMemberData = plrData.Inventory.StaffMembers[currentlyViewedStaffUUID]
+
+            studioPlacedItemsFolder = Workspace.TempAssets.Studios:FindFirstChild("PlacedObjects", true)
+            placedStaffMember = studioPlacedItemsFolder:FindFirstChild(currentlyViewedStaffUUID)
+            staffMemberHrp = placedStaffMember.Character:FindFirstChild("HumanoidRootPart", true)
+            flameParticle = staffMemberHrp:FindFirstChild("FlameParticle", true)
+            starsParticle = staffMemberHrp:FindFirstChild("StarsParticle", true)
+            sparksParticle = staffMemberHrp:FindFirstChild("SparksParticle", true)
+            circleParticle = staffMemberHrp:FindFirstChild("CircleParticle", true)
+            groundParticle = staffMemberHrp:FindFirstChild("GroundParticle", true)
+
             currentBtnPrices["code"] = { Price = nil, Level = nil, AmtOfUpgrades = nil } -- define
             currentBtnPrices["sound"] = { Price = nil, Level = nil, AmtOfUpgrades = nil }
             currentBtnPrices["art"] = { Price = nil, Level = nil, AmtOfUpgrades = nil }
 
             if not staffMemberData then
-                resetViewedStaffVariables()
-                resetTrainStaffVariables()
+                resetVariables()
                 return
             end
             currentlyViewedStaffInstance = StaffMemberConfig.new(currentlyViewedStaffUUID, staffMemberData)
@@ -419,15 +440,40 @@ Remotes.Character.AdjustPlrCoins.OnClientEvent:Connect(function(_newCoinAmt: num
     end
 end)
 
+local particleEffectTimer = 0 -- used to turn effect off without it appearing glitchy while spam clicking upgrade
+Remotes.Staff.LevelUpSkill.OnClientEvent:Connect(function(_staffMemberUUID: string, _skill: string, amtOfLvlUps: number)
+    if flameParticle then -- if one particle exists, then the rest do
+        if amtOfLvlUps >= 5 then
+            flameParticle.Enabled = true
+        end
+        if amtOfLvlUps >= 1 then
+            circleParticle.Enabled = true
+            groundParticle.Enabled = true
+            starsParticle.Enabled = true
+            sparksParticle.Enabled = true
+        end
+        particleEffectTimer = os.time()
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if os.time() > particleEffectTimer + PARTICLE_EFFECT_LENGTH then
+        if flameParticle and groundParticle then
+            flameParticle.Enabled = false
+            starsParticle.Enabled = false
+            sparksParticle.Enabled = false
+            circleParticle.Enabled = false
+            groundParticle.Enabled = false
+        end
+    end
+end)
+
 -- on plr spawn & death
 local function characterAdded(char: Model)
     local humanoid = char:WaitForChild("Humanoid")
     humanoid.Died:Connect(function()
-        if StaffViewContainer.Visible then
-            resetViewedStaffVariables()
-        end
-        if StaffTrainContainer.Visible then
-            resetTrainStaffVariables()
+        if StaffViewContainer.Visible or StaffTrainContainer.Visible then
+            resetVariables()
         end
     end)
 end
