@@ -88,4 +88,12 @@ function GeneralUtils.ShowModel(model: Model, opts: {})
     end
 end
 
+function GeneralUtils.RoundToDp(num: number, dp: number): number
+    local increment = "0."
+    for i=1, dp, 1 do increment += "0" end
+    increment += "1"
+    increment = tostring(increment)
+    return math.round(num / increment) * increment
+end
+
 return GeneralUtils
