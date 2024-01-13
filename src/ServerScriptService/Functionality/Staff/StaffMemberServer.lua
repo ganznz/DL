@@ -36,7 +36,11 @@ function StaffMember:AdjustEnergy(plr: Player, staffMemberUUID: string, amtToAdj
         staffMemberData.CurrentEnergy += amtToAdjustBy
     end
 
+    local updatedInstance = StaffMember.new(staffMemberUUID, staffMemberData)
+    local secondsUntilFull = updatedInstance:CalcTimeUntilFullEnergy()
+
     Remotes.Staff.AdjustEnergy:FireClient(plr, staffMemberUUID, staffMemberData)
+    Remotes.Staff.UpdateEnergyFullTimer:FireClient(plr, staffMemberUUID, secondsUntilFull)
 end
 
 -- function cannot be called directly from client, rather a remote connects a ServerEvent which then calls the function.
@@ -52,24 +56,13 @@ function StaffMember:LevelUpSkill(plr: Player, staffMemberUUID: string, skill: "
     local plrCurrencyAmt = profile.Data[staffMemberConfig.UpgradeCurrency]
     local upgradeCost = self:CalcSkillLevelUpgradeCost(skill, amtOfLvlUps)
 
-    local ptsAfterUpgrade
-    if skill == "code" then
-        ptsAfterUpgrade = self:GetSpecificSkillPoints(skill, { SpecifiedSkillLevel = self.CodeLevel + amtOfLvlUps })
-    elseif skill == "sound" then
-        ptsAfterUpgrade = self:GetSpecificSkillPoints(skill, { SpecifiedSkillLevel = self.SoundLevel + amtOfLvlUps })
-    elseif skill == "art" then
-        ptsAfterUpgrade = self:GetSpecificSkillPoints(skill, { SpecifiedSkillLevel = self.ArtistLevel + amtOfLvlUps })
-    end
-
     if plrCurrencyAmt < upgradeCost then return end
 
     -- check if staff member has enough energy for level up
-    -- level up energy formula --> (currEnergy / maxEnergy) * (skillPtsAfterUpgrade / totalPtsAfterUpgrade)
-    local maxEnergy = self:CalcMaxEnergy()
-    local energyUsedWeighting = if amtOfLvlUps >= 5 then 2 else (amtOfLvlUps / 2.5) -- determines energy usage based on how many level-ups are being done
-    local energyUsedProportional = (ptsAfterUpgrade / (self:GetTotalSkillPts() + ptsAfterUpgrade)) * (energyUsedWeighting) -- e.g. 0.4 (40%)
-    if energyUsedProportional > 1 then energyUsedProportional = 1 end
-    if self.CurrentEnergy / maxEnergy < energyUsedProportional then return end
+    local energyUsed, canUpgrade, maxEnergyAfterUpgrade = unpack(self:CalcSkillUpgradeEnergyConsumption(skill, amtOfLvlUps))
+    if not canUpgrade then return end
+
+    staffMemberData.CurrentEnergy = (staffMemberData.CurrentEnergy / self:CalcMaxEnergy()) * maxEnergyAfterUpgrade
     
     -- all checks passed, level up skill
     if skill == "code" then
@@ -88,12 +81,8 @@ function StaffMember:LevelUpSkill(plr: Player, staffMemberUUID: string, skill: "
     if staffMemberConfig.UpgradeCurrency == "Coins" then
         PlrDataManager.AdjustPlrCoins(plr, -upgradeCost)
     end
-            
-    local newMaxEnergy = self:CalcMaxEnergy()
-    staffMemberData.CurrentEnergy = (staffMemberData.CurrentEnergy / maxEnergy) * newMaxEnergy
 
-    local energyUsedActual = newMaxEnergy * energyUsedProportional
-    self:AdjustEnergy(plr, staffMemberUUID, -energyUsedActual)
+    self:AdjustEnergy(plr, staffMemberUUID, -energyUsed)
 
     -- replicate changes to client
     Remotes.Staff.LevelUpSkill:FireClient(plr, staffMemberUUID, skill, amtOfLvlUps)

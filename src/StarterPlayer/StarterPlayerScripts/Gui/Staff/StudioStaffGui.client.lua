@@ -1,4 +1,5 @@
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -49,6 +50,7 @@ local StaffTrainSpecialtyText = StaffTrainContainer.StaffTrainContainerInner:Fin
 local StaffTrainEnergyContainer = StaffTrainContainer.StaffTrainContainerInner:FindFirstChild("EnergyContainer")
 local StaffTrainEnergyText = StaffTrainEnergyContainer:FindFirstChild("Energy", true)
 local StaffTrainEnergyBarProg = StaffTrainEnergyContainer:FindFirstChild("EnergyProg", true)
+local StaffTrainEnergyTimer = StaffTrainContainer.StaffTrainContainerInner:FindFirstChild("EnergyTimer")
 
 -- train stats
 local StaffTrainSkillPtsContainer = StaffTrainContainer.StaffTrainContainerInner:FindFirstChild("SkillPtsContainer")
@@ -278,12 +280,19 @@ local function populateStaffTrainSkillUpgradeContainer()
         end
     end
 
+    -- check if staff member has enough energy for level up
+    local codeUpgradeEnergyUsed = GeneralUtils.RoundToDp(currentlyViewedStaffInstance:CalcSkillUpgradeEnergyConsumption("code", currentBtnPrices["code"].AmtOfUpgrades)[1], 2)
+    local soundUpgradeEnergyUsed = GeneralUtils.RoundToDp(currentlyViewedStaffInstance:CalcSkillUpgradeEnergyConsumption("sound", currentBtnPrices["sound"].AmtOfUpgrades)[1], 2)
+    local artUpgradeEnergyUsed = GeneralUtils.RoundToDp(currentlyViewedStaffInstance:CalcSkillUpgradeEnergyConsumption("art", currentBtnPrices["art"].AmtOfUpgrades)[1], 2)
+    
+
     local codeUpgradeCost = currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("code", currentBtnPrices["code"].AmtOfUpgrades)
     currentBtnPrices["code"].Price = codeUpgradeCost
     local currentCodePts = currentlyViewedStaffInstance:GetSpecificSkillPoints("code")
     local upgradedCodePts = currentlyViewedStaffInstance:GetSpecificSkillPoints("code", { SpecifiedSkillLevel = currentBtnPrices["code"].Level })
     StaffTrainCodingPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentCodePts}</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedCodePts}</stroke></font>`
     StaffTrainCodingPtsBuyBtn:FindFirstChild("CostText").Text = tostring(codeUpgradeCost)
+    StaffTrainCodingPtsBuyBtn:FindFirstChild("EnergyText").Text = tostring(codeUpgradeEnergyUsed)
 
     local soundUpgradeCost = currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("sound", currentBtnPrices["sound"].AmtOfUpgrades)
     currentBtnPrices["sound"].Price = soundUpgradeCost
@@ -291,6 +300,7 @@ local function populateStaffTrainSkillUpgradeContainer()
     local upgradedSoundPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("sound", { SpecifiedSkillLevel = currentBtnPrices["sound"].Level })
     StaffTrainSoundPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentSoundPts}</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedSoundPts}</stroke></font>`
     StaffTrainSoundPtsBuyBtn:FindFirstChild("CostText").Text = tostring(soundUpgradeCost)
+    StaffTrainSoundPtsBuyBtn:FindFirstChild("EnergyText").Text = tostring(soundUpgradeEnergyUsed)
 
     local artUpgradeCost = currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("art", currentBtnPrices["art"].AmtOfUpgrades)
     currentBtnPrices["art"].Price = artUpgradeCost
@@ -298,6 +308,7 @@ local function populateStaffTrainSkillUpgradeContainer()
     local upgradedArtPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("art", { SpecifiedSkillLevel = currentBtnPrices["art"].Level })
     StaffTrainArtPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentArtPts}</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedArtPts}</stroke></font>`
     StaffTrainArtPtsBuyBtn:FindFirstChild("CostText").Text = tostring(artUpgradeCost)
+    StaffTrainArtPtsBuyBtn:FindFirstChild("EnergyText").Text = tostring(artUpgradeEnergyUsed)
 end
 
 local function populateStaffTrainGui()
@@ -305,6 +316,7 @@ local function populateStaffTrainGui()
     StaffTrainSpecialtyText.Text = SPECIALTY_TEXT:gsub("SPECIALTY", currentlyViewedStaffInstance.Specialisation)
     StaffTrainEnergyBarProg.Size = UDim2.fromScale(currentlyViewedStaffInstance.CurrentEnergy / currentlyViewedStaffInstance:CalcMaxEnergy(), 1)
     StaffTrainEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", currentlyViewedStaffInstance.CurrentEnergy):gsub("MAX", currentlyViewedStaffInstance:CalcMaxEnergy())
+    StaffViewEnergyTimer.Text = ENERGY_FULL_IN_TEXT:gsub("FORMATTED_TIME", DateTimeUtils.FormatTimeLeft(currentlyViewedStaffInstance:CalcTimeUntilFullEnergy()))
 
     populateStaffTrainSkillUpgradeContainer()
 end
@@ -395,7 +407,7 @@ Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, opt
         if guiName == "viewStaffMemberStudio" or guiName == "trainStaffMemberStudio" then
             currentlyViewedStaffUUID = options.StaffMemberUUID
             local staffMemberData = plrData.Inventory.StaffMembers[currentlyViewedStaffUUID]
-
+            
             studioPlacedItemsFolder = Workspace.TempAssets.Studios:FindFirstChild("PlacedObjects", true)
             placedStaffMember = studioPlacedItemsFolder:FindFirstChild(currentlyViewedStaffUUID)
             staffMemberHrp = placedStaffMember.Character:FindFirstChild("HumanoidRootPart", true)
@@ -404,11 +416,11 @@ Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, opt
             sparksParticle = staffMemberHrp:FindFirstChild("SparksParticle", true)
             circleParticle = staffMemberHrp:FindFirstChild("CircleParticle", true)
             groundParticle = staffMemberHrp:FindFirstChild("GroundParticle", true)
-
+            
             currentBtnPrices["code"] = { Price = nil, Level = nil, AmtOfUpgrades = nil } -- define
             currentBtnPrices["sound"] = { Price = nil, Level = nil, AmtOfUpgrades = nil }
             currentBtnPrices["art"] = { Price = nil, Level = nil, AmtOfUpgrades = nil }
-
+            
             if not staffMemberData then
                 resetVariables()
                 return
@@ -440,9 +452,12 @@ Remotes.Character.AdjustPlrCoins.OnClientEvent:Connect(function(_newCoinAmt: num
     end
 end)
 
+local particlesEnabled = false
 local particleEffectTimer = 0 -- used to turn effect off without it appearing glitchy while spam clicking upgrade
 Remotes.Staff.LevelUpSkill.OnClientEvent:Connect(function(_staffMemberUUID: string, _skill: string, amtOfLvlUps: number)
     if flameParticle then -- if one particle exists, then the rest do
+    particleEffectTimer = os.time()
+        particlesEnabled = true
         if amtOfLvlUps >= 5 then
             flameParticle.Enabled = true
         end
@@ -452,18 +467,67 @@ Remotes.Staff.LevelUpSkill.OnClientEvent:Connect(function(_staffMemberUUID: stri
             starsParticle.Enabled = true
             sparksParticle.Enabled = true
         end
-        particleEffectTimer = os.time()
+    end
+end)
+
+Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: string, staffMemberData: {})
+    if (currentlyViewedStaffUUID == staffMemberUUID) and (StaffTrainContainer.Visible or StaffViewContainer.Visible) then
+
+        currentlyViewedStaffInstance = StaffMemberConfig.new(currentlyViewedStaffUUID, staffMemberData) -- refresh staff member instance
+        local maxEnergy = currentlyViewedStaffInstance:CalcMaxEnergy()
+
+        local tween
+        if StaffTrainContainer.Visible then
+            tween = TweenService:Create(StaffTrainEnergyBarProg, TweenInfo.new(0.3), { Size = UDim2.fromScale(staffMemberData.CurrentEnergy / maxEnergy, 1) })
+            StaffTrainEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", GeneralUtils.RoundToDp(staffMemberData.CurrentEnergy, 2)):gsub("MAX", maxEnergy)
+
+        elseif StaffViewContainer.Visible then
+            tween = TweenService:Create(StaffViewEnergyBarProg, TweenInfo.new(0.3), { Size = UDim2.fromScale(staffMemberData.CurrentEnergy / maxEnergy, 1) })
+            StaffViewEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", GeneralUtils.RoundToDp(staffMemberData.CurrentEnergy, 2)):gsub("MAX", maxEnergy)
+        end
+
+        tween:Play()
+    end
+end)
+
+Remotes.Staff.UpdateEnergyFullTimer.OnClientEvent:Connect(function(staffMemberUUID: string, secondsUntilFull: number)
+    if (currentlyViewedStaffUUID == staffMemberUUID) and (StaffTrainContainer.Visible or StaffViewContainer.Visible) then
+        local hideTextTween
+        local showTextTween
+
+        if StaffTrainContainer.Visible then
+            if secondsUntilFull <= 0 then
+                hideTextTween = TweenService:Create(StaffTrainEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 1 })
+            elseif StaffTrainEnergyTimer.TextTransparency == 1 then
+                showTextTween = TweenService:Create(StaffTrainEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 0 })
+            end
+            StaffTrainEnergyTimer.Text = ENERGY_FULL_IN_TEXT:gsub("FORMATTED_TIME", DateTimeUtils.FormatTimeLeft(secondsUntilFull))
+
+        elseif StaffViewContainer.Visible then
+            if secondsUntilFull <= 0 then
+                hideTextTween = TweenService:Create(StaffViewEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 1 })
+            elseif StaffTrainEnergyTimer.TextTransparency == 1 then
+                showTextTween = TweenService:Create(StaffTrainEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 0 })
+            end
+            StaffViewEnergyTimer.Text = ENERGY_FULL_IN_TEXT:gsub("FORMATTED_TIME", DateTimeUtils.FormatTimeLeft(secondsUntilFull))
+        end
+
+        if hideTextTween then hideTextTween:Play() end
+        if showTextTween then showTextTween:Play() end
     end
 end)
 
 RunService.Heartbeat:Connect(function()
-    if os.time() > particleEffectTimer + PARTICLE_EFFECT_LENGTH then
-        if flameParticle and groundParticle then
-            flameParticle.Enabled = false
-            starsParticle.Enabled = false
-            sparksParticle.Enabled = false
-            circleParticle.Enabled = false
-            groundParticle.Enabled = false
+    if particlesEnabled then
+        if os.time() > particleEffectTimer + PARTICLE_EFFECT_LENGTH then
+            particlesEnabled = false
+            if flameParticle then
+                flameParticle.Enabled = false
+                starsParticle.Enabled = false
+                sparksParticle.Enabled = false
+                circleParticle.Enabled = false
+                groundParticle.Enabled = false
+            end
         end
     end
 end)

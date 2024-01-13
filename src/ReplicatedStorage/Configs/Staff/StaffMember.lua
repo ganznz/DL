@@ -48,13 +48,25 @@ StaffMember.Config = config
 StaffMember.Constants = {
     -- these are the multipliers that are used when calculating how many points of a skill a staff member has
     SkillLevelMultipliers = {
-        Rarity1 = 1,
-        Rarity2 = 2,
-        Rarity3 = 5,
-        Rarity4 = 10,
-        Rarity5 = 20,
-        Rarity6 = 50,
-        Rarity7 = 125,
+        -- [rarityValue] = multiplier
+        ["1"] = 1,
+        ["2"] = 2,
+        ["3"] = 5,
+        ["4"] = 10,
+        ["5"] = 20,
+        ["6"] = 50,
+        ["7"] = 125,
+    },
+    EnergyEmptyToFull = {
+        -- in seconds
+        -- [rarityValue] = time
+        ["1"] = 150, -- 2.5 min
+        ["2"] = 300, -- 5 min
+        ["3"] = 540, -- 9 min
+        ["4"] = 900, -- 15 min
+        ["5"] = 1500, -- 25 min
+        ["6"] = 2400, -- 40 min
+        ["7"] = 3600, -- 60 min
     },
     EnergyPerSkillPt = 10
 }
@@ -109,11 +121,7 @@ function StaffMember.new(staffMemberUUID: string, staffMemberData: {})
 end
 
 function StaffMember:GetSkillLvlMultiplier()
-    if self.Rarity == 1 then
-        return StaffMember.Constants.SkillLevelMultipliers.Rarity1
-    elseif self.Rarity == 2 then
-        return StaffMember.Constants.SkillLevelMultipliers.Rarity2
-    end
+    return StaffMember.Constants.SkillLevelMultipliers[tostring(self.Rarity)]
 end
 
 -- returns the LEVEL (not points) of a specific skill
@@ -181,23 +189,7 @@ function StaffMember:GetSpecificSkillPoints(skill: "code" | "sound" | "art", opt
         end
     end
 
-    if self.Rarity == 1 then
-        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity1
-    elseif self.Rarity == 2 then
-        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity2
-    elseif self.Rarity == 3 then
-        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity3
-    elseif self.Rarity == 4 then
-        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity4
-    elseif self.Rarity == 5 then
-        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity5
-    elseif self.Rarity == 6 then
-        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity6
-    elseif self.Rarity == 7 then
-        return skillLevel * StaffMember.Constants.SkillLevelMultipliers.Rarity7
-    end
-
-    return 0
+    return skillLevel * StaffMember.Constants.SkillLevelMultipliers[tostring(self.Rarity)]
 end
 
 function StaffMember:GetTotalSkillPts(): number
@@ -236,7 +228,40 @@ function StaffMember:CalcSkillLevelUpgradeCost(skill: "code" | "sound" | "art", 
     return totalCost
 end
 
-function StaffMember:CalcMaxEnergy(): number
+function StaffMember:CalcSkillUpgradeEnergyConsumption(skill: "code" | "sound" | "art", amtOfLvlUps: number): {}
+    local ptsAfterUpgrade
+    if skill == "code" then
+        ptsAfterUpgrade = self:GetSpecificSkillPoints(skill, { SpecifiedSkillLevel = self.CodeLevel + amtOfLvlUps })
+    elseif skill == "sound" then
+        ptsAfterUpgrade = self:GetSpecificSkillPoints(skill, { SpecifiedSkillLevel = self.SoundLevel + amtOfLvlUps })
+    elseif skill == "art" then
+        ptsAfterUpgrade = self:GetSpecificSkillPoints(skill, { SpecifiedSkillLevel = self.ArtistLevel + amtOfLvlUps })
+    end
+
+    local maxEnergy = self:CalcMaxEnergy()
+    local totalSkillPtsAfterUpgrade = self:GetTotalSkillPts() + (amtOfLvlUps  * StaffMember.Constants.SkillLevelMultipliers[tostring(self.Rarity)])
+    local maxEnergyAfterUpgrade = self:CalcMaxEnergy({ SpecifiedSkillPts = totalSkillPtsAfterUpgrade })
+    
+    local energyUsedWeighting = if amtOfLvlUps >= 5 then 1 else (amtOfLvlUps / 5) -- determines energy usage based on how many level-ups are being done
+    local energyUsedProportional = (ptsAfterUpgrade / totalSkillPtsAfterUpgrade) * (energyUsedWeighting) -- e.g. 0.4 (40%)
+    if energyUsedProportional > 1 then energyUsedProportional = 1 end
+
+    local canUpgrade = true
+    if self.CurrentEnergy / maxEnergy < energyUsedProportional then canUpgrade = false end
+
+    local energyUsedActual = maxEnergy * energyUsedProportional
+
+    -- { [1]=energyUsedActual:number | nil, [2]=canUpgrade:boolean, [3]=maxEnergyAfterUpgrade:number}
+    return { energyUsedActual, canUpgrade, maxEnergyAfterUpgrade}
+end
+
+-- opts
+-- SpecifiedSkillPts -> number: Calculates max energy based on the amount of skill pts provided instead of instances total skill pts
+function StaffMember:CalcMaxEnergy(opts: {}): number
+    if opts and opts["SpecifiedSkillPts"] then
+        return opts["SpecifiedSkillPts"] * StaffMember.Constants.EnergyPerSkillPt
+    end
+
     return self:GetTotalSkillPts() * StaffMember.Constants.EnergyPerSkillPt
 end
 
@@ -253,7 +278,8 @@ end
 
 -- method returns seconds until staff member energy is full
 function StaffMember:CalcTimeUntilFullEnergy(): number
-    return 99
+    local emptyToFullEnergyTime = StaffMember.Constants.EnergyEmptyToFull[tostring(self.Rarity)] -- in seconds
+    return math.floor(emptyToFullEnergyTime - ((emptyToFullEnergyTime * self.CurrentEnergy) / self:CalcMaxEnergy()))
 end
 
 return StaffMember
