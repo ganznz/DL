@@ -113,7 +113,6 @@ local KICK_PLRS_COOLDOWN = 1 -- seconds
 
 -- STATE VARIABLES
 local plrData = Remotes.Data.GetAllData:InvokeServer()
-local viewingShelf = false
 local studioInteriorModel = nil
 local studioFurnitureInventory = nil
 local currentViewedBook = nil -- when plr is viewing bookshelf, this holds cframe info for what book is 'pulled' from the shelf at a given time
@@ -652,7 +651,6 @@ GenreTopicViewExitBtn.Activated:Connect(function()
     GuiServices.ShowHUD()
     PlayerServices.ShowPlayer(localPlr, true)
     CameraControls.SetDefault(localPlr, camera, true)
-    viewingShelf = false
     Remotes.Player.StopInspecting:Fire()
 end)
 
@@ -743,7 +741,6 @@ end)
 
 -- view shelf
 Remotes.GUI.Studio.ViewShelf.Event:Connect(function()
-    viewingShelf = true
     populateShelfGui()
     GuiServices.ShowGuiStandard(GenreTopicViewContainer)
 end)
@@ -752,10 +749,6 @@ Remotes.Player.PlatformChanged.OnClientEvent:Connect(function(newPlatformProfile
     plrPlatformProfile = newPlatformProfile
     setItemInteractionBtns() -- update item interaction btns
 end)
-
-local function onDeath()
-
-end
 
 -- on plr spawn & death
 local function characterAdded(char: Model)
