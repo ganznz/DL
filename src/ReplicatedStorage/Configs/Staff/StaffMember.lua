@@ -55,7 +55,8 @@ StaffMember.Constants = {
         Rarity5 = 20,
         Rarity6 = 50,
         Rarity7 = 125,
-    }
+    },
+    EnergyPerSkillPt = 10
 }
 
 function StaffMember.GetConfig(staffModel: string): StaffMemberConfig | nil
@@ -105,7 +106,14 @@ function StaffMember.new(staffMemberUUID: string, staffMemberData: {})
     staffMember.ArtistLevel = staffMemberData.ArtistLevel
 
     return staffMember
+end
 
+function StaffMember:GetSkillLvlMultiplier()
+    if self.Rarity == 1 then
+        return StaffMember.Constants.SkillLevelMultipliers.Rarity1
+    elseif self.Rarity == 2 then
+        return StaffMember.Constants.SkillLevelMultipliers.Rarity2
+    end
 end
 
 -- returns the LEVEL (not points) of a specific skill
@@ -229,7 +237,7 @@ function StaffMember:CalcSkillLevelUpgradeCost(skill: "code" | "sound" | "art", 
 end
 
 function StaffMember:CalcMaxEnergy(): number
-    return 99
+    return self:GetTotalSkillPts() * StaffMember.Constants.EnergyPerSkillPt
 end
 
 -- calculates how much of a skill point a staff member will have after training that skill
