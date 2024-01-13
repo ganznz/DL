@@ -1,6 +1,6 @@
-local DateTime = {}
+local DateAndTime = {}
 
-function DateTime.ParseTimeLeft(totalSeconds: number)
+function DateAndTime.ParseTimeLeft(totalSeconds: number)
     -- parse into minutes & seconds
     if totalSeconds < 3600 then
         local minutes = math.floor(totalSeconds / 60)
@@ -37,9 +37,9 @@ function DateTime.ParseTimeLeft(totalSeconds: number)
 end
 
 -- opts:
--- -- verbose: boolean (if specified, formatted string uses full words (hours, minutes, etc instead of h, m, etc)
-function DateTime.FormatTimeLeft(totalSeconds: number, opts: {})
-    local parsedTime = DateTime.ParseTimeLeft(totalSeconds)
+-- -- Verbose: boolean (if specified, formatted string uses full words (hours, minutes, etc instead of h, m, etc)
+function DateAndTime.FormatTimeLeft(totalSeconds: number, opts: {})
+    local parsedTime = DateAndTime.ParseTimeLeft(totalSeconds)
 
     if totalSeconds < 3600 then
         return `{parsedTime.Minutes}m {parsedTime.Seconds}s`
@@ -51,4 +51,4 @@ function DateTime.FormatTimeLeft(totalSeconds: number, opts: {})
     end
 end
 
-return DateTime
+return DateAndTime

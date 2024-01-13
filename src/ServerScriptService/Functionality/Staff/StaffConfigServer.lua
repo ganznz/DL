@@ -34,12 +34,7 @@ function StaffServer.GiveStaffMember(plr: Player, staffName: string)
     local staffMemberItemConfig = StaffMemberConfig.GetConfig(staffName)
     if not staffMemberItemConfig then return end
 
-    local startingEnergy
-    if staffMemberItemConfig.Rarity == 1 then
-        startingEnergy = StaffMemberConfig.Constants.SkillLevelMultipliers.Rarity1 * 3 * StaffMemberConfig.Constants.EnergyPerSkillPt
-    elseif staffMemberItemConfig.Rarity == 2 then
-        startingEnergy = StaffMemberConfig.Constants.SkillLevelMultipliers.Rarity2 * 3 * StaffMemberConfig.Constants.EnergyPerSkillPt
-    end
+    local startingEnergy = StaffMemberConfig.Constants.SkillLevelMultipliers[tostring(staffMemberItemConfig.Rarity)] * 3 * StaffMemberConfig.Constants.EnergyPerSkillPt
 
     local itemUUID = HttpService:GenerateGUID(false)
     local instanceData: StaffInstance = {
