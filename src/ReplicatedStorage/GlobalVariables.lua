@@ -62,6 +62,8 @@ GlobalVariables.Sound.Sfx = {}
 -- general sfx
 GlobalVariables.Sound.Sfx.PhoneOpenNormal = SoundsFolder.Sfx:FindFirstChild("PhoneOpenNormal")
 GlobalVariables.Sound.Sfx.PhoneOpenRare = SoundsFolder.Sfx:FindFirstChild("PhoneOpenRare")
+GlobalVariables.Sound.Sfx.PowerupStandard = SoundsFolder.Sfx:FindFirstChild("PowerupStandard")
+GlobalVariables.Sound.Sfx.PowerupSpecial = SoundsFolder.Sfx:FindFirstChild("PowerupSpecial")
 
 -- gui sound effects
 GlobalVariables.Sound.Sfx.GuiOpen = SoundsFolder.Sfx:FindFirstChild("GuiOpen")
