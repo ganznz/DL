@@ -539,12 +539,14 @@ Remotes.Staff.LevelUpSkill.OnClientEvent:Connect(function(_staffMemberUUID: stri
         particlesEnabled = true
         if amtOfLvlUps >= 5 then
             flameParticle.Enabled = true
+            GlobalVariables.Sound.Sfx.PowerupSpecial:Play()
         end
         if amtOfLvlUps >= 1 then
             circleParticle.Enabled = true
             groundParticle.Enabled = true
             starsParticle.Enabled = true
             sparksParticle.Enabled = true
+            GlobalVariables.Sound.Sfx.PowerupStandard:Play()
         end
     end
 end)
