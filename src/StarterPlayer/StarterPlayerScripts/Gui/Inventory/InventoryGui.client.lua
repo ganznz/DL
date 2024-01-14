@@ -16,6 +16,7 @@ local HungerFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitFo
 local EnergyFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("EnergyFurniture"))
 local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
 local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("DecorFurniture"))
+local DateTimeUtils = require(ReplicatedStorage.Utils.DateTime:WaitForChild("DateTime"))
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -64,6 +65,7 @@ local StaffInfoItemName = StaffInfoPanel:FindFirstChild("ItemName")
 local StaffInfoEnergyContainer = StaffInfoPanel:FindFirstChild("EnergyContainer")
 local StaffInfoEnergyBarProg = StaffInfoEnergyContainer:FindFirstChild("EnergyProg", true)
 local StaffInfoEnergyBarText = StaffInfoEnergyContainer:FindFirstChild("Energy")
+local StaffInfoEnergyTimer = StaffInfoPanel:FindFirstChild("EnergyTimer")
 local StaffInfoPtsContainer = StaffInfoPanel:FindFirstChild("SkillPtsContainer")
 local CodingPtsContainer = StaffInfoPtsContainer:FindFirstChild("CodingPts")
 local CodingPtsAmt = CodingPtsContainer:FindFirstChild("PtsAmt")
@@ -89,6 +91,7 @@ local inTrashMode = false
 local placeBtnConnection = nil
 local itemsInTrashMode = {}
 local amtOfItemsInTrashMode = 0
+local currentlyViewedItemInfo = nil -- item info of the instance that is being viewed in the info panel
 
 -- CONSTANT VARIABLES --
 local REMOVE_FROM_STUDIO_TEXT = "Remove from Studio"
@@ -100,6 +103,8 @@ local AMT_TEXT = "xAMT"
 local TOTAL_OWNED_TEXT = "Total Owned: xAMT"
 local STAT_BOOST_BASE_TEXT = "+AMT STAT"
 local AMT_SELECTED_TEXT = "AMT SELECTED!"
+local ENERGY_TEXT = "CURRENT / MAX"
+local ENERGY_FULL_IN_TEXT = "Full in: FORMATTED_TIME"
 local ALL_TRASH_MODE_ICON_IDS = {}
 
 GuiServices.StoreInCache(InventoryContainer)
@@ -300,6 +305,32 @@ local function populateFurnitureInfoPanel(itemInfo: {})
     registerPlaceItemBtn(itemInfo)
 end
 
+local function setStaffInfoPanelEnergyBar(itemInstance: {})
+    local tween = TweenService:Create(StaffInfoEnergyBarProg, TweenInfo.new(0.3), { Size = UDim2.fromScale(itemInstance.CurrentEnergy / itemInstance:CalcMaxEnergy(), 1) })
+    tween:Play()
+
+    StaffInfoEnergyBarText.Text = ENERGY_TEXT:gsub("CURRENT", GeneralUtils.RoundToDp(itemInstance.CurrentEnergy, 2)):gsub("MAX", itemInstance:CalcMaxEnergy())
+end
+
+local function setStaffInfoPanelEnergyTime(secUntilFull: number)
+    local hideTextTween
+    local showTextTween
+
+    if secUntilFull <= 0 then
+        hideTextTween = TweenService:Create(StaffInfoEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 1 })
+
+    elseif StaffInfoEnergyTimer.TextTransparency == 1 then
+        showTextTween = TweenService:Create(StaffInfoEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 0 })
+    end
+
+    StaffInfoEnergyTimer.Text = ENERGY_FULL_IN_TEXT:gsub("FORMATTED_TIME", DateTimeUtils.FormatTimeLeft(secUntilFull))
+
+    if hideTextTween then hideTextTween:Play() end
+    if showTextTween then showTextTween:Play() end
+
+    StaffInfoEnergyTimer.Text = ENERGY_FULL_IN_TEXT:gsub("FORMATTED_TIME", DateTimeUtils.FormatTimeLeft(secUntilFull))
+end
+
 local function populateStaffInfoPanel(itemInfo: {})
     StaffInfoItemIcon.Image = GeneralUtils.GetDecalUrl(itemInfo.ItemConfig.IconStroke)
     StaffInfoRarity.Text = itemInfo.CategoryConfig.GetRarityName(itemInfo.ItemInstance.Model)
@@ -307,6 +338,9 @@ local function populateStaffInfoPanel(itemInfo: {})
     CodingPtsAmt.Text = tostring(itemInfo.ItemInstance:GetSpecificSkillPoints("code"))
     SoundPtsAmt.Text = tostring(itemInfo.ItemInstance:GetSpecificSkillPoints("sound"))
     ArtistPtsAmt.Text = tostring(itemInfo.ItemInstance:GetSpecificSkillPoints("art"))
+
+    setStaffInfoPanelEnergyBar(itemInfo.ItemInstance)
+    setStaffInfoPanelEnergyTime(itemInfo.ItemInstance:CalcTimeUntilFullEnergy())
 
     -- register place btn
     registerPlaceItemBtn(itemInfo)
@@ -322,6 +356,8 @@ end
 
 local function registerItemClickConnection(itemBtn, itemInfo: {})
     itemBtn.Activated:Connect(function()
+        currentlyViewedItemInfo = itemInfo
+
         if inLockMode then
             local itemInfoToSend
             if inventoryCategory == "furniture" then
@@ -657,3 +693,25 @@ Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, _op
 end)
 
 Remotes.Inventory.General.LockItem.OnClientEvent:Connect(updateItemTemplate)
+
+Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: string, staffMemberData: {})
+    if inventoryCategory ~= "staff" then return end
+
+    if StaffInfoPanel.Visible and currentlyViewedItemInfo then
+        local currentlyViewedItemInstance = currentlyViewedItemInfo.ItemInstance
+
+        if (currentlyViewedItemInstance.UUID == staffMemberUUID) then
+            currentlyViewedItemInfo.ItemInstance = StaffMemberConfig.new(currentlyViewedItemInstance.UUID, staffMemberData) -- refresh staff member instance
+            
+            setStaffInfoPanelEnergyBar(currentlyViewedItemInfo.ItemInstance)
+        end
+    end
+end)
+
+Remotes.Staff.UpdateEnergyFullTimer.OnClientEvent:Connect(function(_staffMemberUUID: string, secondsUntilFull: number)
+    if inventoryCategory ~= "staff" then return end
+
+    if StaffInfoPanel.Visible and currentlyViewedItemInfo then
+        setStaffInfoPanelEnergyTime(secondsUntilFull)
+    end
+end)
