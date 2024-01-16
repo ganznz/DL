@@ -74,14 +74,24 @@ GlobalVariables.Sound.Sfx.GuiMouseHover = SoundsFolder.Sfx:FindFirstChild("GuiMo
 GlobalVariables.Images = {}
 GlobalVariables.Images.Icons = {}
 
--- main icons
+-- currency icons
 GlobalVariables.Images.Icons.CoinIcon = "15695993944"
 GlobalVariables.Images.Icons.GemIcon = "15762047580"
-
--- stroke icons
-
--- dropshadow icons
 GlobalVariables.Images.Icons.CoinIconDropshadow = "15903157010"
 GlobalVariables.Images.Icons.GemIconDropshadow = "15903158721"
+
+-- plr icons
+GlobalVariables.Images.Icons.PlrLevelIcon = "15998286348"
+GlobalVariables.Images.Icons.PlrLevelStrokeIcon = "1599828"
+GlobalVariables.Images.Icons.PlrLevelDropshadowIcon = "15998288304"
+GlobalVariables.Images.Icons.PlrEnergyIcon = "15998270577"
+GlobalVariables.Images.Icons.PlrEnergyStrokeIcon = "15998271911"
+GlobalVariables.Images.Icons.PlrEnergyDropshadowIcon = "15998273384"
+GlobalVariables.Images.Icons.PlrHungerIcon = "15998275495"
+GlobalVariables.Images.Icons.PlrHungerStrokeIcon = "15998279544"
+GlobalVariables.Images.Icons.PlrHungerDropshadowIcon = "15998277391"
+GlobalVariables.Images.Icons.PlrMoodIcon = "15998280893"
+GlobalVariables.Images.Icons.PlrMoodStrokeIcon = "15998283439"
+GlobalVariables.Images.Icons.PlrMoodDropshadowIcon = "15998284746"
 
 return GlobalVariables
