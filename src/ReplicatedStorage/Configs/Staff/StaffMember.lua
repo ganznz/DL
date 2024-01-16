@@ -16,6 +16,18 @@ export type StaffMemberConfig = {
     IconStroke: string,
 }
 
+export type StaffMemberInstance = {
+    UUID: string,
+    Model: string,
+    Name: string,
+    Rarity: number,
+    Specialisation: string,
+    CurrentEnergy: number,
+    CodeLevel: number,
+    SoundLevel: number,
+    ArtistLevel: number,
+}
+
 local config: { [string]: StaffMemberConfig } = {
     ["Max"] = {
         Rarity = 1,
@@ -102,7 +114,7 @@ end
 
 -- function NOT used for granting a plr new staff member, but instead used for instantiating a StaffMember object
 --          using predefined staff member data that the appropriate class methods can be used on
-function StaffMember.new(staffMemberUUID: string, staffMemberData: {})
+function StaffMember.new(staffMemberUUID: string, staffMemberData: {}): StaffMemberInstance
 
     local staffMember = {}
     setmetatable(staffMember, StaffMember)

@@ -46,7 +46,9 @@ local Template = {
     },
 
     GameDev = {
-        Computer = 1, -- computer level
+        Computer = {
+            Level = 1
+        },
         Sizes = {
             Small = true;
         },
@@ -76,13 +78,14 @@ local Template = {
         },
         StaffMembers = {},
         StaffFood = ALL_STAFF_FOOD,
-        Materials = ALL_MATERIALS
+        Materials = ALL_MATERIALS,
     },
 
     Studio = {
         -- index of studio that the player is currently using
         ActiveStudio = "1", -- by default is "1"
         StudioStatus = "open", -- "open" | "closed"| "friends"
+        StaffMemberCapacity = 3,
 
         Studios = {
             Standard = {},

@@ -61,11 +61,11 @@ function Computer.GetModel(itemIndex: number): Model | nil
 end
 
 function Computer.HasLastItem(plrData): boolean
-    return plrData.GameDev.Computer == #(Computer.Config)
+    return plrData.GameDev.Computer.Level == #(Computer.Config)
 end
 
 function Computer.CanUpgrade(plrData): boolean
-    local currentComputerLevel = plrData.GameDev.Computer
+    local currentComputerLevel = plrData.GameDev.Computer.Level
     if Computer.HasLastItem(plrData) then return false end
 
     local nextComputerConfig = Computer.GetConfig(currentComputerLevel + 1)

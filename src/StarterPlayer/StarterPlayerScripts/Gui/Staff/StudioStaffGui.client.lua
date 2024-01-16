@@ -13,6 +13,7 @@ local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("
 local DateTimeUtils = require(ReplicatedStorage.Utils.DateTime:WaitForChild("DateTime"))
 local CameraControls = require(ReplicatedStorage.Utils.Camera:WaitForChild("CameraControls"))
 local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
+local FormatNumber = require(ReplicatedStorage.Libs:WaitForChild("FormatNumber").Simple)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -320,24 +321,24 @@ local function populateStaffTrainSkillUpgradeContainer()
     local currentCodePts = currentlyViewedStaffInstance:GetSpecificSkillPoints("code")
     local upgradedCodePts = currentlyViewedStaffInstance:GetSpecificSkillPoints("code", { SpecifiedSkillLevel = currentBtnPrices["code"].Level })
     StaffTrainCodingPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentCodePts}</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedCodePts}</stroke></font>`
-    StaffTrainCodingPtsBuyBtn:FindFirstChild("CostText").Text = tostring(codeUpgradeCost)
-    StaffTrainCodingPtsBuyBtn:FindFirstChild("EnergyText").Text = tostring(codeUpgradeEnergyUsed)
+    StaffTrainCodingPtsBuyBtn:FindFirstChild("CostText").Text = FormatNumber.FormatCompact(codeUpgradeCost)
+    StaffTrainCodingPtsBuyBtn:FindFirstChild("EnergyText").Text = FormatNumber.FormatCompact(codeUpgradeEnergyUsed)
 
     local soundUpgradeCost = currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("sound", currentBtnPrices["sound"].AmtOfUpgrades)
     currentBtnPrices["sound"].Price = soundUpgradeCost
     local currentSoundPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("sound")
     local upgradedSoundPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("sound", { SpecifiedSkillLevel = currentBtnPrices["sound"].Level })
     StaffTrainSoundPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentSoundPts}</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedSoundPts}</stroke></font>`
-    StaffTrainSoundPtsBuyBtn:FindFirstChild("CostText").Text = tostring(soundUpgradeCost)
-    StaffTrainSoundPtsBuyBtn:FindFirstChild("EnergyText").Text = tostring(soundUpgradeEnergyUsed)
+    StaffTrainSoundPtsBuyBtn:FindFirstChild("CostText").Text = FormatNumber.FormatCompact(soundUpgradeCost)
+    StaffTrainSoundPtsBuyBtn:FindFirstChild("EnergyText").Text = FormatNumber.FormatCompact(soundUpgradeEnergyUsed)
 
     local artUpgradeCost = currentlyViewedStaffInstance:CalcSkillLevelUpgradeCost("art", currentBtnPrices["art"].AmtOfUpgrades)
     currentBtnPrices["art"].Price = artUpgradeCost
     local currentArtPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("art")
     local upgradedArtPts = currentlyViewedStaffInstance:GetSpecificSkillPoints("art", { SpecifiedSkillLevel = currentBtnPrices["art"].Level })
     StaffTrainArtPtsText.Text = `<font color="#FFF"><stroke color="#76a8d6" thickness="3">{currentArtPts}</stroke></font><font color="#a0f2a8"><stroke color="#72b078" thickness="3"> >> {upgradedArtPts}</stroke></font>`
-    StaffTrainArtPtsBuyBtn:FindFirstChild("CostText").Text = tostring(artUpgradeCost)
-    StaffTrainArtPtsBuyBtn:FindFirstChild("EnergyText").Text = tostring(artUpgradeEnergyUsed)
+    StaffTrainArtPtsBuyBtn:FindFirstChild("CostText").Text = FormatNumber.FormatCompact(artUpgradeCost)
+    StaffTrainArtPtsBuyBtn:FindFirstChild("EnergyText").Text = FormatNumber.FormatCompact(artUpgradeEnergyUsed)
 end
 
 local function populateStaffTrainGui()

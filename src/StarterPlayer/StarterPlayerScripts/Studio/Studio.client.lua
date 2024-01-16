@@ -40,8 +40,9 @@ local topicIterationIndex = 1
 local presentInteractionBillboards = {} -- holds all existing interaction billboards
 
 -- connections
-local shelfInteractionBtnConnection = nil
-local computerInteractionBtnConnection = nil
+local shelfViewBtnBtnConnection = nil
+local computerMakeGameBtnConnection = nil
+local computerUpgradeBtnConnection
 local studioEssentialsProximityConnection = nil -- connection for detecting what item interactions should show
 
 -- make a copy of all studio exteriors, so when player leaves a studio and
@@ -70,11 +71,14 @@ local function resetStudioVariables()
 end
 
 local function resetStudioConnections()
-    if computerInteractionBtnConnection then computerInteractionBtnConnection:Disconnect() end
-    computerInteractionBtnConnection = nil
+    if shelfViewBtnBtnConnection then shelfViewBtnBtnConnection:Disconnect() end
+    shelfViewBtnBtnConnection = nil
 
-    if shelfInteractionBtnConnection then shelfInteractionBtnConnection:Disconnect() end
-    shelfInteractionBtnConnection = nil
+    if computerMakeGameBtnConnection then computerMakeGameBtnConnection:Disconnect() end
+    computerMakeGameBtnConnection = nil
+
+    if computerUpgradeBtnConnection then computerUpgradeBtnConnection:Disconnect() end
+    computerUpgradeBtnConnection = nil
 
     if studioEssentialsProximityConnection then studioEssentialsProximityConnection:Disconnect() end
     studioEssentialsProximityConnection = nil
@@ -148,7 +152,7 @@ local function disableInteractionBtns()
 end
 
 local function registerShelfViewBtn(viewBtn)
-    shelfInteractionBtnConnection = viewBtn.Activated:Connect(function()
+    shelfViewBtnBtnConnection = viewBtn.Activated:Connect(function()
         GuiServices.HideHUD({ HideGuiFrames = true })
 
         local cameraPos: Vector3 = shelfModel:FindFirstChild("CameraPositionPart").Position
@@ -180,6 +184,15 @@ local function registerComputerInteractionBtns()
 
     computerInteractionBillboard.Adornee = computerModel.PrimaryPart
     table.insert(presentInteractionBillboards, computerInteractionBillboard)
+
+    computerMakeGameBtnConnection = computerMakeGameBtn.Activated:Connect(function()
+        disableInteractionBtns()
+        Remotes.GUI.ChangeGuiStatusBindable:Fire("developGame", true, nil)
+    end)
+
+    computerUpgradeBtnConnection = computerUpgradeBtn.Activated:Connect(function()
+        
+    end)
 
     return computerInteractionBillboard
 end
@@ -311,7 +324,7 @@ end
 
 -- function used for replacing placeholder shelf in studio interior plots with 'real' one
 local function replaceComputerModel(plrData, studioType: "Standard" | "Premium"): Model
-    local plrComputerLevel = plrData.GameDev.Computer
+    local plrComputerLevel = plrData.GameDev.Computer.Level
 
     local placeholderComputerModel = studioInteriorModel:FindFirstChild("Computer")
     local newComputerModel = ReplicatedStorage.Assets.Models.Studio.Computers:FindFirstChild(plrComputerLevel):Clone()
