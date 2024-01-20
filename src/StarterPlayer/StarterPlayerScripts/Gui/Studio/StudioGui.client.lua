@@ -510,8 +510,10 @@ local function createShelfGuiTemplate(name: string, info, type: "genre" | "topic
     local template = GenreTopicTemplate:Clone()
     template.Name = name
 
+    local itemConfig = type == "genre" and GenreConfig.GetConfig(name) or TopicConfig.GetConfig(name)
+
     local templateImage = template:FindFirstChild("Icon")
-    templateImage.Image = type == "genre" and GenreConfig.GetImage(name) or TopicConfig.GetImage(name)
+    if itemConfig["ImageIcon"] then templateImage.Image = GeneralUtils.GetDecalUrl(itemConfig.ImageIcon) end
 
     local levelText = template:FindFirstChild("Level")
     levelText.Text = tostring(object.Level)

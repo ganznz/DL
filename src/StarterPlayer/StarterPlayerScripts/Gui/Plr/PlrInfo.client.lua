@@ -2,6 +2,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local PlayerConfig = require(ReplicatedStorage.Configs:WaitForChild("Player"))
+
 local DataTemplate = ReplicatedStorage.PlayerData:WaitForChild("Template")
 
 local Remotes = ReplicatedStorage.Remotes
@@ -42,25 +44,25 @@ local plrData: DataTemplate.PlayerData = Remotes.Data.GetAllData:InvokeServer()
 local PROG_TEXT_TEMPLATE = "CURRENT/MAX"
 
 
-EnergyBarProg.Size = UDim2.fromScale(plrData.Character.Needs.Energy / plrData.Character.Needs.MaxEnergy, 1)
-EnergyBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Needs.Energy):gsub("MAX", plrData.Character.Needs.MaxEnergy)
+-- EnergyBarProg.Size = UDim2.fromScale(plrData.Character.Needs.CurrentEnergy / plrData.Character.Needs.MaxEnergy, 1)
+-- EnergyBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Needs.CurrentEnergy):gsub("MAX", plrData.Character.Needs.MaxEnergy)
 
-HungerBarProg.Size = UDim2.fromScale(plrData.Character.Needs.Hunger / plrData.Character.Needs.MaxHunger, 1)
-HungerBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Needs.Hunger):gsub("MAX", plrData.Character.Needs.MaxHunger)
+-- HungerBarProg.Size = UDim2.fromScale(plrData.Character.Needs.CurrentHunger / plrData.Character.Needs.MaxHunger, 1)
+-- HungerBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Needs.CurrentHunger):gsub("MAX", plrData.Character.Needs.MaxHunger)
 
-LevelBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Exp):gsub("MAX", 100)
-LevelBarProg.Size = UDim2.fromScale(plrData.Character.Exp / 10, 1)
+-- LevelBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Exp):gsub("MAX", 100)
+-- LevelBarProg.Size = UDim2.fromScale(plrData.Character.Exp / 10, 1)
 
-PlrLevelText.Text = plrData.Character.Level
+-- PlrLevelText.Text = plrData.Character.Level
 
-Remotes.Character.AdjustPlrEnergy.OnClientEvent:Connect(function(newPlrData)
-    plrData = newPlrData
-    tweenBar(EnergyBarProg, plrData.Character.Needs.Energy, plrData.Character.Needs.MaxEnergy)
-    EnergyBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Needs.Energy):gsub("MAX", plrData.Character.Needs.MaxEnergy)
-end)
+-- Remotes.Character.AdjustPlrEnergy.OnClientEvent:Connect(function(newPlrData)
+--     plrData = newPlrData
+--     tweenBar(EnergyBarProg, plrData.Character.Needs.CurrentEnergy, plrData.Character.Needs.MaxEnergy)
+--     EnergyBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Needs.CurrentEnergy):gsub("MAX", plrData.Character.Needs.MaxEnergy)
+-- end)
 
-Remotes.Character.AdjustPlrHunger.OnClientEvent:Connect(function(newPlrData)
-    plrData = newPlrData
-    tweenBar(HungerBarProg, plrData.Character.Needs.Hunger, plrData.Character.Needs.MaxHunger)
-    HungerBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Needs.Hunger):gsub("MAX", plrData.Character.Needs.MaxHunger)
-end)
+-- Remotes.Character.AdjustPlrHunger.OnClientEvent:Connect(function(newPlrData)
+--     plrData = newPlrData
+--     tweenBar(HungerBarProg, plrData.Character.Needs.CurrentHunger, plrData.Character.Needs.MaxHunger)
+--     HungerBarProgText.Text = PROG_TEXT_TEMPLATE:gsub("CURRENT", plrData.Character.Needs.CurrentHunger):gsub("MAX", plrData.Character.Needs.MaxHunger)
+-- end)
