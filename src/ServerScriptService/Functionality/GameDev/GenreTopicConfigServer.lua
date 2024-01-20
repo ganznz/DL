@@ -12,7 +12,7 @@ local GenreTopic = {}
 local function getAvailableGenres(plrData): {}
     local availableGenres = {}
 
-    for genreName, _genreInfo in GenreConfig.Genres do
+    for genreName, _genreInfo in GenreConfig.Config do
         if not plrData.GameDev.Genres[genreName] then table.insert(availableGenres, genreName) end
     end
 
@@ -22,7 +22,7 @@ end
 local function getAvailableTopics(plrData): {}
     local availableTopics = {}
 
-    for topicName, _topicInfo in TopicConfig.Topics do
+    for topicName, _topicInfo in TopicConfig.Config do
         if not plrData.GameDev.Topics[topicName] then table.insert(availableTopics, topicName) end
     end
 
@@ -41,7 +41,7 @@ function GenreTopic.UnlockGenre(plr: Player): string
     local newGenre = availableGenres[math.random(1, #availableGenres)]
 
     -- add new genre to plr data
-    profile.Data.GameDev.Genres[newGenre] = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil }
+    profile.Data.GameDev.Genres[newGenre] = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil }
     
     print(string.format("%s has unlocked genre - %s!", plr.Name, newGenre))
 
@@ -65,7 +65,7 @@ function GenreTopic.UnlockTopic(plr: Player)
     local newTopic = availableTopics[math.random(1, #availableTopics)]
 
     -- add new topic to plr data
-    profile.Data.GameDev.Topics[newTopic] = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil }
+    profile.Data.GameDev.Topics[newTopic] = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil }
     
     print(string.format("%s has unlocked topic - %s!", plr.Name, newTopic))
 

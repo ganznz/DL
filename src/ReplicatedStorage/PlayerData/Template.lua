@@ -32,10 +32,9 @@ local Template = {
         Level = 1,
         Exp = 0,
         Needs = {
-            Energy = 10,
-            MaxEnergy = 10,
-            Hunger = 10,
-            MaxHunger = 10,
+            CurrentEnergy = 10,
+            CurrentHunger = 10,
+            CurrentMood = 10
         },
     },
 
@@ -53,16 +52,16 @@ local Template = {
             Small = true;
         },
         Genres = {
-            -- GenreName = { Level: number | nil, XP: number | nil, CompatibleWith: string | nil, IncompatibleWith: string | nil }
-            Action = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
-            Strategy = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
-            Casual = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
+            -- GenreName = { Level: number, XP: number, CompatibleWith: string | nil, IncompatibleWith: string | nil }
+            Action = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
+            Strategy = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
+            Casual = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
         },
         Topics = {
-            -- TopicName = { Level: number | nil, XP: number | nil, CompatibleWith: string | nil, IncompatibleWith: string | nil }
-            Medieval = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
-            Zombies = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
-            Fantasy = { Level = nil, XP = nil, CompatibleWith = nil, IncompatibleWith = nil },
+            -- TopicName = { Level: number, XP: number, CompatibleWith: string | nil, IncompatibleWith: string | nil }
+            Medieval = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
+            Zombies = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
+            Fantasy = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
         }
     },
 
