@@ -10,9 +10,26 @@ function Player.GetLevel(plrData): number
     return plrData.Character.Level
 end
 
+function Player.GetCurrentHunger(plrData): number
+    return plrData.Character.Needs.CurrentHunger
+end
+
+function Player.GetCurrentEnergy(plrData): number
+    return plrData.Character.Needs.CurrentEnergy
+end
+
+function Player.GetCurrentMood(plrData): number
+    return plrData.Character.Needs.CurrentMood
+end
+
+function Player.CalcMaxNeed(plrData): number
+    return 10 * math.pow(2, plrData.Character.Level - 1)
+end
+
 function Player.CalcLevelUpXpRequirement(plrData): number
     local plrLevel = Player.GetLevel(plrData)
     return if plrLevel == 1 then Player.XpPerLevel else Player.XpPerLevel * plrLevel
 end
+
 
 return Player
