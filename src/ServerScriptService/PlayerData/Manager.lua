@@ -1,5 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local PlayerConfig = require(ReplicatedStorage.Configs:WaitForChild("Player"))
+
 local Remotes = ReplicatedStorage.Remotes
 
 local Manager = {}
@@ -24,42 +26,61 @@ function Manager.AdjustPlrCoins(plr: Player, adjustBy: number)
     return "Adjusted the players coins by " .. tostring(adjustBy) .. "."
 end
 
-function Manager.AdjustPlrHunger(plr: Player, adjustBy: number)
-    local profile = Manager.Profiles[plr]
-    if not profile then return end
-
-    -- DO CHECK FOR Always Satisfied GAMEPASS!!
-
-    if profile.Data.Character.Needs.Hunger + adjustBy < 0 then
-        profile.Data.Character.Needs.Hunger = 0
-    elseif profile.Data.Character.Needs.Hunger + adjustBy > profile.Data.Character.Needs.MaxHunger then
-        profile.Data.Character.Needs.Hunger = profile.Data.Character.Needs.MaxHunger
-    else
-        profile.Data.Character.Needs.Hunger += adjustBy
-    end
-
-    Remotes.Character.AdjustPlrHunger:FireClient(plr, profile.Data)
-
-    return "Adjusted the players hunger by " .. tostring(adjustBy) .. "."
-end
-
 function Manager.AdjustPlrEnergy(plr: Player, adjustBy: number)
     local profile = Manager.Profiles[plr]
     if not profile then return end
 
-    -- DO CHECK FOR Always Satisfied GAMEPASS!!
+    local maxEnergy = PlayerConfig.CalcMaxNeed(profile.Data)
 
-    if profile.Data.Character.Needs.Energy + adjustBy < 0 then
-        profile.Data.Character.Needs.Energy = 0
-    elseif profile.Data.Character.Needs.Energy + adjustBy > profile.Data.Character.Needs.MaxEnergy then
-        profile.Data.Character.Needs.Energy = profile.Data.Character.Needs.MaxEnergy
+    if profile.Data.Character.Needs.CurrentEnergy + adjustBy < 0 then
+        profile.Data.Character.Needs.CurrentEnergy = 0
+    elseif profile.Data.Character.Needs.CurrentEnergy + adjustBy > maxEnergy then
+        profile.Data.Character.Needs.CurrentEnergy = maxEnergy
     else
-        profile.Data.Character.Needs.Energy += adjustBy
+        profile.Data.Character.Needs.CurrentEnergy += adjustBy
     end
 
-    Remotes.Character.AdjustPlrEnergy:FireClient(plr, profile.Data)
+    Remotes.Character.AdjustPlrEnergy:FireClient(plr, profile.Data.Character)
 
     return "Adjusted the players energy by " .. tostring(adjustBy) .. "."
+end
+
+function Manager.AdjustPlrHunger(plr: Player, adjustBy: number)
+    local profile = Manager.Profiles[plr]
+    if not profile then return end
+
+    local maxHunger = PlayerConfig.CalcMaxNeed(profile.Data)
+
+    if profile.Data.Character.Needs.CurrentHunger + adjustBy < 0 then
+        profile.Data.Character.Needs.CurrentHunger = 0
+    elseif profile.Data.Character.Needs.CurrentHunger + adjustBy > maxHunger then
+        profile.Data.Character.Needs.CurrentHunger = maxHunger
+    else
+        profile.Data.Character.Needs.CurrentHunger += adjustBy
+    end
+
+    Remotes.Character.AdjustPlrHunger:FireClient(plr, profile.Data.Character)
+
+    return "Adjusted the players hunger by " .. tostring(adjustBy) .. "."
+end
+
+function Manager.AdjustPlrMood(plr: Player, adjustBy: number)
+    local profile = Manager.Profiles[plr]
+    if not profile then return end
+
+    local maxMood = PlayerConfig.CalcMaxNeed(profile.Data)
+
+    if profile.Data.Character.Needs.CurrentMood + adjustBy < 0 then
+        profile.Data.Character.Needs.CurrentMood = 0
+    elseif profile.Data.Character.Needs.CurrentMood + adjustBy > maxMood then
+        profile.Data.Character.Needs.CurrentMood = maxMood
+    else
+        profile.Data.Character.Needs.CurrentMood += adjustBy
+    end
+
+    Remotes.Character.AdjustPlrMood:FireClient(plr, profile.Data.Character)
+
+    return "Adjusted the players mood by " .. tostring(adjustBy) .. "."
 end
 
 function Manager.UnlockArea(plr: Player, areaName: string)
