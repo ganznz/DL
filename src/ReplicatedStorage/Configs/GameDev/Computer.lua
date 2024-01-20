@@ -46,6 +46,10 @@ local Config: { [number]: ComputerConfig } = {
 
 Computer.Config = Config
 
+Computer.Constants = {
+    NeedReqToMakeGame = 0.3 -- (30% of max need)
+}
+
 function Computer.GetConfig(itemIndex: number): ComputerConfig
     return Computer.Config[itemIndex]
 end
