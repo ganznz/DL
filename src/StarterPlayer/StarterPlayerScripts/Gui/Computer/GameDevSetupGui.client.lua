@@ -1,4 +1,3 @@
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,6 +13,7 @@ local TopicConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Topi
 local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
 local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffMember"))
 local PlayerConfig = require(ReplicatedStorage.Configs:WaitForChild("Player"))
+local PlayerUtils = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
 local ComputerConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Computer"))
 local FormatNumber = require(ReplicatedStorage.Libs:WaitForChild("FormatNumber").Simple)
 
@@ -355,8 +355,8 @@ local function prepareDevelopGameGui()
     PlayerServices.HidePlayer(localPlr, true)
     CameraControls.FocusOnObject(localPlr, camera, cameraPosPart.Position, cameraLookAtPart.Position, true, true)
 
-    GuiServices.HideHUD()
     GuiServices.ShowGuiStandard(ComputerDevContainer)
+    GuiServices.HideHUD()
 end
 
 local function onHideComputerDevGui()
@@ -391,6 +391,7 @@ end)
 
 ConfirmBtn.Activated:Connect(function()
     if not requirementsMet() then return end
+
     Remotes.GameDev.DevelopGame:FireServer(selectedGenre, selectedTopic)
 end)
 
@@ -404,6 +405,11 @@ Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, _op
             prepareDevelopGameGui()
         end
     end
+end)
+
+-- close game setup gui
+Remotes.GameDev.DevelopGame.OnClientEvent:Connect(function(_developmentPhase: string)
+    GuiServices.HideGuiStandard(ComputerDevContainer)
 end)
 
 Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: string, staffMemberData: {})
