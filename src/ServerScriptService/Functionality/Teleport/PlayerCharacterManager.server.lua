@@ -1,5 +1,6 @@
 local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 
 local TeleportAreas = require(ReplicatedStorage.Configs.TeleportAreas)
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
@@ -31,11 +32,18 @@ local function canTp(plr: Player, tpPart: BasePart): boolean
     return false
 end
 
-Remotes.Player.TeleportPlr.OnServerEvent:Connect(function(plr, tpPart)
+Remotes.Player.TeleportPlr.OnServerEvent:Connect(function(plr: Player, tpPart: Part)
     local char = plr.Character
 
     if canTp(plr, tpPart) then
         char:MoveTo(tpPart.Position)
         Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash", false, nil)
+    end
+end)
+
+Remotes.Player.ReplicateSeatPlr.OnServerEvent:Connect(function(plrToSit: Player, CFrame: CFrame)
+    for _i, v in Players:GetPlayers() do
+        if v == plrToSit then continue end
+        Remotes.Player.ReplicateSeatPlr:FireClient(v, plrToSit, CFrame)
     end
 end)
