@@ -1,10 +1,15 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
+
+local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
 
 local Computer = {}
 
 type ComputerUpgradeConfig = {
-    StatIncrease: "design" | "graphics" | "sound" | "coins",
-    StatIncreaseAmt: number -- e.g. 20 (+20% for respective stat)
+    Stat: "design" | "graphics" | "sound" | "coins",
+    StatIncrease: number, -- e.g. 20 (+20% for respective stat)
+    GoalValue: number, -- the value the player needs to reach to complete the upgrade
+    Description: string,
 }
 
 export type ComputerConfig = {
@@ -18,28 +23,88 @@ local Config: { [number]: ComputerConfig } = {
     [1] = {
         Name = "Computer 1",
         Upgrades = {
-            ["Design I"] = { StatIncrease = "design", StatIncreaseAmt = 10 },
-            ["Graphics I"] = { StatIncrease = "graphics", StatIncreaseAmt = 10 },
-            ["Sound I"] = { StatIncrease = "sound", StatIncreaseAmt = 10 },
-            ["Coins I"] = { StatIncrease = "coins", StatIncreaseAmt = 10 },
+            ["Code I"] = {
+                Stat = "code",
+                StatIncrease = 10,
+                GoalValue = 99,
+                Description = "Put a total of 99 Code Points into developing games"
+            },
+            ["Sound I"] = {
+                Stat = "sound",
+                StatIncrease = 10,
+                GoalValue = 99,
+                Description = "Put a total of 99 Sound Points into developing games"
+            },
+            ["Art I"] = {
+                Stat = "art",
+                StatIncrease = 10,
+                GoalValue = 99,
+                Description = "Put a total of 99 Art Points into developing games"
+            },
+            ["Coins I"] = {
+                Stat = "coins",
+                StatIncrease = 10,
+                GoalValue = 499,
+                Description = "Earn a total of 499 Coins from developing games"
+            },
         }
     },
     [2] = {
         Name = "Computer 2",
         Upgrades = {
-            ["Design II"] = { StatIncrease = "design", StatIncreaseAmt = 15 },
-            ["Graphics II"] = { StatIncrease = "graphics", StatIncreaseAmt = 15 },
-            ["Sound II"] = { StatIncrease = "sound", StatIncreaseAmt = 15 },
-            ["Coins II"] = { StatIncrease = "coins", StatIncreaseAmt = 10 },
+            ["Code II"] = {
+                Stat = "code",
+                StatIncrease = 10,
+                GoalValue = 999,
+                Description = "Put a total of 999 Code Points into developing games"
+            },
+            ["Sound II"] = {
+                Stat = "sound",
+                StatIncrease = 10,
+                GoalValue = 999,
+                Description = "Put a total of 999 Sound Points into developing games"
+            },
+            ["Art II"] = {
+                Stat = "art",
+                StatIncrease = 10,
+                GoalValue = 999,
+                Description = "Put a total of 999 Art Points into developing games"
+            },
+            ["Coins II"] = {
+                Stat = "coins",
+                StatIncrease = 10,
+                GoalValue = 7499,
+                Description = "Earn a total of 7499 Coins from developing games"
+            },
         }
     },
     [3] = {
         Name = "Computer 3",
         Upgrades = {
-            ["Design III"] = { StatIncrease = "design", StatIncreaseAmt = 15 },
-            ["Graphics III"] = { StatIncrease = "graphics", StatIncreaseAmt = 15 },
-            ["Sound III"] = { StatIncrease = "sound", StatIncreaseAmt = 15 },
-            ["Coins III"] = { StatIncrease = "coins", StatIncreaseAmt = 10 },
+            ["Code III"] = {
+                Stat = "code",
+                StatIncrease = 15,
+                GoalValue = 4999,
+                Description = "Put a total of 4999 Code Points into developing games"
+            },
+            ["Sound III"] = {
+                Stat = "sound",
+                StatIncrease = 15,
+                GoalValue = 4999,
+                Description = "Put a total of 4999 Sound Points into developing games"
+            },
+            ["Art III"] = {
+                Stat = "art",
+                StatIncrease = 15,
+                GoalValue = 4999,
+                Description = "Put a total of 4999 Art Points into developing games"
+            },
+            ["Coins III"] = {
+                Stat = "coins",
+                StatIncrease = 15,
+                GoalValue = 49999,
+                Description = "Earn a total of 49,999 Coins from developing games"
+            },
         }
     },
 }
@@ -65,7 +130,7 @@ function Computer.GetModel(itemIndex: number): Model | nil
 end
 
 function Computer.HasLastItem(plrData): boolean
-    return plrData.GameDev.Computer.Level == #(Computer.Config)
+    return plrData.GameDev.Computer.Level == GeneralUtils.LengthOfDict(Computer.Config)
 end
 
 function Computer.CanUpgrade(plrData): boolean
