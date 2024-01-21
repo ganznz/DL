@@ -343,7 +343,6 @@ local function replaceComputerModel(plrData, studioType: "Standard" | "Premium")
 end
 
 local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
-    localPlr:SetAttribute("InStudio", true)
     local plrToVisitData = Remotes.Data.GetAllData:InvokeServer(plrToVisit)
 
     -- tp plr into studio interior
@@ -403,7 +402,6 @@ local function studioInteriorExitListener()
     studioInteriorExitZone.localPlayerEntered:Connect(function(_plr: Player)
         Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
         Remotes.Studio.General.LeaveStudio:FireServer()
-        localPlr:SetAttribute("InStudio", false)
 
         task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
             studioInteriorCleanup()
@@ -414,9 +412,9 @@ end
 local visitOwnStudioRemote = Remotes.Studio.General.VisitOwnStudio
 local visitOtherStudioRemote = Remotes.Studio.General.VisitOtherStudio
 for _i, remote in { visitOwnStudioRemote, visitOtherStudioRemote } do
-    remote.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData)
+    remote.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData, opts: {})
         -- if plr was already in a studio (their own or someone elses)
-        if localPlr:GetAttribute("InStudio") then
+        if opts and opts["SwitchingStudios"] then
             studioInteriorCleanup()
         end
     
@@ -437,13 +435,8 @@ for _i, remote in { visitOwnStudioRemote, visitOtherStudioRemote } do
 end
 
 -- leave studio
-Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function()
+Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function(_opts: {})
     disableInteractionBtns()
-end)
-
--- exit place mode
-Remotes.Studio.BuildMode.ExitBuildModeBindable.Event:Connect(function()
-    registerInteractionBtns()
 end)
 
 Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryData)
@@ -451,8 +444,6 @@ Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioIn
 end)
 
 Remotes.Studio.General.KickFromStudio.OnClientEvent:Connect(function()
-    localPlr:SetAttribute("InStudio", false)
-
     Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         studioInteriorCleanup()

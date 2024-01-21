@@ -623,7 +623,7 @@ end)
 
 BuildModeExitBtn.Activated:Connect(function()
     disableBuildModeGui()
-    Remotes.Studio.BuildMode.ExitBuildModeBindable:Fire()
+    Remotes.Studio.BuildMode.ExitBuildMode:FireServer()
     
     -- add cooldown so plr can't enter build mode again instantly
     buildModeDebounce = false
@@ -678,18 +678,16 @@ Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(_studioIn
     GuiServices.HideGuiStandard(StudioListContainer)
 end)
 
-Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function()
+Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function(opts: {})
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioBuildModeBtnContainer, StudioTeleportBtnContainer)
     end)
-    if localPlr:GetAttribute("InBuildMode") then disableBuildModeGui() end
-    if localPlr:GetAttribute("InPlaceMode") then
+
+    if opts and opts["InBuildMode"] then disableBuildModeGui() end
+    if opts and opts["InPlaceMode"] then
         -- fire to server, which then fires to client to terminate place mode functionality
         Remotes.Studio.BuildMode.ExitPlaceMode:FireServer()
     end
-    
-    localPlr:SetAttribute("InPlaceMode", false)
-    localPlr:SetAttribute("InBuildMode", false)
     currentViewedBook = nil
 end)
 
@@ -703,7 +701,6 @@ end)
 
 -- when plr enters build mode, save furniture inventory data to variable
 Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(studioInventoryData)
-    localPlr:SetAttribute("InBuildMode", true)
     studioFurnitureInventory = studioInventoryData
     GuiServices.HideHUD({ HideGuiFrames = true })
 end)

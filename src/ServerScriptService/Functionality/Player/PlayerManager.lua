@@ -9,6 +9,16 @@ local EXTRA_ADMINS = {} -- any player you want to give admin access to that isn'
 
 local PlrManager = {}
 
+-- table holds UserId of plrs in-game
+local PlrsInGame = {}
+
+function PlrManager.HasAdminAccess(plr: Player)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    return profile.Data.Admin
+end
+
 function PlrManager.GiveAdminAccess(plr: Player)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
@@ -33,14 +43,36 @@ Players.PlayerAdded:Connect(function(plr: Player)
 end)
 
 
-task.spawn(function()
-    for _i, plr: Player in Players:GetPlayers() do
-        -- check for admin-privilege updates every sec
-        if PlrManager.IsAdminEligible(plr) then
-            PlrManager.GiveAdminAccess(plr)
-        end
-    end
-    task.wait(1)
+-- attributes that are commonly used globally in scripts are declared here
+local function characterAdded(char: Model, plr: Player)
+    plr:SetAttribute("IsAlive", true)
+    plr:SetAttribute("InStudio", false)
+    plr:SetAttribute("InBuildMode", false)
+    plr:SetAttribute("InPlaceMode", false)
+    plr:SetAttribute("CurrentlyDevelopingGame", false)
+
+    local humanoid = char:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        plr:SetAttribute("IsAlive", false)
+    end)
+end
+
+Players.PlayerAdded:Connect(function(plr: Player)
+    if not table.find(PlrsInGame, plr.UserId) then table.insert(PlrsInGame, plr.UserId) end
+
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    characterAdded(char, plr)
+
+    plr.CharacterAdded:Connect(function(newChar: Model)
+        characterAdded(newChar, plr)
+    end)
 end)
+
+for _i, plr: Player in Players:GetPlayers() do
+    -- check for admin-privilege updates every sec
+    if not PlrManager.HasAdminAccess(plr) and PlrManager.IsAdminEligible(plr) then
+        PlrManager.GiveAdminAccess(plr)
+    end
+end
 
 return PlrManager

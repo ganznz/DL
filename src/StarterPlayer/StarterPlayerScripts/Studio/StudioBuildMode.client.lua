@@ -166,11 +166,7 @@ local function registerItemDeleteBtn(billboardGui, deleteBtn, itemType: "furnitu
         local itemCategory = itemModel:GetAttribute("Category")
         local itemUUID = itemModel.Name
 
-        if localPlr:GetAttribute("InBuildMode") then
-            placement:DestroyGrid()
-            localPlr:SetAttribute("InBuildMode", false)
-            disableAllModelClickConnections()
-        end
+        Remotes.Studio.BuildMode.ExitBuildMode:FireServer()
 
         -- prompt UI
         local itemToDelete = {}
@@ -313,8 +309,6 @@ end
 Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioInventoryData)
     plrData = Remotes.Data.GetAllData:InvokeServer()
 
-    localPlr:SetAttribute("InBuildMode", true)
-
     studioInteriorFolder = Workspace.TempAssets.Studios:FindFirstChild(localPlr.UserId)
     studioInteriorModel = studioInteriorFolder:FindFirstChild("Interior")
     studioInteriorPlot = studioInteriorFolder:FindFirstChild("Plot", true)
@@ -441,19 +435,17 @@ Remotes.Studio.BuildMode.PlaceItem.OnClientEvent:Connect(function(itemType, item
     StudioConfig.PlaceItemOnPlot(itemType, itemInfo, itemParent)
 end)
 
--- exit build mode
-Remotes.Studio.BuildMode.ExitBuildModeBindable.Event:Connect(function()
-    placement:DestroyGrid()
-    disableAllModelClickConnections()
-    localPlr:SetAttribute("InBuildMode", false)
-end)
-
 Remotes.Studio.BuildMode.FurnitureItemRotate.Event:Connect(function()
     rotateItem(nil, nil, nil)
 end)
 
 Remotes.Studio.BuildMode.FurnitureItemCancel.Event:Connect(function()
     cancelOnTermination(nil, nil, nil)
+end)
+
+Remotes.Studio.BuildMode.ExitBuildMode.OnClientEvent:Connect(function(_opts: {})
+    placement:DestroyGrid()
+    disableAllModelClickConnections()
 end)
 
 Remotes.Player.PlatformChanged.OnClientEvent:Connect(function(newPlatformProfile)

@@ -10,14 +10,8 @@ local camera = Workspace:WaitForChild("Camera")
 
 -- attributes that are commonly used globally in scripts are declared here
 local function characterAdded(char: Model)
-    localPlr:SetAttribute("IsAlive", true)
-    localPlr:SetAttribute("InStudio", false)
-    localPlr:SetAttribute("InBuildMode", false)
-    localPlr:SetAttribute("InPlaceMode", false)
-
     local humanoid = char:WaitForChild("Humanoid")
     humanoid.Died:Connect(function()
-        localPlr:SetAttribute("IsAlive", false)
         GuiServices.HideGuiStandard()
         GuiServices.ShowHUD()
         CameraControls.SetDefault(localPlr, camera, false)

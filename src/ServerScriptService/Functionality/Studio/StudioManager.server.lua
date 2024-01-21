@@ -70,6 +70,10 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: string)
     local exteriorPlayerTpPart = studioExteriorFolder:FindFirstChild("TeleportToPart")
 
     local alreadyPlacedFurnitureData = FurnitureConfigServer.AlreadyPlacedFurnitureData(plrToVisit, studioIndex)
+    local switchingStudios = plr:GetAttribute("InStudio")
+
+    plr:SetAttribute("InStudio", true)
+
     if plr == plrToVisit then
         profile.Data.Studio.ActiveStudio = studioIndex
         StudioConfigServer.PlrStudios[plrToVisit.UserId].StudioIndex = profile.Data.Studio.ActiveStudio
@@ -78,13 +82,14 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: string)
             PlrVisitingId = plr.UserId,
             StudioIndex = studioIndex
         }
-        Remotes.Studio.General.VisitOwnStudio:FireClient(plr, plr.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
+
+        Remotes.Studio.General.VisitOwnStudio:FireClient(plr, plr.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData, { switchingStudios = switchingStudios })
     else
         StudioConfigServer.PlrsInStudio[plr.UserId] = {
             PlrVisitingId = plrToVisit.UserId,
             StudioIndex = studioIndex
         }
-        Remotes.Studio.General.VisitOtherStudio:FireClient(plr, plrToVisit.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData)
+        Remotes.Studio.General.VisitOtherStudio:FireClient(plr, plrToVisit.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData, { switchingStudios = switchingStudios })
     end
 end
 
@@ -135,6 +140,7 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
                 if plrToKick then
                     if ignoreFriends and plrToKick:IsFriendsWith(plrWhosStudioToClear.UserId) then continue end
 
+                    plrToKick:SetAttribute("InStudio", false)
                     StudioConfigServer.PlrsInStudio[plrToKick.UserId] = false
                     Remotes.Studio.General.KickFromStudio:FireClient(plrToKick)
                     Remotes.GUI.DisplayNotification:FireClient(plrToKick, "general", string.format("%s has removed you from their studio", plrWhosStudioToClear.Name))
@@ -304,9 +310,20 @@ end)
 
 Remotes.Studio.General.LeaveStudio.OnServerEvent:Connect(function(plr: Player)
     StudioConfigServer.PlrsInStudio[plr.UserId] = false
+    local previouslyInStudio = plr:GetAttribute("InStudio")
+    local previouslyInBuildMode = plr:GetAttribute("InBuildMode")
+    local previouslyInPlaceMode = plr:GetAttribute("InPlaceMode")
+
+    plr:SetAttribute("InStudio", false)
+    plr:SetAttribute("InPlaceMode", false)
+    plr:SetAttribute("InBuildMode", false)
 
     -- switch left-side gui btn from build-mode to tp btn
-    Remotes.Studio.General.LeaveStudio:FireClient(plr)
+    Remotes.Studio.General.LeaveStudio:FireClient(plr, {
+        InStudio = previouslyInStudio,
+        InBuildMode = previouslyInBuildMode,
+        InPlaceMode = previouslyInPlaceMode,
+    })
 end)
 
 Remotes.Studio.General.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
@@ -353,6 +370,7 @@ Remotes.Studio.BuildMode.EnterBuildMode.OnServerEvent:Connect(function(plr: Play
             -- 2) enable build-mode functionality
             local studioFurnitureInventory = StudioConfig.GetFurnitureAvailableForStudio(profile.Data)
 
+            plr:SetAttribute("InBuildMode", true)
             Remotes.Studio.BuildMode.EnterBuildMode:FireClient(plr, studioFurnitureInventory)
         end
     end
@@ -377,6 +395,11 @@ Remotes.Studio.BuildMode.EnterPlaceMode.OnServerEvent:Connect(function(plr: Play
 end)
 
 Remotes.Studio.BuildMode.PlaceItem.OnServerEvent:Connect(placeStudioItem)
+
+Remotes.Studio.BuildMode.ExitBuildMode.OnServerEvent:Connect(function(plr: Player)
+    plr:SetAttribute("InBuildMode", false)
+    Remotes.Studio.BuildMode.ExitBuildMode:FireClient(plr, nil)
+end)
 
 Remotes.Studio.BuildMode.ExitPlaceMode.OnServerEvent:Connect(function(plr: Player)
     -- terminate place mode functionality on client
