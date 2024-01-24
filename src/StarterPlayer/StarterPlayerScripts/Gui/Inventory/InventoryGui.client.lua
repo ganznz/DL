@@ -697,10 +697,10 @@ Remotes.Inventory.General.LockItem.OnClientEvent:Connect(updateItemTemplate)
 Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: string, staffMemberData: {})
     if inventoryCategory ~= "staff" then return end
 
-    if StaffInfoPanel.Visible and currentlyViewedItemInfo then
+    if InventoryContainer.Visible and StaffInfoPanel.Visible and currentlyViewedItemInfo then
         local currentlyViewedItemInstance = currentlyViewedItemInfo.ItemInstance
 
-        if (currentlyViewedItemInstance.UUID == staffMemberUUID) then
+        if currentlyViewedItemInstance.UUID == staffMemberUUID then
             currentlyViewedItemInfo.ItemInstance = StaffMemberConfig.new(currentlyViewedItemInstance.UUID, staffMemberData) -- refresh staff member instance
             
             setStaffInfoPanelEnergyBar(currentlyViewedItemInfo.ItemInstance)
@@ -708,10 +708,14 @@ Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: strin
     end
 end)
 
-Remotes.Staff.UpdateEnergyFullTimer.OnClientEvent:Connect(function(_staffMemberUUID: string, secondsUntilFull: number)
+Remotes.Staff.UpdateEnergyFullTimer.OnClientEvent:Connect(function(staffMemberUUID: string, secondsUntilFull: number)
     if inventoryCategory ~= "staff" then return end
 
-    if StaffInfoPanel.Visible and currentlyViewedItemInfo then
-        setStaffInfoPanelEnergyTime(secondsUntilFull)
+    if InventoryContainer.Visible and StaffInfoPanel.Visible and currentlyViewedItemInfo then
+        local currentlyViewedItemInstance = currentlyViewedItemInfo.ItemInstance
+
+        if currentlyViewedItemInstance.UUID == staffMemberUUID then
+            setStaffInfoPanelEnergyTime(secondsUntilFull)
+        end
     end
 end)
