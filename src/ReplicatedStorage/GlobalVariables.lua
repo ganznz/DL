@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
 
 local GlobalVariables = {}
 
@@ -55,19 +56,24 @@ GlobalVariables.Gui.NotificationWarning = Color3.fromRGB(255, 106, 108)
 
 
 -- SOUND --
-local SoundsFolder = ReplicatedStorage.Assets.Sounds
+local LocalSounds = SoundService.LocalSounds
 GlobalVariables.Sound = {}
 GlobalVariables.Sound.Sfx = {}
 
 -- general sfx
-GlobalVariables.Sound.Sfx.PhoneOpenNormal = SoundsFolder.Sfx:FindFirstChild("PhoneOpenNormal")
-GlobalVariables.Sound.Sfx.PhoneOpenRare = SoundsFolder.Sfx:FindFirstChild("PhoneOpenRare")
-GlobalVariables.Sound.Sfx.PowerupStandard = SoundsFolder.Sfx:FindFirstChild("PowerupStandard")
-GlobalVariables.Sound.Sfx.PowerupSpecial = SoundsFolder.Sfx:FindFirstChild("PowerupSpecial")
+-- -- Variables hold sound ID's, not actual Sound instance
+GlobalVariables.Sound.Sfx.PhoneOpenNormal = LocalSounds.Sfx:FindFirstChild("PhoneOpenNormal").SoundId
+GlobalVariables.Sound.Sfx.PhoneOpenRare = LocalSounds.Sfx:FindFirstChild("PhoneOpenRare").SoundId
+GlobalVariables.Sound.Sfx.PowerupStandard = LocalSounds.Sfx:FindFirstChild("PowerupStandard").SoundId
+GlobalVariables.Sound.Sfx.PowerupSpecial = LocalSounds.Sfx:FindFirstChild("PowerupSpecial").SoundId
+GlobalVariables.Sound.Sfx.NotificationStandard = LocalSounds.Sfx:FindFirstChild("NotificationStandard").SoundId
+GlobalVariables.Sound.Sfx.LevelUp = LocalSounds.Sfx:FindFirstChild("LevelUp").SoundId
+GlobalVariables.Sound.Sfx.CountdownLoop = LocalSounds.Sfx:FindFirstChild("CountdownLoop").SoundId
+GlobalVariables.Sound.Sfx.CountdownEnd = LocalSounds.Sfx:FindFirstChild("CountdownEnd").SoundId
 
 -- gui sound effects
-GlobalVariables.Sound.Sfx.GuiOpen = SoundsFolder.Sfx:FindFirstChild("GuiOpen")
-GlobalVariables.Sound.Sfx.GuiMouseHover = SoundsFolder.Sfx:FindFirstChild("GuiMouseHover")
+GlobalVariables.Sound.Sfx.GuiOpen = LocalSounds.Sfx:FindFirstChild("GuiOpen").SoundId
+GlobalVariables.Sound.Sfx.GuiMouseHover = LocalSounds.Sfx:FindFirstChild("GuiMouseHover").SoundId
 
 
 -- IMAGES --
@@ -86,7 +92,8 @@ GlobalVariables.Images.Icons.PlrLevelStrokeIcon = "1599828"
 GlobalVariables.Images.Icons.PlrLevelDropshadowIcon = "15998288304"
 GlobalVariables.Images.Icons.PlrEnergyIcon = "15998270577"
 GlobalVariables.Images.Icons.PlrEnergyStrokeIcon = "15998271911"
-GlobalVariables.Images.Icons.PlrEnergyDropshadowIcon = "15998273384"
+GlobalVariables.Images.Icons.PlrEnergyDropshadowIcon = "15991548869"
+GlobalVariables.Images.Icons.PlrEnergyGrayscaleIcon = "16073650701"
 GlobalVariables.Images.Icons.PlrHungerIcon = "15998275495"
 GlobalVariables.Images.Icons.PlrHungerStrokeIcon = "15998279544"
 GlobalVariables.Images.Icons.PlrHungerDropshadowIcon = "15998277391"
