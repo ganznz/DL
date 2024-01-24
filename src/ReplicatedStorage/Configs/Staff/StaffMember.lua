@@ -14,6 +14,8 @@ export type StaffMemberConfig = {
     UpgradeCurrency: string,
     IconOriginal: string,
     IconStroke: string,
+    IconFill: string,
+    IconGrayscale: string,
 }
 
 export type StaffMemberInstance = {
@@ -32,26 +34,34 @@ local config: { [string]: StaffMemberConfig } = {
     ["Max"] = {
         Rarity = 1,
         UpgradeCurrency = "Coins",
-        IconOriginal = "15803863472",
-        IconStroke = "15803865261",
+        IconOriginal = "16073550931",
+        IconStroke = "16073551629",
+        IconFill = "16073552488",
+        IconGrayscale = "16073624399",
     },
     ["Cam"] = {
         Rarity = 1,
         UpgradeCurrency = "Coins",
-        IconOriginal = "15803860031",
-        IconStroke = "15803861381",
+        IconOriginal = "16073559841",
+        IconStroke = "16073560572",
+        IconFill = "16073560955",
+        IconGrayscale = "16073629720",
     },
     ["Sophie"] = {
         Rarity = 1,
         UpgradeCurrency = "Coins",
-        IconOriginal = "15804094588",
-        IconStroke = "15804095897",
+        IconOriginal = "16073553712",
+        IconStroke = "16073554767",
+        IconFill = "16073555193",
+        IconGrayscale = "16073627960",
     },
     ["Logan"] = {
         Rarity = 2,
         UpgradeCurrency = "Coins",
-        IconOriginal = "15803866632",
-        IconStroke = "15803868605",
+        IconOriginal = "16073556500",
+        IconStroke = "16073557800",
+        IconFill = "16073558410",
+        IconGrayscale = "16073628849",
     },
 }
 
@@ -115,7 +125,6 @@ end
 -- function NOT used for granting a plr new staff member, but instead used for instantiating a StaffMember object
 --          using predefined staff member data that the appropriate class methods can be used on
 function StaffMember.new(staffMemberUUID: string, staffMemberData: {}): StaffMemberInstance
-
     local staffMember = {}
     setmetatable(staffMember, StaffMember)
 

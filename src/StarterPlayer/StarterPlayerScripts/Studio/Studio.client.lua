@@ -491,6 +491,10 @@ Remotes.Player.StopInspecting.Event:Connect(function()
     registerInteractionBtns()
 end)
 
+Remotes.Studio.BuildMode.ExitBuildMode.OnClientEvent:Connect(function(_opts: {})
+    registerInteractionBtns()
+end)
+
 -- on plr spawn & death
 local function characterAdded(char: Model)
     local humanoid = char:WaitForChild("Humanoid")

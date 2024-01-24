@@ -48,6 +48,10 @@ local Template = {
         Computer = {
             Level = 1
         },
+        -- holds data of developed games (e.g. game name, ratings, topic & genre, was marketed or not, etc)
+        DevelopedGames = {
+
+        },
         Sizes = {
             Small = true;
         },
@@ -92,6 +96,15 @@ local Template = {
             -- Gamepass studios
             Premium = {}
         }
+    },
+
+    -- holds 'statistical' game data (e.g. total staff upgrades, currency spent, total playtime, etc)
+    Statistics = {
+        RobuxSpent = 0,
+        CoinsSpent = 0,
+        GemsSpent = 0,
+        TotalPlaytime = 0,
+        StaffUpgradesDone = 0,
     },
 
     -- all areas which are unlockable through playing the game
