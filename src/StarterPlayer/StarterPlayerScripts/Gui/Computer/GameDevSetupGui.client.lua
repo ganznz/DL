@@ -392,7 +392,7 @@ end)
 ConfirmBtn.Activated:Connect(function()
     if not requirementsMet() then return end
 
-    Remotes.GameDev.DevelopGame:FireServer(selectedGenre, selectedTopic)
+    Remotes.GameDev.CreateGame.DevelopGame:FireServer(selectedGenre, selectedTopic)
 end)
 
 -- REMOTES --
@@ -408,8 +408,8 @@ Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, _op
 end)
 
 -- close game setup gui
-Remotes.GameDev.DevelopGame.OnClientEvent:Connect(function(_developmentPhase: string)
-    GuiServices.HideGuiStandard(ComputerDevContainer)
+Remotes.GameDev.CreateGame.DevelopGame.OnClientEvent:Connect(function()
+    GuiServices.HideGuiStandard()
 end)
 
 Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: string, staffMemberData: {})
