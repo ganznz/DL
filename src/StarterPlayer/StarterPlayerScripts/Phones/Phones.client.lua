@@ -199,7 +199,7 @@ Remotes.Phones.OpenPhone.OnClientEvent:Connect(function(_reward: string, rarestI
     resetPhoneOpeningGui()
     GuiServices.CreateConfettiEffect(1, 2)
     CameraControls.SetDefault(localPlr, camera)
-    if rarestItemInPhone then GlobalVariables.Sound.Sfx.PhoneOpenRare:Play() else GlobalVariables.Sound.Sfx.PhoneOpenNormal:Play() end
+    if rarestItemInPhone then GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.PhoneOpenRare) else GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.PhoneOpenNormal) end
 
     -- wait for reward display icon to disappear
     -- lazy af code bruh

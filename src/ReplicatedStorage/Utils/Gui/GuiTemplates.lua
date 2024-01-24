@@ -2,6 +2,7 @@ local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
+local GeneralUtils = require(ReplicatedStorage.Utils:WaitForChild("GeneralUtils"))
 
 local GuiTemplates = {}
 
@@ -14,7 +15,7 @@ function GuiTemplates.CreateButton(btn: Instance, opts: {})
 
     btn.MouseEnter:Connect(function()
         if opts["Rotates"] then tweenMouseEnter:Play() end
-        GlobalVariables.Sound.Sfx.GuiMouseHover:Play()
+        GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.GuiMouseHover)
     end)
 
     btn.MouseLeave:Connect(function()
@@ -22,7 +23,7 @@ function GuiTemplates.CreateButton(btn: Instance, opts: {})
     end)
 
     btn.Activated:Connect(function()
-        GlobalVariables.Sound.Sfx.GuiOpen:Play()
+        GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.GuiOpen)
     end)
 end
 
