@@ -1,3 +1,4 @@
+local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
 -- // this file contains methods that can be used anywhere without dependancy on gameplay code // --
@@ -96,6 +97,27 @@ function GeneralUtils.RoundToDp(num: number, dp: number): number
     increment += "1"
     increment = tostring(increment)
     return math.round(num / increment) * increment
+end
+
+-- function returns a NEW table with values in tb1 that are not in tb2
+function GeneralUtils.UniqueTable(tb1: {}, tb2: {})
+    local newTable = {}
+
+    for _i, v in tb1 do
+        if table.find(tb2, v) then continue end
+        table.insert(newTable, v)
+    end
+
+    return newTable
+end
+
+function GeneralUtils.PlaySfx(soundId: string): Sound
+    local sound = Instance.new("Sound")
+    sound.SoundId = soundId
+    SoundService:PlayLocalSound(sound)
+    sound.Ended:Connect(function() sound:Destroy() end)
+
+    return sound
 end
 
 return GeneralUtils
