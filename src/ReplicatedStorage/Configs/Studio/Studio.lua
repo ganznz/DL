@@ -218,5 +218,12 @@ function Studio.IndexOfSpecialFurnitureItemParent(plrData, itemName: string, ite
     return nil
 end
 
+function Studio.GetStaffInActiveStudio(plrData)
+    local studioIndex = plrData.Studio.ActiveStudio
+    local studioConfig: StudioConfig = Studio.GetConfig(studioIndex)
+    local studioType = studioConfig.StudioType
+
+    return plrData.Studio.Studios[studioType][studioIndex].StaffMembers
+end
 
 return Studio
