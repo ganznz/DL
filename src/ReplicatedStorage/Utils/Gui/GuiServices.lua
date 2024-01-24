@@ -81,12 +81,17 @@ function GuiServices.DisableUnrelatedButtons(guiInstanceToIgnore)
     end
 end
 
-function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, xOffset: number, yOffset: number)
-    local xPos = GuiCache[guiInstance].Position.X.Scale + (xOffset and xOffset or 0)
-    local yPos = GuiCache[guiInstance].Position.Y.Scale + (yOffset and yOffset or GlobalVariables.Gui.MainGuiInvisibleYOffset)
+-- opts
+-- -- PosX -> number: Scale
+-- -- PosY -> number: Scale
+function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, opts: {}): UDim2
+    local xPos = if (opts and opts["PosX"]) then opts["PosX"] else GuiCache[guiInstance].Position.X.Scale
+    local yPos = if (opts and opts["PosY"]) then opts["PosY"] else GuiCache[guiInstance].Position.Y.Scale + GlobalVariables.Gui.MainGuiInvisibleYOffset
 
     guiInstance.Position = UDim2.fromScale(xPos, yPos)
     guiInstance.Visible = false
+
+    return guiInstance.Position
 end
 
 local function showBackdrop(colour: Color3)
