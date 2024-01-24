@@ -19,16 +19,14 @@ function StaffMember:AdjustEnergy(plr: Player, staffMemberUUID: string, amtToAdj
 
     local instanceMaxEnergy = self:CalcMaxEnergy()
 
-    if amtToAdjustBy and amtToAdjustBy > 0 and (staffMemberData.CurrentEnergy >= instanceMaxEnergy) then return end
-
     -- if amtToAdjustBy isn't specified, then this function is being called to regenerate staff member energy automatically
     if not amtToAdjustBy then
-        if self.Rarity == 1 then
-            amtToAdjustBy = instanceMaxEnergy / 150 -- (from 0 energy, 2.5 min until full)
-        elseif self.Rarity == 2 then
-            amtToAdjustBy = instanceMaxEnergy / 300 -- (from 0 energy, 5 min until full)
-        end
+        amtToAdjustBy = instanceMaxEnergy / StaffMember.Constants.EnergyEmptyToFull[tostring(self.Rarity)]
     end
+
+    local energyBeforeAdjustment = staffMemberData.CurrentEnergy
+    local alreadyFull = energyBeforeAdjustment == instanceMaxEnergy
+    if alreadyFull and amtToAdjustBy > 0 then return end -- if energy full then don't regen
 
     if staffMemberData.CurrentEnergy + amtToAdjustBy > instanceMaxEnergy then
         staffMemberData.CurrentEnergy = instanceMaxEnergy
