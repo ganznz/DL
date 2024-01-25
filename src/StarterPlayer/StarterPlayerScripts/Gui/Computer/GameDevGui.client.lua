@@ -30,17 +30,19 @@ local camera = Workspace:WaitForChild("Camera")
 -- GUI REFERENCE VARIABLES --
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
 local DevelopGameGui = AllGuiScreenGui.DevelopGame
+-- phase number text
+local PhaseNumberText = DevelopGameGui.PhaseNumber
 -- countdown text
-local CountdownTextContainer = DevelopGameGui:WaitForChild("CountdownTextContainer")
+local CountdownTextContainer = DevelopGameGui.CountdownTextContainer
 local CountdownText = CountdownTextContainer.CountdownText
 -- timer bar
 local TimerBarContainer = DevelopGameGui.TimerBarContainer
 local TimerBarProg = TimerBarContainer.TimerBarProg
 -- game points
 local GamePtsContainer = DevelopGameGui.GamePoints
-local CodePtsAmt =GamePtsContainer.CodePts.PtsAmount
-local SoundPtsAmt =GamePtsContainer.SoundPts.PtsAmount
-local ArtPtsAmt =GamePtsContainer.ArtPts.PtsAmount
+local CodePtsAmt = GamePtsContainer.CodePts.PtsAmount
+local SoundPtsAmt = GamePtsContainer.SoundPts.PtsAmount
+local ArtPtsAmt = GamePtsContainer.ArtPts.PtsAmount
 -- team members
 local TeamMembersContainer = DevelopGameGui.TeamMembers
 local TeamMemberTemplate = TeamMembersContainer.Template
@@ -52,21 +54,60 @@ local BtnTemplateMobile = Phase1BtnContainer.MobileTemplate
 -- STATIC VARIABLES --
 local PHASE_1_PC_KEYS = Remotes.GameDev.CreateGame.GetPcPhase1BtnValues:InvokeServer()
 local COUNTDOWN_TEXT = "Start in... TIME_LEFT"
+local PHASE_INDICATOR_TEXT = "PHASE - PHASE_NO"
+
+-- -- styling static variables
+local ENERGY_COLOURS = {
+    NoEnergy = { Main = Color3.fromRGB(191, 191, 191), Prog = Color3.fromRGB(191, 191, 191) },
+    LowEnergy = { Main = Color3.fromRGB(154, 84, 84), Prog = Color3.fromRGB(255, 139, 139) },
+    MedEnergy = { Main = Color3.fromRGB(188, 164, 69), Prog = Color3.fromRGB(255, 231, 51) },
+    HighEnergy = { Main = Color3.fromRGB(90, 162, 82), Prog = Color3.fromRGB(161, 255, 142) }
+}
+local BTN_STYLE_INFO = {
+    ["pc"] = {
+        ["Code"] = {
+            ["Images"] = { Default = "16103019898", Bomb = "16102714079" },
+            ["Colours"] = { Fill = Color3.fromRGB(123, 241, 91), Outline = Color3.fromRGB(74, 147, 61) }
+        },
+        ["Sound"] = {
+            ["Images"] = { Default = "16103020629", Bomb = "16102479667" },
+            ["Colours"] = { Fill = Color3.fromRGB(124, 205, 255), Outline = Color3.fromRGB(83, 138, 170) }
+        },
+        ["Art"] = {
+            ["Images"] = { Default = "16103021581", Bomb = "16102481342" },
+            ["Colours"] = { Fill = Color3.fromRGB(255, 174, 74), Outline = Color3.fromRGB(176, 104, 32) }
+        }
+    },
+    ["mobile"] = {
+        ["Code"] = {
+            ["Images"] = { Default = "16102482196", Bomb = "16102482911" },
+        },
+        ["Sound"] = {
+            ["Images"] = { Default = "16102483760", Bomb = "16102484802" },
+        },
+        ["Art"] = {
+            ["Images"] = { Default = "16102486250", Bomb = "16102487404" },
+        }
+    }
+}
 
 -- STATE VARIABLES --
 local plrData = nil
 local plrPlatform = nil
+local helpingStaffMembers = nil
 local studioPcSetup: Model = nil
 local pcSetupSeat: Seat = nil
 -- -- connections
 local userPcInputConnection: RBXScriptConnection | nil = nil
 
+GuiServices.StoreInCache(PhaseNumberText)
 GuiServices.StoreInCache(CountdownTextContainer)
 GuiServices.StoreInCache(TeamMembersContainer)
 GuiServices.StoreInCache(GamePtsContainer)
 GuiServices.StoreInCache(TimerBarContainer)
 
 GuiServices.DefaultMainGuiStyling(CountdownTextContainer, { PosY = -CountdownTextContainer.Size.Y.Scale })
+local phaseNumberTextHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(PhaseNumberText, { PosX = PhaseNumberText.Position.X.Scale, PosY = -PhaseNumberText.Size.Y.Scale })
 local teamMembersContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(TeamMembersContainer, { PosX = -0.13, PosY = TeamMembersContainer.Position.Y.Scale})
 local gamePtsContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(GamePtsContainer, { PosY = -0.01 })
 local timerBarContainerContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(TimerBarContainer, { PosY = -TimerBarContainer.Size.Y.Scale })
@@ -81,6 +122,93 @@ local function setup()
     GeneralUtils.HideModel(studioPcSetup:FindFirstChild("Pc"), { Tween = true })
     PlayerServices.ShowPlayer(localPlr, true)
     PlayerUtils.SeatPlayer(localPlr, pcSetupSeat)
+end
+
+local function clearStaffMemberContainer()
+    local instancesToIgnore = {"UIListLayout", "Template"}
+    for _i, instance in TeamMembersContainer:GetChildren() do
+        if table.find(instancesToIgnore, instance.Name) then continue end
+
+        instance:Destroy()
+    end
+end
+
+local styleStaffMemberTemplate -- to hoist function
+
+local function styleStaffMemberTemplateEnergyContainer(staffMemberUUID: string, staffMemberData: {})
+    local staffMemberTemplate = TeamMembersContainer:FindFirstChild(staffMemberUUID)
+    if not staffMemberTemplate then return end
+
+    local energyContainer = staffMemberTemplate:FindFirstChild("EnergyContainer")
+    local energyIconDropshadow: ImageLabel = energyContainer:FindFirstChild("EnergyIconDropshadow", true)
+    local energyBarMain: Frame = energyContainer:FindFirstChild("EnergyBar")
+    local energyBarProg: Frame = energyBarMain:FindFirstChild("EnergyProg")
+    local energyBarUIStroke: UIStroke = energyBarMain:FindFirstChild("UIStroke")
+
+    local staffMemberInstance: StaffMemberConfig.StaffMemberInstance = StaffMemberConfig.new(staffMemberUUID, staffMemberData)
+    local currentEnergy = staffMemberData.CurrentEnergy
+    local maxEnergy = staffMemberInstance:CalcMaxEnergy()
+    local currEnergyProportion = currentEnergy / maxEnergy
+    
+    local colours
+    if currEnergyProportion >= 0.66 then
+        colours = ENERGY_COLOURS.HighEnergy
+    elseif currEnergyProportion >= 0.33 then
+        colours = ENERGY_COLOURS.MedEnergy
+    elseif currEnergyProportion <= 0 then
+        colours = ENERGY_COLOURS.NoEnergy
+    else
+        colours = ENERGY_COLOURS.LowEnergy
+    end
+
+    local tweenInfo = TweenInfo.new(0.5)
+    -- only tween colours if the colour has actually changed
+    if energyIconDropshadow.ImageColor3 ~= colours.Main then
+        local iconDropshadowTween = TweenService:Create(energyIconDropshadow, tweenInfo, { ImageColor3 = colours.Main })
+        local energyBarColourTween = TweenService:Create(energyBarMain, tweenInfo, { BackgroundColor3 = colours.Main })
+        local energyBarProgColourTween = TweenService:Create(energyBarProg, tweenInfo, { BackgroundColor3 = colours.Prog })
+        local energyBarUIStrokeTween = TweenService:Create(energyBarUIStroke, tweenInfo, { Color = colours.Main })
+        iconDropshadowTween:Play()
+        energyBarColourTween:Play()
+        energyBarProgColourTween:Play()
+        energyBarUIStrokeTween:Play()
+    end
+
+    -- tween bar movement
+    local energyBarProgTween = TweenService:Create(energyBarProg, tweenInfo, { Size = UDim2.fromScale(currEnergyProportion, 1) })
+    energyBarProgTween:Play()
+end
+
+styleStaffMemberTemplate = function(template: Frame, staffMemberUUID: string, staffMemberData: {})
+    local templateUIStroke: UIStroke = template:FindFirstChild("UIStroke")
+    local gradient: Frame = template:FindFirstChild("Gradient")
+    local staffIcon: ImageLabel = template:FindFirstChild("StaffIcon")
+    local staffIconDropshadow: ImageLabel = staffIcon:FindFirstChild("StaffIconDropshadow")
+
+    local currentEnergy = staffMemberData.CurrentEnergy
+    local noEnergyColour: Color3 = ENERGY_COLOURS.NoEnergy.Main
+
+    local staffMemberConfig: StaffMemberConfig.StaffMemberConfig = StaffMemberConfig.GetConfig(staffMemberData.Model)
+    local rarityColour: Color3 = GeneralConfig.GetRarityColour(staffMemberData.Rarity)
+    
+    staffIcon.Image = if currentEnergy <= 0 then GeneralUtils.GetDecalUrl(staffMemberConfig.IconGrayscale) else GeneralUtils.GetDecalUrl(staffMemberConfig.IconStroke)
+    staffIconDropshadow.Image = GeneralUtils.GetDecalUrl(staffMemberConfig.IconFill)
+    
+    templateUIStroke.Color = if currentEnergy <= 0 then noEnergyColour else rarityColour
+    gradient.BackgroundColor3 = if currentEnergy <= 0 then noEnergyColour else rarityColour
+    staffIconDropshadow.ImageColor3 = if currentEnergy <= 0 then noEnergyColour else rarityColour
+
+    styleStaffMemberTemplateEnergyContainer(staffMemberUUID, staffMemberData)
+end
+
+local function populateStaffMemberContainer()
+    for staffMemberUUID: string, staffMemberData in helpingStaffMembers do
+        local template = TeamMemberTemplate:Clone()
+        template.Parent = TeamMembersContainer
+        template.Name = staffMemberUUID
+        styleStaffMemberTemplate(template, staffMemberUUID, staffMemberData)
+        template.Visible = true
+    end
 end
 
 local function resetConnection(connection: RBXScriptConnection)
@@ -99,12 +227,15 @@ local function setupPcUserInputConnection()
         if not processed then
             for _i, allowedKey in PHASE_1_PC_KEYS do
                 if input.KeyCode == Enum.KeyCode[allowedKey] then
-                    print('sent')
-                    Remotes.GameDev.CreateGame.Phase1.CheckInteraction:FireServer({ InputKeyCode = input.KeyCode })
+                    Remotes.GameDev.CreateGame.Phase1.ValidateInput:FireServer({ InputKeyCode = input.KeyCode })
                 end
             end
         end
     end)
+end
+
+local function setPhaseIndicatorText(phaseNumber: number)
+    PhaseNumberText.Text = PHASE_INDICATOR_TEXT:gsub("PHASE_NO", phaseNumber)
 end
 
 local function showCountdownText()
@@ -122,12 +253,14 @@ local function hideCountdownText()
 end
 
 local function populateGameDevGui()
-    
+    -- populate staff member container
+    clearStaffMemberContainer()
+    populateStaffMemberContainer()
 end
 
 -- general gamedev gui to display across the different phases
 local function showGameDevGui()
-    local instancesToShow = {TeamMembersContainer, GamePtsContainer, TimerBarContainer}
+    local instancesToShow = {PhaseNumberText, TeamMembersContainer, GamePtsContainer, TimerBarContainer}
     for _i, v in instancesToShow do
         local visiblePos = GuiServices.GetCachedData(v).Position
         v.Visible = true
@@ -136,9 +269,12 @@ local function showGameDevGui()
 end
 
 local function hideGameDevGui()
-    local instancesToHide = {[TeamMembersContainer.Name] = teamMembersContainerHiddenPos,
-            [GamePtsContainer.Name] = gamePtsContainerHiddenPos,
-            [TimerBarContainer.Name] = timerBarContainerContainerHiddenPos}
+    local instancesToHide = {
+        [PhaseNumberText.Name] = phaseNumberTextHiddenPos,
+        [TeamMembersContainer.Name] = teamMembersContainerHiddenPos,
+        [GamePtsContainer.Name] = gamePtsContainerHiddenPos,
+        [TimerBarContainer.Name] = timerBarContainerContainerHiddenPos
+    }
 
     for instanceName, hiddenPos in instancesToHide do
         local instance = DevelopGameGui:FindFirstChild(instanceName, true)
@@ -164,42 +300,60 @@ local function setupGameDevGui()
     showGameDevGui()
 end
 
-local function phase1StyleBtn(btn, isBomb: boolean)
-    local btnUIStroke: UIStroke = btn:FindFirstChild("UIStroke")
+local function resetTimerBar(): Tween
+    local tween = TweenService:Create(TimerBarProg, TweenInfo.new(TimerBarProg.Size.X.Scale * 0.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { Size = UDim2.fromScale(0, 1) })
+    tween:Play()
 
-    -- universal styling
-    if isBomb then
-        btnUIStroke.Color = Color3.fromRGB(255, 172, 88)
+    return tween
+end
+
+local function styleTimerBar()
+    local xSizeScale: number = TimerBarProg.Size.X.Scale
+    local colours -- timer bar uses same colours as staff members energy bar
+    if xSizeScale >= 0.66 then
+        colours = ENERGY_COLOURS.HighEnergy
+    elseif xSizeScale >= 0.33 then
+        colours = ENERGY_COLOURS.MedEnergy
     else
-        btnUIStroke.Color = Color3.fromRGB(89, 181, 97)
+        colours = ENERGY_COLOURS.LowEnergy
     end
 
-    -- platform specific styling
-    if plrPlatform == "pc" then
-        local inputText: TextLabel = btn:FindFirstChild("InputText")
-        local inputTextUIStroke: UIStroke = inputText:FindFirstChild("UIStroke")
-        if isBomb then
-            inputText.TextColor3 = Color3.fromRGB(255, 229, 133)
-            inputTextUIStroke.Color = Color3.fromRGB(255, 172, 88)
-        else
-            inputText.TextColor3 = Color3.fromRGB(126, 255, 137)
-            inputTextUIStroke.Color = Color3.fromRGB(89, 181, 97)
-        end
+    TimerBarContainer.BackgroundColor3 = colours.Main
+    TimerBarProg.BackgroundColor3 = colours.Prog
+end
 
-    elseif plrPlatform == "mobile" then
-        local bombIcon: ImageLabel = btn:FindFirstChild("BombIcon")
-        local bombIconDropshadow: ImageLabel = bombIcon:FindFirstChild("BombIconDropshadow")
-        local clickIcon: ImageLabel = btn:FindFirstChild("ClickIcon")
-        local clickIconDropshadow: ImageLabel = clickIcon:FindFirstChild("ClickIconDropshadow")
-        if isBomb then
-            bombIcon.Visible = true
-            bombIcon.ImageColor3 = Color3.fromRGB(255, 229, 133)
-            bombIconDropshadow.ImageColor3 = Color3.fromRGB(255, 172, 88)
-        else
-            clickIcon.Visible = true
-            clickIcon.ImageColor3 = Color3.fromRGB(126, 255, 137)
-            clickIconDropshadow.ImageColor3 = Color3.fromRGB(89, 181, 97)
+local function startTimerBar(time: number)
+    local timeLeft = time
+    task.spawn(function()
+        while timeLeft > 0 do
+            styleTimerBar()
+            task.wait(1)
+            timeLeft -= 1
         end
+    end)
+
+    -- reset timer bar
+    local resetTween = resetTimerBar()
+    resetTween.Completed:Connect(function()
+        local tween = TweenService:Create(TimerBarProg, TweenInfo.new(timeLeft, Enum.EasingStyle.Linear), { Size = UDim2.fromScale(1, 1) })
+        tween:Play()
+    end)
+end
+
+local function phase1StyleBtn(btn, btnType: "Code" | "Sound" | "Art" , isBomb: boolean)
+    local defaultIcon: ImageLabel = btn:FindFirstChild("DefaultIcon")
+    local bombIcon: ImageLabel = btn:FindFirstChild("BombIcon")
+    defaultIcon.Visible = not isBomb
+    bombIcon.Visible = isBomb
+
+    local stylingInfo = BTN_STYLE_INFO[plrPlatform][btnType]
+    if isBomb then bombIcon.Image = GeneralUtils.GetDecalUrl(stylingInfo.Images.Bomb) else defaultIcon.Image = GeneralUtils.GetDecalUrl(stylingInfo.Images.Default) end
+
+    if plrPlatform == "pc" then
+        local btnValueText: TextLabel = btn:FindFirstChild("BtnValue")
+        local btnValueTextUIStroke: UIStroke = btnValueText:FindFirstChild("UIStroke")
+        btnValueText.TextColor3 = stylingInfo.Colours.Fill
+        btnValueTextUIStroke.Color = stylingInfo.Colours.Outline
     end
 end
 
@@ -207,14 +361,14 @@ local function phase1DisplayBtn(isBomb: boolean, opts: {})
     local template
 
     if plrPlatform == "pc" then
-        template = BtnTemplatePc:Clone()
         local btnValue = opts["BtnValue"]
-        template:FindFirstChild("InputText").Text = btnValue
+        template = BtnTemplatePc:Clone()
+        template:FindFirstChild("BtnValue").Text = btnValue
 
     elseif plrPlatform == "mobile" then
         template = BtnTemplateMobile:Clone()
         template.Activated:Connect(function()
-            Remotes.GameDev.CreateGame.Phase1.CheckInteraction:FireServer({ BtnId = template.Name })
+            Remotes.GameDev.CreateGame.Phase1.ValidateInput:FireServer({ BtnId = template.Name })
         end)
     end
 
@@ -224,7 +378,7 @@ local function phase1DisplayBtn(isBomb: boolean, opts: {})
     local sizeTween = TweenService:Create(template, TweenInfo.new(0.3, Enum.EasingStyle.Elastic), { Size = template.Size })
     template.Size = UDim2.fromScale(0, 0)
     
-    phase1StyleBtn(template, isBomb)
+    phase1StyleBtn(template, opts["BtnType"], isBomb)
     template.Parent = Phase1BtnContainer
     template.Name = opts["BtnId"]
     template.Visible = true
@@ -232,14 +386,30 @@ local function phase1DisplayBtn(isBomb: boolean, opts: {})
     sizeTween:Play()
 end
 
-local function phase1RemoveBtn(btnId: number, removeOnPlrInteraction: boolean)
-    
+local function phase1RemoveBtn(btnId: number, removeOnPlrInteraction: boolean, wasBomb: boolean)
+    local btnInstance = Phase1BtnContainer:FindFirstChild(btnId)
+    if not btnInstance then return end
+
+    local hideTween: Tween
+    if removeOnPlrInteraction then
+        hideTween = TweenService:Create(btnInstance, TweenInfo.new(0.3), { Size = UDim2.fromScale(0.1, 0.1) })
+        GuiServices.MakeInvisible(btnInstance, 0.3)
+        GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.GuiOpen)
+        task.delay(0.3, function() btnInstance:Destroy() end)
+    else
+        hideTween = TweenService:Create(btnInstance, TweenInfo.new(0.15), { Size = UDim2.fromScale(0, 0) })
+    end
+    hideTween:Play()
+    hideTween.Completed:Connect(function()
+        btnInstance:Destroy()
+    end)
 end
 
 -- REMOTES --
 Remotes.GameDev.CreateGame.DevelopGame.OnClientEvent:Connect(function()
     plrData = Remotes.Data.GetAllData:InvokeServer()
     plrPlatform = Remotes.Player.GetPlrPlatformData:InvokeServer().Platform
+    helpingStaffMembers = StudioConfig.GetStaffInActiveStudio(plrData)
     setup()
 end)
 
@@ -269,14 +439,41 @@ end)
 Remotes.GameDev.CreateGame.StartPhase.OnClientEvent:Connect(function(phase: number)
     if phase == 1 then
         hideCountdownText()
+        setPhaseIndicatorText(phase)
         setupGameDevGui()
 
         if plrPlatform == "pc" then
             setupPcUserInputConnection()
         end
     end
+
+    if phase == 2 then
+        
+    end
+
+    -- bug fix phase
+    if phase == -1 then
+        
+    end
 end)
 
-Remotes.GameDev.CreateGame.Phase1.SendBtn.OnClientEvent:Connect(phase1DisplayBtn)
+Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: string, staffMemberData: {})
+    if helpingStaffMembers and helpingStaffMembers[staffMemberUUID] then
+        -- if energy <= 0, style template only (which also styles energy bar)
+        -- else style energy bar only
+        if staffMemberData.CurrentEnergy <= 0 then
+            local template = TeamMembersContainer:FindFirstChild(staffMemberUUID)
+            if not template then return end
+            styleStaffMemberTemplate(template, staffMemberUUID, staffMemberData)
+    
+        else
+            styleStaffMemberTemplateEnergyContainer(staffMemberUUID, staffMemberData)
+        end
+    end
+end)
 
+-- phase 1 btn remotes
+Remotes.GameDev.CreateGame.Phase1.SendBtn.OnClientEvent:Connect(phase1DisplayBtn)
 Remotes.GameDev.CreateGame.Phase1.RemoveBtn.OnClientEvent:Connect(phase1RemoveBtn)
+
+Remotes.GUI.GameDev.StartTimerBar.OnClientEvent:Connect(startTimerBar)
