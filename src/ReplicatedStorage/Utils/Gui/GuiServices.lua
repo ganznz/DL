@@ -276,8 +276,34 @@ function GuiServices.ShowHUD()
     end
 end
 
-function GuiServices.AdjustTransparency(guiInstance, transparencyValue, tweenInfo)
-    GuiTransparency:SetTransparency(guiInstance, transparencyValue, tweenInfo)
+-- IMPORTANT: Only recommended to use call this method on an instance who's transparency will not be adjusted back to normal later on unless the instance children by default have the same transparency values
+-- ^^ ADD LATER: to make the previous point obsolete, add cached transparency data for instances&children to easily revert transparency values
+function GuiServices.MakeInvisible(guiInstance, tweenTime)
+    local tweenInfo: TweenInfo = TweenInfo.new(tweenTime or 0)
+    local tween = nil
+    local iterateOver = guiInstance:GetDescendants()
+    table.insert(iterateOver, guiInstance)
+
+    for _i, v in iterateOver do
+        local success, _ = pcall(function()
+            local tweenGoal: {}
+            if v:IsA("Frame") then
+                tweenGoal = { BackgroundTransparency = 1 }
+            elseif v:IsA("ScrollingFrame") then
+                tweenGoal = { BackgroundTransparency = 1, ScrollBarImageTransparency = 1 }
+            elseif v:IsA("ImageLabel") or v:IsA("ImageButton") then
+                tweenGoal = { BackgroundTransparency = 1, ImageTransparency = 1 }
+            elseif v:IsA("TextLabel") then
+                tweenGoal = { BackgroundTransparency = 1, TextTransparency = 1 }
+            elseif v:IsA("TextButton") or v:IsA("TextBox") then
+                tweenGoal = { BackgroundTransparency = 1, TextTransparency = 1, TextStrokeTransparency = 1 }
+            elseif v:IsA("UIStroke") then
+                tweenGoal = { Transparency = 1 }
+            end
+            tween = TweenService:Create(v, tweenInfo, tweenGoal)
+            tween:Play()
+        end)
+    end
 end
 
 function GuiServices.AdjustTextTransparency(guiInstance, transparencyValue: number, transparencyTween: boolean)
