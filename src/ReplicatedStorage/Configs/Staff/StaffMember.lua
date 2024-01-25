@@ -173,8 +173,6 @@ function StaffMember:GetSpecificSkillLevel(skill: "code" | "sound" | "art", opts
     local totalCost = 0
 
     -- calculate the cost for the maximum amt of upgrades the player can afford
-
-
     while totalCost <= plrCurrencyAmt do
         local temp
         if self.Rarity == 1 then
@@ -301,6 +299,17 @@ end
 function StaffMember:CalcTimeUntilFullEnergy(): number
     local emptyToFullEnergyTime = StaffMember.Constants.EnergyEmptyToFull[tostring(self.Rarity)] -- in seconds
     return math.floor(emptyToFullEnergyTime - ((emptyToFullEnergyTime * self.CurrentEnergy) / self:CalcMaxEnergy()))
+end
+
+function StaffMember.GetTotalSkillPtsAcrossNumerousStaff(plrData, staffMemberUUIDs: {}): number
+    local totalPts = 0
+    local staffMemberData = plrData.Inventory.StaffMembers
+    for _i, uuid: string in staffMemberUUIDs do
+        local instance: StaffMemberInstance = StaffMember.new(uuid, staffMemberData[uuid])
+        totalPts += instance:GetTotalSkillPts()
+    end
+
+    return totalPts
 end
 
 return StaffMember
