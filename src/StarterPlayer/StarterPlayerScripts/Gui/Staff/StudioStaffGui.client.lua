@@ -501,7 +501,6 @@ Remotes.Character.AdjustPlrCoins.OnClientEvent:Connect(function(_newCoinAmt: num
 end)
 
 Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: string, staffMemberData: {})
-    print('adjusting energy')
     if (currentlyViewedStaffUUID == staffMemberUUID) and (StaffTrainContainer.Visible or StaffViewContainer.Visible) then
         currentlyViewedStaffInstance = StaffMemberConfig.new(currentlyViewedStaffUUID, staffMemberData) -- refresh staff member instance
         
@@ -523,27 +522,22 @@ Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: strin
 end)
 
 Remotes.Staff.UpdateEnergyFullTimer.OnClientEvent:Connect(function(staffMemberUUID: string, secondsUntilFull: number)
-    print('adjusting timer')
     if (currentlyViewedStaffUUID == staffMemberUUID) and (StaffTrainContainer.Visible or StaffViewContainer.Visible) then
         local hideTextTween
         local showTextTween
 
         if StaffTrainContainer.Visible then
             if secondsUntilFull <= 0 then
-                print("a - train")
                 hideTextTween = TweenService:Create(StaffTrainEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 1 })
             elseif secondsUntilFull > 0 and StaffTrainEnergyTimer.TextTransparency == 1 then
-                print("b - train")
                 showTextTween = TweenService:Create(StaffTrainEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 0 })
             end
             StaffTrainEnergyTimer.Text = ENERGY_FULL_IN_TEXT:gsub("FORMATTED_TIME", DateTimeUtils.FormatTimeLeft(secondsUntilFull))
 
         elseif StaffViewContainer.Visible then
             if secondsUntilFull <= 0 then
-                print("a - view")
                 hideTextTween = TweenService:Create(StaffViewEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 1 })
             elseif secondsUntilFull > 0 and StaffViewEnergyTimer.TextTransparency == 1 then
-                print("b - view")
                 showTextTween = TweenService:Create(StaffViewEnergyTimer, TweenInfo.new(0.2), { TextTransparency = 0 })
             end
             StaffViewEnergyTimer.Text = ENERGY_FULL_IN_TEXT:gsub("FORMATTED_TIME", DateTimeUtils.FormatTimeLeft(secondsUntilFull))

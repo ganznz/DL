@@ -33,8 +33,8 @@ function PlrPlatformManager.UpdateProfile(plr: Player, platform: "pc" | "mobile"
     if platform == "pc" or platform == "mobile" or platform == "console" then
         plrProfile.Platform = platform
 
-        -- fire update to client
         Remotes.Player.PlatformChanged:FireClient(plr, plrProfile)
+        Remotes.Player.PlatformChangedBindable:Fire(plr, plrProfile)
     end
 end
 

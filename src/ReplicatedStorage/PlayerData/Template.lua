@@ -45,6 +45,7 @@ local Template = {
     },
 
     GameDev = {
+        HighestGameDevPhase = 1,
         Computer = {
             Level = 1
         },

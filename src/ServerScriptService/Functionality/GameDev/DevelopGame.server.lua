@@ -180,8 +180,6 @@ local function initiatePhase1(plr: Player)
                 local staffMemberEnergyUsage = staffMemberInfo.EnergyUsage.Phase1 / PHASE_1_LENGTH
 
                 staffMemberInstance:AdjustEnergy(plr, staffMemberUUID, -staffMemberEnergyUsage)
-                -- print(newStaffMemberData)
-                -- staffMemberInfo["StaffMemberData"] = newStaffMemberData
             end
 
             task.wait(1)

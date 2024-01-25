@@ -10,7 +10,7 @@ local StaffMember = require(ReplicatedStorage.Configs.Staff.StaffMember)
 
 local Remotes = ReplicatedStorage.Remotes
 
-function StaffMember:AdjustEnergy(plr: Player, staffMemberUUID: string, amtToAdjustBy: number): number
+function StaffMember:AdjustEnergy(plr: Player, staffMemberUUID: string, amtToAdjustBy: number)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -30,6 +30,10 @@ function StaffMember:AdjustEnergy(plr: Player, staffMemberUUID: string, amtToAdj
 
     if staffMemberData.CurrentEnergy + amtToAdjustBy > instanceMaxEnergy then
         staffMemberData.CurrentEnergy = instanceMaxEnergy
+
+    elseif staffMemberData.CurrentEnergy + amtToAdjustBy <= 0 then
+        staffMemberData.CurrentEnergy = 0
+
     else
         staffMemberData.CurrentEnergy += amtToAdjustBy
     end

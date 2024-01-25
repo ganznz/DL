@@ -15,10 +15,11 @@ local function adjustAllStaffMemberEnergy(plr: Player)
     local staffMembersToIgnore = {}
     if plr:GetAttribute("InStudio") and plr:GetAttribute("CurrentlyDevelopingGame") then
         staffMembersToIgnore = StudioConfig.GetStaffInActiveStudio(profile.Data)
+        
     end
 
     for staffMemberUUID: string, staffMemberData in profile.Data.Inventory.StaffMembers do
-        if table.find(staffMembersToIgnore, staffMemberUUID) then continue end
+        if staffMembersToIgnore[staffMemberUUID] then continue end
 
         local staffInstance = StudioConfigServer.new(staffMemberUUID, staffMemberData)
 
