@@ -223,7 +223,13 @@ function Studio.GetStaffInActiveStudio(plrData)
     local studioConfig: StudioConfig = Studio.GetConfig(studioIndex)
     local studioType = studioConfig.StudioType
 
-    return plrData.Studio.Studios[studioType][studioIndex].StaffMembers
+    local staffMemberData = plrData.Inventory.StaffMembers
+    local staffMembers = {}
+    for staffMemberUUID, _staffMemberStudioData in plrData.Studio.Studios[studioType][studioIndex].StaffMembers do
+        staffMembers[staffMemberUUID] = staffMemberData[staffMemberUUID]
+    end
+
+    return staffMembers
 end
 
 return Studio
