@@ -1,3 +1,4 @@
+local Workspace = game:GetService("Workspace")
 local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
@@ -119,5 +120,12 @@ function GeneralUtils.PlaySfx(soundId: string): Sound
 
     return sound
 end
+
+function GeneralUtils.GetVectorBetweenUDim2s(UDim2A: UDim2, UDim2B: UDim2): Vector2
+    local vectorX = UDim2B.X.Scale - UDim2A.X.Scale
+    local vectorY = UDim2B.Y.Scale - UDim2A.Y.Scale
+    return Vector2.new(vectorX, vectorY)
+end
+
 
 return GeneralUtils
