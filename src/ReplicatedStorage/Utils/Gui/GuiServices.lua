@@ -16,12 +16,17 @@ local PlayerGui = localPlr.PlayerGui
 local camera = Workspace:FindFirstChild("Camera")
 
 local AllGuiScreenGui: ScreenGui = PlayerGui:WaitForChild("AllGui")
-local GuiBackdropFrame: Frame = AllGuiScreenGui.Misc:WaitForChild("GuiBackdrop")
-local NotificationPanelFrame = AllGuiScreenGui.Misc.Notification:WaitForChild("NotificationPanel")
-local FlashFrame: Frame = AllGuiScreenGui.Misc:WaitForChild("FlashBg")
-local BeamImage: ImageLabel = AllGuiScreenGui.Particles:WaitForChild("Beam")
-local ConfettiContainer: Frame = AllGuiScreenGui.Misc:WaitForChild("ConfettiContainer")
-local ConfettiParticle: Frame = AllGuiScreenGui.Particles:WaitForChild("ConfettiParticle")
+local GuiBackdropFrame: Frame = AllGuiScreenGui.Misc.GuiBackdrop
+local NotificationPanelFrame = AllGuiScreenGui.Misc.Notification.NotificationPanel
+local FlashFrame: Frame = AllGuiScreenGui.Misc.FlashBg
+-- border flash gui
+local BorderFlashContainer: Frame = AllGuiScreenGui.Misc.BorderFlash
+local BorderFlashImage: ImageLabel = BorderFlashContainer.BorderFlashImage
+-- beam effect gui
+local BeamImage: ImageLabel = AllGuiScreenGui.Particles.Beam
+-- confetti effect gui
+local ConfettiContainer: Frame = AllGuiScreenGui.Misc.ConfettiContainer
+local ConfettiParticle: Frame = AllGuiScreenGui.Particles.ConfettiParticle
 
 local HudFolder = AllGuiScreenGui.Hud
 -- left HUD containers
@@ -526,6 +531,16 @@ function GuiServices.TriggerFlashFrame(opts: {})
         fadeOutTween:Play()
     end)
     fadeOutTween.Completed:Connect(function() FlashFrame.Visible = false end)
+end
+
+local borderFlashTween = TweenService:Create(BorderFlashImage, TweenInfo.new(0.15, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 0, true), { ImageTransparency = 0 })
+function GuiServices.TriggerBorderFlash(colour: Color3)
+    borderFlashTween:Cancel()
+    BorderFlashContainer.Visible = true
+    BorderFlashImage.ImageTransparency = 1
+    BorderFlashImage.ImageColor3 = colour
+    borderFlashTween:Play()
+    borderFlashTween.Completed:Connect(function() BorderFlashContainer.Visible = false end)
 end
 
 return GuiServices
