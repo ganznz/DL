@@ -1,3 +1,4 @@
+local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
@@ -30,8 +31,15 @@ local camera = Workspace:WaitForChild("Camera")
 -- GUI REFERENCE VARIABLES --
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
 local DevelopGameGui = AllGuiScreenGui.DevelopGame
+-- phase intro
+local PhaseIntroContainer = DevelopGameGui.PhaseIntroContainer
+local PhaseIntroBgGradient: UIGradient = PhaseIntroContainer.BackgroundGradient
+local PhaseIntroHeaderContainer = PhaseIntroContainer.HeaderContainer
+local PhaseIntroHeaderText = PhaseIntroHeaderContainer.Header
+local PhaseIntroDescContainer = PhaseIntroContainer.DescContainer
+local PhaseIntroDescText = PhaseIntroDescContainer.Desc
 -- phase number text
-local PhaseNumberText = DevelopGameGui.PhaseNumber
+local PhaseText = DevelopGameGui.PhaseNumber
 -- countdown text
 local CountdownTextContainer = DevelopGameGui.CountdownTextContainer
 local CountdownText = CountdownTextContainer.CountdownText
@@ -50,11 +58,17 @@ local TeamMemberTemplate = TeamMembersContainer.Template
 local Phase1BtnContainer = DevelopGameGui.Phase1Container
 local BtnTemplatePc = Phase1BtnContainer.PcTemplate
 local BtnTemplateMobile = Phase1BtnContainer.MobileTemplate
+-- big fix phase
+local BugFixPhaseContainer = DevelopGameGui.BugFixPhaseContainer
+local BugTemplate: ImageButton = BugFixPhaseContainer.BugTemplate
 
 -- STATIC VARIABLES --
+local RANDOM = Random.new()
 local PHASE_1_PC_KEYS = Remotes.GameDev.CreateGame.GetPcPhase1BtnValues:InvokeServer()
 local COUNTDOWN_TEXT = "Start in... TIME_LEFT"
 local PHASE_INDICATOR_TEXT = "PHASE - PHASE_NO"
+local BUG_DEFAULT_IMAGE_ID = "16169807796"
+local BUG_SQUASHED_IMAGE_ID = "16169809051"
 
 -- -- styling static variables
 local ENERGY_COLOURS = {
@@ -99,18 +113,25 @@ local studioPcSetup: Model = nil
 local pcSetupSeat: Seat = nil
 -- -- connections
 local userPcInputConnection: RBXScriptConnection | nil = nil
+local bugIconTweens = {} -- { [bugID: string] = { MovementTween: Tween | nil, RotationTween: Tween | nil } }
 
-GuiServices.StoreInCache(PhaseNumberText)
+GuiServices.StoreInCache(PhaseIntroHeaderContainer)
+GuiServices.StoreInCache(PhaseIntroDescContainer)
+GuiServices.StoreInCache(PhaseText)
 GuiServices.StoreInCache(CountdownTextContainer)
 GuiServices.StoreInCache(TeamMembersContainer)
 GuiServices.StoreInCache(GamePtsContainer)
 GuiServices.StoreInCache(TimerBarContainer)
 
+GuiTemplates.PopText(CodePtsAmt, UDim2.fromScale(CodePtsAmt.Size.X.Scale, CodePtsAmt.Size.Y.Scale + 0.35))
+GuiTemplates.PopText(SoundPtsAmt, UDim2.fromScale(CodePtsAmt.Size.X.Scale, CodePtsAmt.Size.Y.Scale + 0.35))
+GuiTemplates.PopText(ArtPtsAmt, UDim2.fromScale(CodePtsAmt.Size.X.Scale, CodePtsAmt.Size.Y.Scale + 0.35))
+
 GuiServices.DefaultMainGuiStyling(CountdownTextContainer, { PosY = -CountdownTextContainer.Size.Y.Scale })
-local phaseNumberTextHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(PhaseNumberText, { PosX = PhaseNumberText.Position.X.Scale, PosY = -PhaseNumberText.Size.Y.Scale })
+local phaseTextHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(PhaseText, { PosX = PhaseText.Position.X.Scale, PosY = -PhaseText.Size.Y.Scale })
 local teamMembersContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(TeamMembersContainer, { PosX = -0.13, PosY = TeamMembersContainer.Position.Y.Scale})
 local gamePtsContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(GamePtsContainer, { PosY = -0.01 })
-local timerBarContainerContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(TimerBarContainer, { PosY = -TimerBarContainer.Size.Y.Scale })
+local timerBarContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(TimerBarContainer, { PosY = -TimerBarContainer.Size.Y.Scale })
 
 local function setup()
     studioPcSetup = Workspace.TempAssets.Studios:FindFirstChild("Computer", true)
@@ -140,7 +161,8 @@ local function styleStaffMemberTemplateEnergyContainer(staffMemberUUID: string, 
     if not staffMemberTemplate then return end
 
     local energyContainer = staffMemberTemplate:FindFirstChild("EnergyContainer")
-    local energyIconDropshadow: ImageLabel = energyContainer:FindFirstChild("EnergyIconDropshadow", true)
+    local energyIcon: ImageLabel = energyContainer:FindFirstChild("EnergyIcon")
+    local energyIconDropshadow: ImageLabel = energyIcon:FindFirstChild("EnergyIconDropshadow")
     local energyBarMain: Frame = energyContainer:FindFirstChild("EnergyBar")
     local energyBarProg: Frame = energyBarMain:FindFirstChild("EnergyProg")
     local energyBarUIStroke: UIStroke = energyBarMain:FindFirstChild("UIStroke")
@@ -157,6 +179,7 @@ local function styleStaffMemberTemplateEnergyContainer(staffMemberUUID: string, 
         colours = ENERGY_COLOURS.MedEnergy
     elseif currEnergyProportion <= 0 then
         colours = ENERGY_COLOURS.NoEnergy
+        energyIcon.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.PlrEnergyGrayscaleIcon)
     else
         colours = ENERGY_COLOURS.LowEnergy
     end
@@ -234,53 +257,96 @@ local function setupPcUserInputConnection()
     end)
 end
 
-local function setPhaseIndicatorText(phaseNumber: number)
-    PhaseNumberText.Text = PHASE_INDICATOR_TEXT:gsub("PHASE_NO", phaseNumber)
-end
-
-local function showCountdownText()
-    CountdownTextContainer.Visible = true
-    local visiblePos = GuiServices.GetCachedData(CountdownTextContainer).Position
-    local showTween = TweenService:Create(CountdownTextContainer, TweenInfo.new(0.8, Enum.EasingStyle.Elastic), { Position = visiblePos })
-    showTween:Play()
-end
-
-local function hideCountdownText()
-    local countdownTextVisiblePos = GuiServices.GetCachedData(CountdownTextContainer).Position
-    local hideTween = TweenService:Create(CountdownTextContainer, TweenInfo.new(0.4), { Position = UDim2.fromScale(countdownTextVisiblePos.X.Scale, 0) })
-    hideTween:Play()
-    hideTween.Completed:Connect(function() CountdownTextContainer.Visible = false end)
-end
-
 local function populateGameDevGui()
     -- populate staff member container
     clearStaffMemberContainer()
     populateStaffMemberContainer()
+    CodePtsAmt.Text = 0
+    SoundPtsAmt.Text = 0
+    ArtPtsAmt.Text = 0
+end
+
+local function toggleStaffMemberContainer(visible: boolean)
+    if visible then
+        local visiblePos = GuiServices.GetCachedData(TeamMembersContainer).Position
+        if TeamMembersContainer.Position == visiblePos then return end -- already visible
+        TeamMembersContainer.Visible = true
+        TweenService:Create(TeamMembersContainer, TweenInfo.new(0.3), { Position = visiblePos }):Play()
+
+    else
+        if TeamMembersContainer.Position == teamMembersContainerHiddenPos then return end -- already hidden
+        local tween = TweenService:Create(TeamMembersContainer, TweenInfo.new(0.3), { Position = teamMembersContainerHiddenPos })
+        tween:Play()
+        tween.Completed:Connect(function() TeamMembersContainer.Visible = false end)
+    end
+end
+
+local function togglePhaseText(visible: boolean)
+    if visible then
+        local visiblePos = GuiServices.GetCachedData(PhaseText).Position
+        if PhaseText.Position == visiblePos then return end -- already visible
+        PhaseText.Visible = true
+        TweenService:Create(PhaseText, TweenInfo.new(0.3), { Position = visiblePos }):Play()
+
+    else
+        if PhaseText.Position == phaseTextHiddenPos then return end -- already hidden
+        local tween = TweenService:Create(PhaseText, TweenInfo.new(0.3), { Position = phaseTextHiddenPos })
+        tween:Play()
+        tween.Completed:Connect(function() PhaseText.Visible = false end)
+    end
+end
+
+local function toggleGamePtsContainer(visible: boolean)
+    if visible then
+        local visiblePos = GuiServices.GetCachedData(GamePtsContainer).Position
+        if GamePtsContainer.Position == visiblePos then return end -- already visible
+        GamePtsContainer.Visible = true
+        TweenService:Create(GamePtsContainer, TweenInfo.new(0.3), { Position = visiblePos }):Play()
+
+    else
+        if GamePtsContainer.Position == gamePtsContainerHiddenPos then return end -- already hidden
+        local tween = TweenService:Create(GamePtsContainer, TweenInfo.new(0.3), { Position = gamePtsContainerHiddenPos })
+        tween:Play()
+        tween.Completed:Connect(function() GamePtsContainer.Visible = false end)
+    end
+end
+
+local function toggleTimerBarContainer(visible: boolean)
+    if visible then
+        local visiblePos = GuiServices.GetCachedData(TimerBarContainer).Position
+        if TimerBarContainer.Position == visiblePos then return end -- already visible
+        TimerBarContainer.Visible = true
+        TweenService:Create(TimerBarContainer, TweenInfo.new(0.3), { Position = visiblePos }):Play()
+
+    else
+        if TimerBarContainer.Position == timerBarContainerHiddenPos then return end -- already hidden
+        local tween = TweenService:Create(TimerBarContainer, TweenInfo.new(0.3), { Position = timerBarContainerHiddenPos })
+        tween:Play()
+        tween.Completed:Connect(function() TimerBarContainer.Visible = false end)
+    end
 end
 
 -- general gamedev gui to display across the different phases
-local function showGameDevGui()
-    local instancesToShow = {PhaseNumberText, TeamMembersContainer, GamePtsContainer, TimerBarContainer}
-    for _i, v in instancesToShow do
-        local visiblePos = GuiServices.GetCachedData(v).Position
-        v.Visible = true
-        TweenService:Create(v, TweenInfo.new(0.3), { Position = visiblePos }):Play()
-    end
+-- opts
+-- -- KeepHidden = { "StaffMember", "PhaseText", "GamePts", "TimerBar" }
+local function showGameDevGui(opts: {})
+    opts = opts or {}
+
+    toggleStaffMemberContainer(if opts["KeepHidden"] and table.find(opts["KeepHidden"], "StaffMember") then false else true)
+    togglePhaseText(if opts["KeepHidden"] and table.find(opts["KeepHidden"], "PhaseText") then false else true)
+    toggleGamePtsContainer(if opts["KeepHidden"] and table.find(opts["KeepHidden"], "GamePts") then false else true)
+    toggleTimerBarContainer(if opts["KeepHidden"] and table.find(opts["KeepHidden"], "TimerBar") then false else true)
 end
 
-local function hideGameDevGui()
-    local instancesToHide = {
-        [PhaseNumberText.Name] = phaseNumberTextHiddenPos,
-        [TeamMembersContainer.Name] = teamMembersContainerHiddenPos,
-        [GamePtsContainer.Name] = gamePtsContainerHiddenPos,
-        [TimerBarContainer.Name] = timerBarContainerContainerHiddenPos
-    }
+-- opts
+-- -- KeepVisible = { "StaffMember", "PhaseText", "GamePts", "TimerBar" }
+local function hideGameDevGui(opts: {})
+    opts = opts or {}
 
-    for instanceName, hiddenPos in instancesToHide do
-        local instance = DevelopGameGui:FindFirstChild(instanceName, true)
-        instance.Visible = true
-        TweenService:Create(instance, TweenInfo.new(0.3), { Position = hiddenPos }):Play()
-    end
+    toggleStaffMemberContainer(if opts["KeepVisible"] and table.find(opts["KeepVisible"], "StaffMember") then true else false)
+    togglePhaseText(if opts["KeepVisible"] and table.find(opts["KeepVisible"], "PhaseText") then true else false)
+    toggleGamePtsContainer(if opts["KeepVisible"] and table.find(opts["KeepVisible"], "GamePts") then true else false)
+    toggleTimerBarContainer(if opts["KeepVisible"] and table.find(opts["KeepVisible"], "TimerBar") then true else false)
 end
 
 local function clearPhase1BtnContainer()
@@ -294,10 +360,6 @@ end
 
 local function setupGameDevGui()
     populateGameDevGui()
-    clearPhase1BtnContainer()
-
-    Phase1BtnContainer.Visible = true
-    showGameDevGui()
 end
 
 local function resetTimerBar(): Tween
@@ -310,12 +372,12 @@ end
 local function styleTimerBar()
     local xSizeScale: number = TimerBarProg.Size.X.Scale
     local colours -- timer bar uses same colours as staff members energy bar
-    if xSizeScale >= 0.66 then
-        colours = ENERGY_COLOURS.HighEnergy
-    elseif xSizeScale >= 0.33 then
+    if xSizeScale >= 0.75 then
+        colours = ENERGY_COLOURS.LowEnergy
+    elseif xSizeScale >= 0.5 then
         colours = ENERGY_COLOURS.MedEnergy
     else
-        colours = ENERGY_COLOURS.LowEnergy
+        colours = ENERGY_COLOURS.HighEnergy
     end
 
     TimerBarContainer.BackgroundColor3 = colours.Main
@@ -324,6 +386,7 @@ end
 
 local function startTimerBar(time: number)
     local timeLeft = time
+
     task.spawn(function()
         while timeLeft > 0 do
             styleTimerBar()
@@ -333,6 +396,7 @@ local function startTimerBar(time: number)
     end)
 
     -- reset timer bar
+    styleTimerBar()
     local resetTween = resetTimerBar()
     resetTween.Completed:Connect(function()
         local tween = TweenService:Create(TimerBarProg, TweenInfo.new(timeLeft, Enum.EasingStyle.Linear), { Size = UDim2.fromScale(1, 1) })
@@ -372,8 +436,7 @@ local function phase1DisplayBtn(isBomb: boolean, opts: {})
         end)
     end
 
-    local random = Random.new()
-    template.Position = UDim2.fromScale(random:NextNumber(0, 1), random:NextNumber(0, 1))
+    template.Position = UDim2.fromScale(RANDOM:NextNumber(0, 1), RANDOM:NextNumber(0, 1))
 
     local sizeTween = TweenService:Create(template, TweenInfo.new(0.3, Enum.EasingStyle.Elastic), { Size = template.Size })
     template.Size = UDim2.fromScale(0, 0)
@@ -405,6 +468,270 @@ local function phase1RemoveBtn(btnId: number, removeOnPlrInteraction: boolean, w
     end)
 end
 
+local function removeBug(bugID: number, removeOnPlrInteraction: boolean)
+    local bugTweenInfo = bugIconTweens[tostring(bugID)]
+    if not bugTweenInfo then return end
+
+    local bugImage = BugFixPhaseContainer:FindFirstChild(bugID)
+    local removeBugTween = TweenService:Create(bugImage, TweenInfo.new(0.15), { Size = UDim2.fromScale(0, 0) })
+
+    bugTweenInfo.MovementTween:Pause()
+    bugTweenInfo.RotationTween:Pause()
+
+    if removeOnPlrInteraction then
+        bugImage.Image = GeneralUtils.GetDecalUrl(BUG_SQUASHED_IMAGE_ID)
+        task.delay(2, function() removeBugTween:Play() end)
+
+    else
+        removeBugTween:Play()
+    end
+
+    removeBugTween.Completed:Connect(function()
+        bugImage:Destroy()
+        bugIconTweens[tostring(bugID)] = nil
+    end)
+end
+
+local function calcBugEndPos(quadrant: string): UDim2
+    if quadrant == "top-1" then
+        local xPos = RANDOM:NextNumber(0.05, 1.5)
+        local yPos = if xPos > 1.2 then RANDOM:NextNumber(0.2, 1.2) else 1.2
+        return UDim2.fromScale(xPos, yPos)
+
+    elseif quadrant == "top-2" then
+        local xPos = RANDOM:NextNumber(-0.5, 0.95)
+        local yPos = if xPos < -0.2 then RANDOM:NextNumber(0.2, 1.2) else 1.2
+        return UDim2.fromScale(xPos, yPos)
+
+    elseif quadrant == "bottom-3" then
+        local xPos = RANDOM:NextNumber(0.05, 1.5)
+        local yPos = if xPos > 1.2 then RANDOM:NextNumber(-0.2, 0.8) else -0.2
+        return UDim2.fromScale(xPos, yPos)
+
+    elseif quadrant == "bottom-4" then
+        local xPos = RANDOM:NextNumber(-0.5, 0.95)
+        local yPos = if xPos < -0.2 then RANDOM:NextNumber(-0.2, 0.8) else -0.2
+        return UDim2.fromScale(xPos, yPos)
+
+    elseif quadrant == "left-1" then
+        local yPos = RANDOM:NextNumber(0.05, 1.4)
+        local xPos = if yPos > 1.2 then RANDOM:NextNumber(0.05, 1.2) else 1.2
+        return UDim2.fromScale(xPos, yPos)
+
+    elseif quadrant == "left-3" then
+        local yPos = RANDOM:NextNumber(-0.4, 0.95)
+        local xPos = if yPos < -0.2 then RANDOM:NextNumber(0.05, 1.2) else 1.2
+        return UDim2.fromScale(xPos, yPos)
+
+    elseif quadrant == "right-2" then
+        local yPos = RANDOM:NextNumber(0.05, 1.4)
+        local xPos = if yPos > 1.2 then RANDOM:NextNumber(-0.2, 0.95) else -0.2
+        return UDim2.fromScale(xPos, yPos)
+
+    elseif quadrant == "right-4" then
+        local yPos = RANDOM:NextNumber(-0.4, 0.95)
+        local xPos = if yPos < -0.2 then RANDOM:NextNumber(-0.2, 0.95) else -0.2
+        return UDim2.fromScale(xPos, yPos)
+    end
+end
+
+local function calcBugStartPos(): { StartPos: UDim2, Quadrant: string }
+    local randomNum = math.random()
+    local info = {}
+    if randomNum < 0.25 then
+        -- bug starts along top of screen
+        local xPos = RANDOM:NextNumber(-0.1, 1.1)
+        info["StartPos"] = UDim2.fromScale(xPos, -0.2)
+        info["Quadrant"] = if xPos <= 0.5 then "top-1" else "top-2"
+
+    elseif randomNum < 0.5 then
+        -- bug starts along bottom of screen
+        local xPos = RANDOM:NextNumber(-0.1, 1.1)
+        info["StartPos"] = UDim2.fromScale(xPos, 1.2)
+        info["Quadrant"] = if xPos <= 0.5 then "bottom-3" else "bottom-4"
+
+    elseif randomNum < 0.75 then
+        -- bug starts along left-side of screen
+        local yPos = RANDOM:NextNumber(-0.2, 1.2)
+        info["StartPos"] = UDim2.fromScale(-0.1, yPos)
+        info["Quadrant"] = if yPos <= 0.5 then "left-1" else "left-3"
+    else
+        -- bug starts along right-side of screen
+        local yPos = RANDOM:NextNumber(-0.2, 1.2)
+        info["StartPos"] = UDim2.fromScale(1.1, yPos)
+        info["Quadrant"] = if yPos <= 0.5 then "right-2" else "right-4"
+    end
+    return info
+end
+
+-- function calculates the path of a bug image
+local function calcBugMovementInfo(): {}
+    local startPosInfo = calcBugStartPos()
+    local startPos = startPosInfo.StartPos
+    local quadrant = startPosInfo.Quadrant
+    local endPos = calcBugEndPos(quadrant)
+
+    local vector = GeneralUtils.GetVectorBetweenUDim2s(startPos, endPos)
+
+    local rotationRadians = math.atan2(vector.Y, vector.X)
+    local rotationDegrees = math.deg(rotationRadians)
+
+    -- ensure that rotation is in the range [0, 360)
+    rotationDegrees = ((rotationDegrees + 90) % 360 + 360) % 360
+
+    return { StartPos = startPos, EndPos = endPos, Rotation = rotationDegrees }
+end
+
+local function spawnBug(bugId: number)
+    local template = BugTemplate:Clone()
+    template.Parent = BugFixPhaseContainer
+    template.Name = bugId
+    template.Image = GeneralUtils.GetDecalUrl(BUG_DEFAULT_IMAGE_ID)
+    
+    local movementInfo = calcBugMovementInfo()
+    template.Position = movementInfo.StartPos
+    template.Rotation = movementInfo.Rotation
+    
+    local movementTween = TweenService:Create(template, TweenInfo.new(RANDOM:NextNumber(5, 10)), { Position = movementInfo.EndPos })
+    movementTween:Play()
+    
+    template.Rotation -= 15
+    local rotationTween = TweenService:Create(template, TweenInfo.new(0.15, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true), { Rotation = template.Rotation + 30 })
+    rotationTween:Play()
+    
+    bugIconTweens[tostring(bugId)] = { MovementTween = movementTween, RotationTween = rotationTween }
+    template.Visible = true
+    
+    local timeAlive = 0
+    task.spawn(function()
+        while BugFixPhaseContainer:FindFirstChild(bugId) do
+            task.wait(1)
+            timeAlive += 1
+        end
+    end)
+
+    -- detection for border flash (dmg taken) effect
+    local offScreen = false
+    template:GetPropertyChangedSignal("Position"):Connect(function()
+        if not offScreen and timeAlive > 2 and ((template.Position.X.Scale < 0 or template.Position.X.Scale > 1) or (template.Position.Y.Scale < 0 or template.Position.Y.Scale > 1)) then
+            print(`{bugId} dealed dmg!`)
+            offScreen = true
+            GuiServices.TriggerBorderFlash(GlobalVariables.Gui.BorderFlashDmgTaken)
+        end
+    end)
+
+    -- squash bug
+    template.Activated:Connect(function()
+        Remotes.GameDev.CreateGame.BugFixPhase.SquashBug:FireServer(bugId, true)
+    end)
+end
+
+local function resetPhaseIntro()
+    PhaseIntroContainer.Visible = false
+    PhaseIntroContainer.BackgroundTransparency = 1
+    -- reset background uigradient
+    PhaseIntroBgGradient.Rotation = -180
+    -- reset text position
+    local headerCache = GuiServices.GetCachedData(PhaseIntroHeaderContainer)
+    local descCache = GuiServices.GetCachedData(PhaseIntroDescContainer)
+    PhaseIntroHeaderContainer.Position = UDim2.fromScale(-headerCache.Size.X.Scale / 2, headerCache.Position.Y.Scale)
+    PhaseIntroDescContainer.Position = UDim2.fromScale(1 + descCache.Size.X.Scale / 2, descCache.Position.Y.Scale)
+end
+resetPhaseIntro()
+
+local function playPhaseIntro(phaseNumber: string)
+    resetPhaseIntro()
+    hideGameDevGui()
+
+    PhaseIntroContainer.Visible = true
+    -- GrayscaleColourCorrection.Enabled = true
+
+    -- cached data
+    local headerCache = GuiServices.GetCachedData(PhaseIntroHeaderContainer)
+    local descCache = GuiServices.GetCachedData(PhaseIntroDescContainer)
+
+    -- tweens
+    local bgGradientRotateTween = TweenService:Create(PhaseIntroBgGradient, TweenInfo.new(4), { Rotation = 180 })
+    local containerInTween = TweenService:Create(PhaseIntroContainer, TweenInfo.new(0.5), { BackgroundTransparency = 0.45 })
+    local containerOutTween = TweenService:Create(PhaseIntroContainer, TweenInfo.new(0.5), { BackgroundTransparency = 1 })
+    local headerInTween = TweenService:Create(PhaseIntroHeaderContainer, TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { Position = headerCache.Position })
+    local descInTween = TweenService:Create(PhaseIntroDescContainer, TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { Position = descCache.Position })
+    local headerOutTween = TweenService:Create(PhaseIntroHeaderContainer, TweenInfo.new(1), { Position = UDim2.fromScale(1 + headerCache.Position.X.Scale / 2, headerCache.Position.Y.Scale) })
+    local descOutTween = TweenService:Create(PhaseIntroDescContainer, TweenInfo.new(1), { Position = UDim2.fromScale(-descCache.Position.X.Scale / 2, descCache.Position.Y.Scale) })
+
+    if phaseNumber == "1" then
+        PhaseIntroHeaderText.Text = "Develop"
+        PhaseIntroDescText.Text = "Don't hit the bombs!"
+    elseif phaseNumber == "2" then
+        PhaseIntroHeaderText.Text = "Balancing"
+        PhaseIntroDescText.Text = "Balance out the points!"
+    elseif phaseNumber == "-1" then
+        PhaseIntroHeaderText.Text = "Bug Fixing"
+        PhaseIntroDescText.Text = "Squash the bugs!"
+    end
+
+    bgGradientRotateTween:Play()
+    containerInTween:Play()
+    headerInTween:Play()
+    task.wait(1)
+    descInTween:Play()
+    task.wait(3)
+    containerOutTween:Play()
+    headerOutTween:Play()
+    descOutTween:Play()
+
+    headerOutTween.Completed:Connect(function()
+        PhaseIntroContainer.Visible = false
+    end)
+end
+
+local function displayStaffPtContribution(staffMemberUUID: string, ptsType: "Code" | "Sound" | "Art", contributedPts)
+    local template = TeamMembersContainer:FindFirstChild(staffMemberUUID)
+    if not template then return end
+
+    local contributionContainer = template:FindFirstChild("ContributionContainer")
+    local contributionText: TextLabel = contributionContainer:FindFirstChild("ContributionTemplate"):Clone()
+    local contributionTextUIStroke: UIStroke = contributionText:FindFirstChild("UIStroke")
+    
+    contributionText.Parent = contributionContainer
+    contributionText.Text = `{contributedPts < 0 and "-" or "+"}{FormatNumber.FormatCompact(math.abs(contributedPts))}`
+
+    -- style text
+    if ptsType == "Code" then
+        contributionText.TextColor3 = Color3.fromRGB(123, 241, 91)
+        contributionTextUIStroke.Color = Color3.fromRGB(74, 147, 61)
+    elseif ptsType == "Sound" then
+        contributionText.TextColor3 = Color3.fromRGB(124, 205, 255)
+        contributionTextUIStroke.Color = Color3.fromRGB(83, 138, 170)
+    elseif ptsType == "Art" then
+        contributionText.TextColor3 = Color3.fromRGB(255, 174, 74)
+        contributionTextUIStroke.Color = Color3.fromRGB(176, 104, 32)
+    end
+
+    contributionText.Visible = true
+
+    -- tween text
+    local tween = TweenService:Create(contributionText, TweenInfo.new(2), { Position = UDim2.fromScale(0.5, 0.273) })
+    GuiServices.MakeInvisible(contributionText, 2)
+    tween:Play()
+    tween.Completed:Connect(function() contributionText:Destroy() end)
+end
+
+local function adjustGamePts(phaseNo: string, ptsType: "Code" | "Sound" | "Art", newPtAmt: number, pointsLost: boolean, opts: {})
+    if pointsLost then GuiServices.TriggerBorderFlash(GlobalVariables.Gui.BorderFlashDmgTaken) end
+
+    if phaseNo == "1" then
+        if ptsType == "Code" then CodePtsAmt.Text = FormatNumber.FormatCompact(newPtAmt) end
+        if ptsType == "Sound" then SoundPtsAmt.Text = FormatNumber.FormatCompact(newPtAmt) end
+        if ptsType == "Art" then ArtPtsAmt.Text = FormatNumber.FormatCompact(newPtAmt) end
+
+        local staffMemberContributions = opts["StaffMemberContributions"].Individual
+        for staffMemberUUID: string, contributedPts: number in staffMemberContributions do
+            displayStaffPtContribution(staffMemberUUID, ptsType, contributedPts)
+        end
+    end
+end
+
 -- REMOTES --
 Remotes.GameDev.CreateGame.DevelopGame.OnClientEvent:Connect(function()
     plrData = Remotes.Data.GetAllData:InvokeServer()
@@ -413,49 +740,30 @@ Remotes.GameDev.CreateGame.DevelopGame.OnClientEvent:Connect(function()
     setup()
 end)
 
--- phase 0 timer remotes
-local countdownLoopSfx: Sound = GlobalVariables.Sound.Sfx.CountdownLoop
-local countdownEndSfx: Sound = GlobalVariables.Sound.Sfx.CountdownEnd
-Remotes.GUI.GameDev.DisplayTimerText.OnClientEvent:Connect(function(secLeft: number)
-    GeneralUtils.PlaySfx(countdownLoopSfx)
-    CountdownText.Text = COUNTDOWN_TEXT:gsub("TIME_LEFT", tostring(secLeft))
-    showCountdownText()
-
-    -- timer sfx
-    task.spawn(function()
-        local sfx: Sound
-        while secLeft >= 1 do
-            GeneralUtils.PlaySfx(countdownLoopSfx)
-            task.wait(1)
-            secLeft -= 1
-        end
-        GeneralUtils.PlaySfx(countdownEndSfx)
-    end)
-end)
-Remotes.GUI.GameDev.UpdateTimerText.OnClientEvent:Connect(function(secLeft: number)
-    CountdownText.Text = COUNTDOWN_TEXT:gsub("TIME_LEFT", tostring(secLeft))
-end)
-
 Remotes.GameDev.CreateGame.StartPhase.OnClientEvent:Connect(function(phase: number)
     if phase == 1 then
-        hideCountdownText()
-        setPhaseIndicatorText(phase)
         setupGameDevGui()
+        clearPhase1BtnContainer()
+        showGameDevGui()
 
         if plrPlatform == "pc" then
             setupPcUserInputConnection()
         end
-    end
 
-    if phase == 2 then
-        
+    elseif phase == 2 then
+        showGameDevGui({ KeepHidden = {"StaffMember, TimerBar"} })
     end
 
     -- bug fix phase
     if phase == -1 then
-        
+        showGameDevGui({ KeepHidden = {"StaffMember"} })
     end
+
+    Phase1BtnContainer.Visible = phase == 1
+    BugFixPhaseContainer.Visible = phase == -1
 end)
+
+Remotes.GUI.GameDev.DisplayPhaseIntro.OnClientEvent:Connect(playPhaseIntro)
 
 Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: string, staffMemberData: {})
     if helpingStaffMembers and helpingStaffMembers[staffMemberUUID] then
@@ -472,8 +780,14 @@ Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: strin
     end
 end)
 
+Remotes.GameDev.CreateGame.AdjustGamePoints.OnClientEvent:Connect(adjustGamePts)
+
 -- phase 1 btn remotes
 Remotes.GameDev.CreateGame.Phase1.SendBtn.OnClientEvent:Connect(phase1DisplayBtn)
 Remotes.GameDev.CreateGame.Phase1.RemoveBtn.OnClientEvent:Connect(phase1RemoveBtn)
+
+-- bug fix phase remotes
+Remotes.GameDev.CreateGame.BugFixPhase.SendBug.OnClientEvent:Connect(spawnBug)
+Remotes.GameDev.CreateGame.BugFixPhase.SquashBug.OnClientEvent:Connect(removeBug)
 
 Remotes.GUI.GameDev.StartTimerBar.OnClientEvent:Connect(startTimerBar)
