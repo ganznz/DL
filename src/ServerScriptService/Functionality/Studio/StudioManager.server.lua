@@ -407,29 +407,3 @@ Remotes.Studio.BuildMode.ExitPlaceMode.OnServerEvent:Connect(function(plr: Playe
 end)
 
 Remotes.Studio.BuildMode.StoreItem.OnServerEvent:Connect(storeStudioItem)
-
-Remotes.GameDev.UnlockGenreBindable.Event:Connect(function(plrWhoUnlocked, genreName)
-    for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
-        if studioInfo then
-            if plrUserId == plrWhoUnlocked.UserId then continue end
-
-            if studioInfo.PlrVisitingId == plrWhoUnlocked.UserId then
-                local plrToFireRemote = Players:GetPlayerByUserId(plrUserId)
-                Remotes.GameDev.UnlockGenre:FireClient(plrToFireRemote, genreName)
-            end
-        end
-    end
-end)
-
-Remotes.GameDev.UnlockTopicBindable.Event:Connect(function(plrWhoUnlocked, topicName)
-    for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
-        if studioInfo then
-            if plrUserId == plrWhoUnlocked.UserId then continue end
-
-            if studioInfo.PlrVisitingId == plrWhoUnlocked.UserId then
-                local plrToFireRemote = Players:GetPlayerByUserId(plrUserId)
-                Remotes.GameDev.UnlockTopic:FireClient(plrToFireRemote, topicName)
-            end
-        end
-    end
-end)
