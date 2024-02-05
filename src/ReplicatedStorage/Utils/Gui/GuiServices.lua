@@ -534,13 +534,18 @@ function GuiServices.TriggerFlashFrame(opts: {})
 end
 
 local borderFlashTween = TweenService:Create(BorderFlashImage, TweenInfo.new(0.15, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 0, true), { ImageTransparency = 0 })
+local flashTweenCompletedConnection: RBXScriptConnection | nil = nil
 function GuiServices.TriggerBorderFlash(colour: Color3)
     borderFlashTween:Cancel()
     BorderFlashContainer.Visible = true
     BorderFlashImage.ImageTransparency = 1
     BorderFlashImage.ImageColor3 = colour
     borderFlashTween:Play()
-    borderFlashTween.Completed:Connect(function() BorderFlashContainer.Visible = false end)
+    flashTweenCompletedConnection = borderFlashTween.Completed:Connect(function()
+        if flashTweenCompletedConnection then flashTweenCompletedConnection:Disconnect() end
+        flashTweenCompletedConnection = nil
+        BorderFlashContainer.Visible = false
+    end)
 end
 
 return GuiServices

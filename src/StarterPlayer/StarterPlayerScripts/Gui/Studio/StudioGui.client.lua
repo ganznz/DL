@@ -503,9 +503,9 @@ local function registerGenreTopicViewBtn(name: string, type: "genre" | "topic", 
     end)
 end
 
-local function createShelfGuiTemplate(name: string, info, type: "genre" | "topic")
-    local object = type == "genre" and GenreConfig.new(name, info.Level, info.XP, info.CompatibleWith, info.IncompatibleWith)
-                                   or TopicConfig.new(name, info.Level, info.XP, info.CompatibleWith, info.IncompatibleWith)
+local function createShelfGuiTemplate(name: string, data, type: "genre" | "topic")
+    local object = type == "genre" and GenreConfig.new(name, data)
+                                   or TopicConfig.new(name, data)
 
     local template = GenreTopicTemplate:Clone()
     template.Name = name
@@ -534,13 +534,13 @@ local function populateShelfGui()
     clearShelfGui()
 
     -- populate with genre & topic cards
-    for genreName, genreInfo in plrGenres do
-        local template = createShelfGuiTemplate(genreName, genreInfo, "genre")
+    for genreName, genreData in plrGenres do
+        local template = createShelfGuiTemplate(genreName, genreData, "genre")
         template.Parent = GenresScrollingFrame
     end
 
-    for topicName, topicInfo in plrTopics do
-        local template = createShelfGuiTemplate(topicName, topicInfo, "topic")
+    for topicName, topicData in plrTopics do
+        local template = createShelfGuiTemplate(topicName, topicData, "topic")
         template.Parent = TopicsScrollingFrame
     end
 end

@@ -479,10 +479,10 @@ Remotes.Studio.BuildMode.RemoveItem.OnClientEvent:Connect(function(itemType: str
 end)
 
 -- add books to shelves
-Remotes.GameDev.UnlockGenre.OnClientEvent:Connect(function(genreName)
+Remotes.GameDev.GenreTopic.UnlockGenre.OnClientEvent:Connect(function(genreName)
     if localPlr:GetAttribute("InStudio") then addBookModelToShelf("genre", genreName) end
 end)
-Remotes.GameDev.UnlockTopic.OnClientEvent:Connect(function(topicName)
+Remotes.GameDev.GenreTopic.UnlockTopic.OnClientEvent:Connect(function(topicName)
     if localPlr:GetAttribute("InStudio") then addBookModelToShelf("topic", topicName) end
 end)
 

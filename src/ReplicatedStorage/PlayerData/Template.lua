@@ -57,16 +57,16 @@ local Template = {
             Small = true;
         },
         Genres = {
-            -- GenreName = { Level: number, XP: number, CompatibleWith: string | nil, IncompatibleWith: string | nil }
-            Action = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
-            Strategy = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
-            Casual = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
+            -- GenreName = { Level: number, XP: number, CompatibleWith: string, IncompatibleWith: string }
+            Action = { Level = 1, XP = 0, CompatibleWith = "", IncompatibleWith = "" },
+            Strategy = { Level = 1, XP = 0, CompatibleWith = "", IncompatibleWith = "" },
+            Casual = { Level = 1, XP = 0, CompatibleWith = "", IncompatibleWith = "" },
         },
         Topics = {
-            -- TopicName = { Level: number, XP: number, CompatibleWith: string | nil, IncompatibleWith: string | nil }
-            Medieval = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
-            Zombies = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
-            Fantasy = { Level = 1, XP = 0, CompatibleWith = nil, IncompatibleWith = nil },
+            -- TopicName = { Level: number, XP: number, CompatibleWith: string, IncompatibleWith: string }
+            Medieval = { Level = 1, XP = 0, CompatibleWith = "", IncompatibleWith = "" },
+            Zombies = { Level = 1, XP = 0, CompatibleWith = "", IncompatibleWith = "" },
+            Fantasy = { Level = 1, XP = 0, CompatibleWith = "", IncompatibleWith = "" },
         }
     },
 

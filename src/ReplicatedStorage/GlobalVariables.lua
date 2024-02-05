@@ -55,7 +55,7 @@ GlobalVariables.Gui.NotificationGood = Color3.fromRGB(130, 229, 115)
 GlobalVariables.Gui.NotificationWarning = Color3.fromRGB(255, 106, 108)
 
 -- border flash colours
-GlobalVariables.Gui.BorderFlashDmgTaken = Color3.fromRGB(255, 125, 125)
+GlobalVariables.Gui.BorderFlashDmgTaken = Color3.fromRGB(172, 48, 48)
 
 
 -- SOUND --

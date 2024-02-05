@@ -28,22 +28,20 @@ function GuiTemplates.CreateButton(btn: Instance, opts: {})
 end
 
 function GuiTemplates.HeaderText(header: Instance, opts: {})
-    local tweenGoal
     local ROTATION = 4
     header.Rotation = -ROTATION
-
+    
+    local tweenGoal
     -- if no specification for opts Movement option, then apply default movement (rotate)
     if not opts then
         tweenGoal = { Rotation = ROTATION }
     end
 
-    TweenService:Create(header, TweenInfo.new(2, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut, 99999999999999, true), tweenGoal):Play()
+    TweenService:Create(header, TweenInfo.new(2, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut, -1, true), tweenGoal):Play()
 end
 
 -- Gives the passed TextLabel instance a 'pop' effect whenever it's value changes
--- usecases include currency indicator
 function GuiTemplates.PopText(text: TextLabel, popSize: UDim2)
-    -- local textSize = text.Size
     local popTween = TweenService:Create(text, TweenInfo.new(0.15, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 0, true), { Size = popSize })
 
     text.Changed:Connect(function(property: string)
