@@ -8,6 +8,7 @@ local GeneralUtils = require(ReplicatedStorage.Utils.GeneralUtils)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
 local StaffMemberConfigServer = require(ServerScriptService.Functionality.Staff.StaffMemberServer)
 local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff.StaffMember)
+local GenreTopicConfigServer = require(ServerScriptService.Functionality.GameDev.GenreTopicConfigServer)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -80,6 +81,45 @@ local function initializeGameDevState(plr: Player, selectedGenre: string, select
         PhaseInfo = {},
         Timer = 5 -- the amt of time the current phase should last for, resets to a number (seconds) at the start of each phase
     }
+end
+
+local function createReview(gameDataResults)
+    
+end
+
+local function calculateGameDataResults(plr: Player, gameStateInfo: {})
+    local gameStateInfo = plrsDeveloping[plr.UserId]
+    if not gameStateInfo then return end
+
+    -- calc points distribution
+    local totalGamePts = gameStateInfo.GamePoints.Code + gameStateInfo.GamePoints.Sound + gameStateInfo.GamePoints.Art
+    local evenPtDistribution = true -- ideal pt distributionion is 0.33% per point type, if this deviates by -+10% for any point type, pt distribution is not even
+    if not GeneralUtils.IsInRange(NumberRange.new(0.23, 0.43), gameStateInfo.GamePoints.Code / totalGamePts) then evenPtDistribution = false end
+    if not GeneralUtils.IsInRange(NumberRange.new(0.23, 0.43), gameStateInfo.GamePoints.Sound / totalGamePts) then evenPtDistribution = false end
+    if not GeneralUtils.IsInRange(NumberRange.new(0.23, 0.43), gameStateInfo.GamePoints.Art / totalGamePts) then evenPtDistribution = false end
+
+    -- 25% chance of making genre/topic pair either compatible, or incompatible, if no relationship between them has been established yet
+    if math.random() < 0.25 then GenreTopicConfigServer.EstablishGenreTopicRelationship(plr, gameStateInfo.Genre, gameStateInfo.Topic) end
+end
+
+local function getGameResults(plr: Player): {}
+    local gameStateInfo = plrsDeveloping[plr.UserId]
+    if not gameStateInfo then return end
+
+    local gameDataResults: {} = calculateGameDataResults(plr)
+end
+
+local function endGameDevelopment(plr: Player)
+    local gameStateInfo = plrsDeveloping[plr.UserId]
+    if not gameStateInfo then return end
+
+    local gameResults = getGameResults(plr)
+    if not gameResults then return end
+
+    Remotes.GUI.GameDev.DisplayPhaseIntro:FireClient(plr, "-99")
+    task.wait(PHASE_INTRO_LENGTH)
+
+    Remotes.GameDev.CreateGame.StartPhase:FireClient(plr, -99)
 end
 
 local function adjustGamePts(plr: Player, phase: string, pointsType: "Code" | "Sound" | "Art", opts: {}): number
@@ -213,6 +253,9 @@ local function initiateBugFixPhase(plr: Player)
     for i = #bugsLeft, 1, -1 do
         endBugLife(plr, bugsLeft[i], false)
     end
+    
+    -- finish game development
+    endGameDevelopment(plr)
 end
 
 local function initiatePhase2(plr: Player)

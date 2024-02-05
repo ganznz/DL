@@ -29,38 +29,88 @@ local PlayerGui = localPlr.PlayerGui
 local camera = Workspace:WaitForChild("Camera")
 
 -- GUI REFERENCE VARIABLES --
+-- IN-DEV GUI
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
 local DevelopGameGui = AllGuiScreenGui.DevelopGame
--- phase intro
-local PhaseIntroContainer = DevelopGameGui.PhaseIntroContainer
+local InDevGui = DevelopGameGui.InDev
+---- phase intro
+local PhaseIntroContainer = InDevGui.PhaseIntroContainer
 local PhaseIntroBgGradient: UIGradient = PhaseIntroContainer.BackgroundGradient
 local PhaseIntroHeaderContainer = PhaseIntroContainer.HeaderContainer
 local PhaseIntroHeaderText = PhaseIntroHeaderContainer.Header
 local PhaseIntroDescContainer = PhaseIntroContainer.DescContainer
 local PhaseIntroDescText = PhaseIntroDescContainer.Desc
--- phase number text
-local PhaseText = DevelopGameGui.PhaseNumber
--- countdown text
-local CountdownTextContainer = DevelopGameGui.CountdownTextContainer
+---- countdown text
+local CountdownTextContainer = InDevGui.CountdownTextContainer
 local CountdownText = CountdownTextContainer.CountdownText
--- timer bar
-local TimerBarContainer = DevelopGameGui.TimerBarContainer
+---- timer bar
+local TimerBarContainer = InDevGui.TimerBarContainer
 local TimerBarProg = TimerBarContainer.TimerBarProg
--- game points
-local GamePtsContainer = DevelopGameGui.GamePoints
+---- game points
+local GamePtsContainer = InDevGui.GamePoints
 local CodePtsAmt = GamePtsContainer.CodePts.PtsAmount
 local SoundPtsAmt = GamePtsContainer.SoundPts.PtsAmount
 local ArtPtsAmt = GamePtsContainer.ArtPts.PtsAmount
--- team members
-local TeamMembersContainer = DevelopGameGui.TeamMembers
+---- team members
+local TeamMembersContainer = InDevGui.TeamMembers
 local TeamMemberTemplate = TeamMembersContainer.Template
--- phase 1 btn container
-local Phase1BtnContainer = DevelopGameGui.Phase1Container
+---- phase 1 btn container
+local Phase1BtnContainer = InDevGui.Phase1Container
 local BtnTemplatePc = Phase1BtnContainer.PcTemplate
 local BtnTemplateMobile = Phase1BtnContainer.MobileTemplate
--- big fix phase
-local BugFixPhaseContainer = DevelopGameGui.BugFixPhaseContainer
+---- big fix phase
+local BugFixPhaseContainer = InDevGui.BugFixPhaseContainer
 local BugTemplate: ImageButton = BugFixPhaseContainer.BugTemplate
+-- POST-DEV GUI
+local PostDevGui = DevelopGameGui.PostDev
+-- market game gui
+local MarketGameContainer = PostDevGui.MarketGame
+local MarketGameHeader = MarketGameContainer.MarketGameInner.Header
+local MarketGameDeclineBtn = MarketGameContainer.MarketGameInner.DeclineBtn
+local ReviewsPanel = MarketGameContainer.MarketGameInner.ReviewsPanel
+local ReviewsContainer = ReviewsPanel.ReviewsContainer
+local ReviewTemplate = ReviewsContainer.TemplateContainer
+local MarketingPanel = MarketGameContainer.MarketGameInner.MarketingPanel
+local MarketingOption1 = MarketingPanel.MarketingOptions.Friends
+local MarketingOption2 = MarketingPanel.MarketingOptions.Newspaper
+local MarketingOption3 = MarketingPanel.MarketingOptions.TV
+-- game results gui
+local GameResultsContainer = PostDevGui.GameResults
+local GameInfoContainer = GameResultsContainer.GameResultsInner.GameInfoContainer
+local GameInfoGameName = GameInfoContainer.GameName
+local GameInfoCollectBtn = GameInfoContainer.CollectCoinsBtn
+local GameInfoPanel = GameInfoContainer.GameInfo
+---- game points
+local GameInfoGamePtsContainer = GameInfoPanel.GamePoints
+local GameInfoCodingPts = GameInfoGamePtsContainer.CodingPts
+local GameInfoSoundPts = GameInfoGamePtsContainer.SoundPts
+local GameInfoArtPts = GameInfoGamePtsContainer.ArtPts
+local PtsDistributionInfoContainer = GameInfoGamePtsContainer.PointsDistributionInfo
+local PtsDistributionResult = PtsDistributionInfoContainer.Result
+local PtsDistributionBonus = PtsDistributionInfoContainer.BonusText
+---- level bars
+local GameInfoLevelBarsContainer = GameInfoPanel.LevelBars
+local PlrLevelContainer = GameInfoLevelBarsContainer.PlrLevelContainer
+local PlrLevelInfoText = PlrLevelContainer.InfoText
+local PlrLevelBarContainer = PlrLevelContainer.LevelBarContainer
+local PlrLevelText = PlrLevelBarContainer:FindFirstChild("LevelText", true)
+local PlrLevelXp = PlrLevelBarContainer.LevelXP
+local PlrLevelBarProg = PlrLevelBarContainer:FindFirstChild("LevelProg", true)
+local GenreLevelContainer = GameInfoLevelBarsContainer.GenreLevelContainer
+local GenreLevelInfoText = GenreLevelContainer.InfoText
+local GenreLevelTrendingInfoContainer = GenreLevelContainer.TrendingInfo
+local GenreLevelBarContainer = GenreLevelContainer.LevelBarContainer
+local GenreLevelText = GenreLevelBarContainer:FindFirstChild("LevelText", true)
+local GenreLevelXp = GenreLevelBarContainer.LevelXP
+local TopicLevelContainer = GameInfoLevelBarsContainer.TopicLevelContainer
+local TopicLevelInfoText = TopicLevelContainer.InfoText
+local TopicLevelTrendingInfoContainer = TopicLevelContainer.TrendingInfo
+local TopicLevelBarContainer = TopicLevelContainer.LevelBarContainer
+local TopicLevelText = TopicLevelBarContainer:FindFirstChild("LevelText", true)
+local TopicLevelXp = TopicLevelBarContainer.LevelXP
+local GenreTopicCompatibilityContainer = GameInfoLevelBarsContainer.GenreTopicCompatibilityContainer
+
+local GameInfoGraphPanel = GameResultsContainer.GameResultsInner.SalesGraphPanel
 
 -- STATIC VARIABLES --
 local RANDOM = Random.new()
@@ -117,7 +167,6 @@ local bugIconTweens = {} -- { [bugID: string] = { MovementTween: Tween | nil, Ro
 
 GuiServices.StoreInCache(PhaseIntroHeaderContainer)
 GuiServices.StoreInCache(PhaseIntroDescContainer)
-GuiServices.StoreInCache(PhaseText)
 GuiServices.StoreInCache(CountdownTextContainer)
 GuiServices.StoreInCache(TeamMembersContainer)
 GuiServices.StoreInCache(GamePtsContainer)
@@ -128,7 +177,6 @@ GuiTemplates.PopText(SoundPtsAmt, UDim2.fromScale(CodePtsAmt.Size.X.Scale, CodeP
 GuiTemplates.PopText(ArtPtsAmt, UDim2.fromScale(CodePtsAmt.Size.X.Scale, CodePtsAmt.Size.Y.Scale + 0.35))
 
 GuiServices.DefaultMainGuiStyling(CountdownTextContainer, { PosY = -CountdownTextContainer.Size.Y.Scale })
-local phaseTextHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(PhaseText, { PosX = PhaseText.Position.X.Scale, PosY = -PhaseText.Size.Y.Scale })
 local teamMembersContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(TeamMembersContainer, { PosX = -0.13, PosY = TeamMembersContainer.Position.Y.Scale})
 local gamePtsContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(GamePtsContainer, { PosY = -0.01 })
 local timerBarContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(TimerBarContainer, { PosY = -TimerBarContainer.Size.Y.Scale })
@@ -281,21 +329,6 @@ local function toggleStaffMemberContainer(visible: boolean)
     end
 end
 
-local function togglePhaseText(visible: boolean)
-    if visible then
-        local visiblePos = GuiServices.GetCachedData(PhaseText).Position
-        if PhaseText.Position == visiblePos then return end -- already visible
-        PhaseText.Visible = true
-        TweenService:Create(PhaseText, TweenInfo.new(0.3), { Position = visiblePos }):Play()
-
-    else
-        if PhaseText.Position == phaseTextHiddenPos then return end -- already hidden
-        local tween = TweenService:Create(PhaseText, TweenInfo.new(0.3), { Position = phaseTextHiddenPos })
-        tween:Play()
-        tween.Completed:Connect(function() PhaseText.Visible = false end)
-    end
-end
-
 local function toggleGamePtsContainer(visible: boolean)
     if visible then
         local visiblePos = GuiServices.GetCachedData(GamePtsContainer).Position
@@ -333,7 +366,6 @@ local function showGameDevGui(opts: {})
     opts = opts or {}
 
     toggleStaffMemberContainer(if opts["KeepHidden"] and table.find(opts["KeepHidden"], "StaffMember") then false else true)
-    togglePhaseText(if opts["KeepHidden"] and table.find(opts["KeepHidden"], "PhaseText") then false else true)
     toggleGamePtsContainer(if opts["KeepHidden"] and table.find(opts["KeepHidden"], "GamePts") then false else true)
     toggleTimerBarContainer(if opts["KeepHidden"] and table.find(opts["KeepHidden"], "TimerBar") then false else true)
 end
@@ -344,7 +376,6 @@ local function hideGameDevGui(opts: {})
     opts = opts or {}
 
     toggleStaffMemberContainer(if opts["KeepVisible"] and table.find(opts["KeepVisible"], "StaffMember") then true else false)
-    togglePhaseText(if opts["KeepVisible"] and table.find(opts["KeepVisible"], "PhaseText") then true else false)
     toggleGamePtsContainer(if opts["KeepVisible"] and table.find(opts["KeepVisible"], "GamePts") then true else false)
     toggleTimerBarContainer(if opts["KeepVisible"] and table.find(opts["KeepVisible"], "TimerBar") then true else false)
 end
@@ -656,8 +687,8 @@ local function playPhaseIntro(phaseNumber: string)
     local containerOutTween = TweenService:Create(PhaseIntroContainer, TweenInfo.new(0.5), { BackgroundTransparency = 1 })
     local headerInTween = TweenService:Create(PhaseIntroHeaderContainer, TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { Position = headerCache.Position })
     local descInTween = TweenService:Create(PhaseIntroDescContainer, TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { Position = descCache.Position })
-    local headerOutTween = TweenService:Create(PhaseIntroHeaderContainer, TweenInfo.new(1), { Position = UDim2.fromScale(1 + headerCache.Position.X.Scale / 2, headerCache.Position.Y.Scale) })
-    local descOutTween = TweenService:Create(PhaseIntroDescContainer, TweenInfo.new(1), { Position = UDim2.fromScale(-descCache.Position.X.Scale / 2, descCache.Position.Y.Scale) })
+    local headerOutTween = TweenService:Create(PhaseIntroHeaderContainer, TweenInfo.new(0.3), { Position = UDim2.fromScale(1 + headerCache.Position.X.Scale / 2, headerCache.Position.Y.Scale) })
+    local descOutTween = TweenService:Create(PhaseIntroDescContainer, TweenInfo.new(0.3), { Position = UDim2.fromScale(-descCache.Position.X.Scale / 2, descCache.Position.Y.Scale) })
 
     if phaseNumber == "1" then
         PhaseIntroHeaderText.Text = "Develop"
@@ -668,6 +699,9 @@ local function playPhaseIntro(phaseNumber: string)
     elseif phaseNumber == "-1" then
         PhaseIntroHeaderText.Text = "Bug Fixing"
         PhaseIntroDescText.Text = "Squash the bugs!"
+    elseif phaseNumber == "-99" then
+        PhaseIntroHeaderText.Text = "Completed Development"
+        PhaseIntroDescText.Text = "Adding finishing touches..."
     end
 
     bgGradientRotateTween:Play()
@@ -752,11 +786,14 @@ Remotes.GameDev.CreateGame.StartPhase.OnClientEvent:Connect(function(phase: numb
 
     elseif phase == 2 then
         showGameDevGui({ KeepHidden = {"StaffMember, TimerBar"} })
-    end
 
     -- bug fix phase
-    if phase == -1 then
+    elseif phase == -1 then
         showGameDevGui({ KeepHidden = {"StaffMember"} })
+    
+    -- end games development
+    elseif phase == -99 then
+        -- displayMarketingGui
     end
 
     Phase1BtnContainer.Visible = phase == 1
