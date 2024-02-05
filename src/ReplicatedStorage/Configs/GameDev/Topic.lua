@@ -6,6 +6,13 @@ export type TopicConfig = {
     ImageSplash: string
 }
 
+export type TopicInstance = {
+    Name: string,
+    Level: number,
+    XP: number,
+    CompatibleWith: string,
+    IncompatibleWith: string
+}
 
 local config: { [string]: TopicConfig } = {
     ["Modern"] = { ImageIcon = "", ImageSplash = "" },
@@ -30,32 +37,32 @@ local config: { [string]: TopicConfig } = {
 
 Topic.Config = config
 
+function Topic.GetAllTopics()
+    local allTopics = {}
+    for name, _info in Topic.Config do table.insert(allTopics, name) end
+
+    return allTopics
+end
+
 function Topic.GetConfig(name: string): TopicConfig | nil
     return Topic.Config[name]
 end
 
-function Topic.new(name: string, level: number | nil, xp: number | nil, compatibleGenre: string | nil, incompatibleGenre: string | nil)
-    local topicConfig = Topic.GetConfig(name)
+function Topic.new(topicName: string, topicData: {}): TopicInstance
+    local topicConfig = Topic.GetConfig(topicName)
     if not topicConfig then return nil end
 
     local newTopic = {}
     setmetatable(newTopic, Topic)
 
-    newTopic.Name = name
-    newTopic.Level = level or 1
-    newTopic.XP = xp or 0
-    newTopic.compatibleWith = compatibleGenre or nil
-    newTopic.incompatibleWith = incompatibleGenre or nil
+    newTopic.Name = topicName
+    newTopic.Level = topicData.Level
+    newTopic.XP = topicData.XP
+    newTopic.CompatibleWith = topicData.CompatibleWith
+    newTopic.IncompatibleWith = topicData.IncompatibleWith
 
     return newTopic
 end
-
--- CLASS METHODS
-function Topic.CalculateTopicCost(plrData): number
-    local amtOfTopics = #plrData.GameDev.Topics
-    -- come up with cost formula
-end
-
 
 -- INSTANCE METHODS
 function Topic:AddCompatibleGenre(genreObject)
