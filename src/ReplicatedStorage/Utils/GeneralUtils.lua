@@ -127,5 +127,17 @@ function GeneralUtils.GetVectorBetweenUDim2s(UDim2A: UDim2, UDim2B: UDim2): Vect
     return Vector2.new(vectorX, vectorY)
 end
 
+-- opts
+-- LowerBound: "closed" | "open" (default: "closed")
+-- UpperBound: "closed" | "open" (default: "closed")
+function GeneralUtils.IsInRange(range: NumberRange, num: number, opts: {})
+    opts = opts or { LowerBound = "closed", UpperBound = "closed" }
+
+    local lowerClosed = opts.LowerBound == "closed"
+    local upperClosed = opts.UpperBound == "closed"
+
+    return (if lowerClosed then num >= range.Min else num > range.Min) and (if upperClosed then num <= range.Max else num < range.Max)
+end
+
 
 return GeneralUtils
