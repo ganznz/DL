@@ -56,6 +56,18 @@ function Player.SeatPlayer(plr: Player, seat: Seat)
     Remotes.Player.ReplicateSeatPlr:FireServer(CFrameToSitAt)
 end
 
+function Player.UnseatPlayer(plr: Player)
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    local humanoid: Humanoid = char:FindFirstChild("Humanoid")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+
+    hrp.Anchored = false
+    humanoid.Sit = false
+
+    local weldConstraint: WeldConstraint = hrp:FindFirstChild("SeatWeldConstraint")
+    if weldConstraint then weldConstraint:Destroy() end
+end
+
 function Player.GetPlrNameFromUserId(userId: number)
     local username = nil
     local success, errorMsg = pcall(function()
