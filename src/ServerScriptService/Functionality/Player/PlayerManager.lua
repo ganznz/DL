@@ -1,16 +1,17 @@
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
+local PlayerConfig = require(ReplicatedStorage.Configs.Player)
+
+local Remotes = ReplicatedStorage.Remotes
 
 local GROUP_ID = 33054213
 local GROUP_ADMIN_RANK_IDS = {255, 254} -- 255: Owner, 254: Devs
 local EXTRA_ADMINS = {} -- any player you want to give admin access to that isn't a dev, put their user ID in here
 
 local PlrManager = {}
-
--- table holds UserId of plrs in-game
-local PlrsInGame = {}
 
 function PlrManager.HasAdminAccess(plr: Player)
     local profile = PlrDataManager.Profiles[plr]
@@ -36,6 +37,43 @@ function PlrManager.IsAdminEligible(plr: Player): boolean
     return false
 end
 
+function PlrManager.AdjustXP(plr: Player, adjustBy: number)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    -- holds the plr character data
+    local plrCharData = profile.Data.Character
+
+    local preAdjustmentLevel = plrCharData.Level
+    local preAdjustmentXp = plrCharData.Exp
+    local xpLvlRequirement: number = PlayerConfig.CalcLevelUpXpRequirement(profile.Data)
+    local preAdjustmentMaxXp = xpLvlRequirement
+
+    -- adjust xp and/or level
+    if preAdjustmentXp + adjustBy >= xpLvlRequirement then
+
+        local leftOverXp = preAdjustmentXp + adjustBy - xpLvlRequirement
+        -- while plr can continue to level up more than once
+        while leftOverXp >= 0 do
+            profile.Data.Character.Level += 1
+            xpLvlRequirement = PlayerConfig.CalcLevelUpXpRequirement(profile.Data)
+            profile.Data.Character.Exp = leftOverXp
+            leftOverXp -= xpLvlRequirement
+        end
+    else -- no level up, only xp adjustment
+        profile.Data.Character.Exp += adjustBy
+    end
+
+    Remotes.Character.AdjustPlrXP:FireClient(plr, plrCharData, {
+        PreAdjustmentLevel = preAdjustmentLevel,
+        PreAdjustmentXP = preAdjustmentXp,
+        PreAdjustmentMaxXP = preAdjustmentMaxXp,
+        PostAdjustmentLevel = plrCharData.Level,
+        PostAdjustmentXP = plrCharData.Exp,
+        PostAdjustmentMaxXP = PlayerConfig.CalcLevelUpXpRequirement(profile.Data)
+    })
+end
+
 Players.PlayerAdded:Connect(function(plr: Player)
     if PlrManager.IsAdminEligible(plr) then
         PlrManager.GiveAdminAccess(plr)
@@ -58,8 +96,6 @@ local function characterAdded(char: Model, plr: Player)
 end
 
 Players.PlayerAdded:Connect(function(plr: Player)
-    if not table.find(PlrsInGame, plr.UserId) then table.insert(PlrsInGame, plr.UserId) end
-
     local char = plr.Character or plr.CharacterAdded:Wait()
     characterAdded(char, plr)
 
