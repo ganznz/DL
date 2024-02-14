@@ -3,22 +3,22 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
-local GenreConfig = require(ReplicatedStorage.Configs.GameDev.Genre)
-local TopicConfig = require(ReplicatedStorage.Configs.GameDev.Topic)
+local GenreTopicConfig = require(ReplicatedStorage.Configs.GameDev.GenreTopicConfig)
+local GenreConfigServer = require(ServerScriptService.Functionality.GameDev.GenreServer)
+local TopicConfigServer = require(ServerScriptService.Functionality.GameDev.TopicServer)
 local StudioConfigServer = require(ServerScriptService.Functionality.Studio.StudioConfigServer)
 
 local Remotes = ReplicatedStorage.Remotes
 
-local GenreTopic = {}
+local TRENDING_REFRESH_COOLDOWN = 300 -- seconds (5min)
 
--- values defined at bottom of script as cannot hoist functions
-GenreTopic.TrendingGenre = nil
-GenreTopic.TrendingTopic = nil
+GenreTopicConfig.TrendingGenre = ""
+GenreTopicConfig.TrendingTopic = ""
 
 local function getAvailableGenres(plrData): {}
     local availableGenres = {}
 
-    for genreName, _genreInfo in GenreConfig.Config do
+    for genreName, _genreInfo in GenreConfigServer.Config do
         if not plrData.GameDev.Genres[genreName] then table.insert(availableGenres, genreName) end
     end
 
@@ -28,14 +28,14 @@ end
 local function getAvailableTopics(plrData): {}
     local availableTopics = {}
 
-    for topicName, _topicInfo in TopicConfig.Config do
+    for topicName, _topicInfo in TopicConfigServer.Config do
         if not plrData.GameDev.Topics[topicName] then table.insert(availableTopics, topicName) end
     end
 
     return availableTopics
 end
 
-function GenreTopic.UnlockGenre(plr: Player): string
+function GenreTopicConfig.UnlockGenre(plr: Player): string
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -48,8 +48,6 @@ function GenreTopic.UnlockGenre(plr: Player): string
 
     -- add new genre to plr data
     profile.Data.GameDev.Genres[newGenre] = { Level = 1, XP = 0, CompatibleWith = "", IncompatibleWith = "" }
-    
-    print(string.format("%s has unlocked genre - %s!", plr.Name, newGenre))
 
     Remotes.GameDev.GenreTopic.UnlockGenre:FireClient(plr, newGenre)
 
@@ -68,7 +66,7 @@ function GenreTopic.UnlockGenre(plr: Player): string
     return newGenre
 end
 
-function GenreTopic.UnlockTopic(plr: Player)
+function GenreTopicConfig.UnlockTopic(plr: Player)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -81,8 +79,6 @@ function GenreTopic.UnlockTopic(plr: Player)
 
     -- add new topic to plr data
     profile.Data.GameDev.Topics[newTopic] = { Level = 1, XP = 0, CompatibleWith = "", IncompatibleWith = "" }
-    
-    print(string.format("%s has unlocked topic - %s!", plr.Name, newTopic))
 
     Remotes.GameDev.GenreTopic.UnlockTopic:FireClient(plr, newTopic)
 
@@ -101,7 +97,7 @@ function GenreTopic.UnlockTopic(plr: Player)
     return newTopic
 end
 
-function GenreTopic.EstablishGenreTopicRelationship(plr: Player, genre: string, topic: string)
+function GenreTopicConfig.EstablishGenreTopicRelationship(plr: Player, genre: string, topic: string)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -109,77 +105,56 @@ function GenreTopic.EstablishGenreTopicRelationship(plr: Player, genre: string, 
     local topicData = profile.Data.GameDev.Topics[topic]
     if not genreData or not topicData then return end
 
-    local genreInstance: GenreConfig.GenreInstance = GenreConfig.new(genre, genreData)
-    local topicInstance: TopicConfig.TopicInstance = TopicConfig.new(topic, topicData)
+    local genreInstance: GenreConfigServer.GenreInstance = GenreConfigServer.new(genre, genreData)
+    local topicInstance: TopicConfigServer.TopicInstance = TopicConfigServer.new(topic, topicData)
     
-    local relationshipType = nil
-    
-    -- if genre and topic have no compatible AND incompatible relationships, then 50/50 chance to determine relationshipType
-    if (genreInstance.CompatibleWith == "" and genreInstance.IncompatibleWith == "") and (topicInstance.CompatibleWith == "" and topicInstance.IncompatibleWith == "") then
-        if math.random() > 0.5 then
-            genreInstance.CompatibleWith = topic
-            topicInstance.CompatibleWith = genre
-            profile.Data.GameDev.Genres[genre].CompatibleWith = topic
-            profile.Data.GameDev.Topics[topic].CompatibleWith = genre
-        else
-            genreInstance.IncompatibleWith = topic
-            topicInstance.IncompatibleWith = genre
-            profile.Data.GameDev.Genres[genre].IncompatibleWith = topic
-            profile.Data.GameDev.Topics[topic].IncompatibleWith = genre
-        end
-
-    -- if genre and topic both have no compatible relationships, then make them compatible with one another
-    elseif genreInstance.CompatibleWith == "" and topicInstance.CompatibleWith == "" then
-        genreInstance.CompatibleWith = topic
-        topicInstance.CompatibleWith = genre
-        profile.Data.GameDev.Genres[genre].CompatibleWith = topic
-        profile.Data.GameDev.Topics[topic].CompatibleWith = genre
-
-    -- if genre and topic both have no incompatible relationships, then make them incompatible with one another
-    elseif genreInstance.IncompatibleWith == "" and topicInstance.IncompatibleWith == "" then
-        genreInstance.IncompatibleWith = topic
-        topicInstance.IncompatibleWith = genre
-        profile.Data.GameDev.Genres[genre].IncompatibleWith = topic
-        profile.Data.GameDev.Topics[topic].IncompatibleWith = genre
+    if math.random() > 0.5 then
+        genreInstance:AddCompatibleTopic(plr, topicInstance)
+    else
+        genreInstance:AddIncompatibleTopic(plr, topicInstance)
     end
-
-    if not relationshipType then return end
 end
 
-function GenreTopic.ChooseTrendingGenre()
-    local allGenres = GenreConfig.GetAllGenres()
-    local chosenGenre = allGenres[math.random(1, #allGenres)]
-    while chosenGenre == GenreTopic.TrendingGenre do chosenGenre = allGenres[math.random(1, #allGenres)] end
+function GenreTopicConfig.ChooseTrendingGenre()
+    local allGenres = GenreConfigServer.GetAllGenres()
+    local previousGenre = GenreTopicConfig.TrendingGenre
+    local newGenre = allGenres[math.random(1, #allGenres)]
+    
+    while previousGenre == newGenre do newGenre = allGenres[math.random(1, #allGenres)] end
 
-    GenreTopic.TrendingGenre = chosenGenre
-    Remotes.GameDev.GenreTopic.ChangeTrendingGenre:FireAllClients(GenreTopic.TrendingGenre)
+    GenreTopicConfig.TrendingGenre = newGenre
+
+    Remotes.GameDev.GenreTopic.ChangeTrendingGenre:FireAllClients(GenreTopicConfig.TrendingGenre)
+
 end
 
-function GenreTopic.ChooseTrendingTopic()
-    local allTopics = TopicConfig.GetAllTopics()
-    local chosenTopic = allTopics[math.random(1, #allTopics)]
-    while chosenTopic == GenreTopic.TrendingTopic do chosenTopic = allTopics[math.random(1, #allTopics)] end
+function GenreTopicConfig.ChooseTrendingTopic()
+    local allTopics = TopicConfigServer.GetAllTopics()
+    local previousTopic = GenreTopicConfig.TrendingTopic
+    local newTopic = allTopics[math.random(1, #allTopics)]
 
-    GenreTopic.TrendingTopic = chosenTopic
+    while previousTopic == newTopic do newTopic = allTopics[math.random(1, #allTopics)] end
 
-    Remotes.GameDev.GenreTopic.ChangeTrendingTopic:FireAllClients(GenreTopic.TrendingTopic)
+    GenreTopicConfig.TrendingTopic = newTopic
+
+
+    Remotes.GameDev.GenreTopic.ChangeTrendingTopic:FireAllClients(GenreTopicConfig.TrendingTopic)
 end
 
 
-GenreTopic.TrendingGenre = GenreTopic.ChooseTrendingGenre()
-GenreTopic.TrendingTopic = GenreTopic.ChooseTrendingTopic()
+GenreTopicConfig.ChooseTrendingGenre()
+GenreTopicConfig.ChooseTrendingTopic()
 
-local cooldown = os.time() + 300 -- 5min between changing trending genre & topic
+local cooldown = os.time() + TRENDING_REFRESH_COOLDOWN
 task.spawn(function()
     while true do
         if os.time() > cooldown then
-            GenreTopic.TrendingGenre = GenreTopic.ChooseTrendingGenre()
-            GenreTopic.TrendingTopic = GenreTopic.ChooseTrendingTopic()
-            cooldown = os.time() + 2
+            GenreTopicConfig.ChooseTrendingGenre()
+            GenreTopicConfig.ChooseTrendingTopic()
+            cooldown = os.time() + TRENDING_REFRESH_COOLDOWN
         end
         task.wait(1)
     end
 end)
 
-
-return GenreTopic
+return GenreTopicConfig
