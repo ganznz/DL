@@ -12,6 +12,7 @@ local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiService
 local GuiTemplates = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiTemplates"))
 local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
 local CameraControls = require(ReplicatedStorage.Utils.Camera:WaitForChild("CameraControls"))
+local GenreTopicConfig = require(ReplicatedStorage.Configs.GameDev.GenreTopicConfig)
 local GenreConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Genre"))
 local TopicConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Topic"))
 local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
@@ -19,6 +20,7 @@ local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("
 local PlayerConfig = require(ReplicatedStorage.Configs:WaitForChild("Player"))
 local PlayerUtils = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
 local ComputerConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Computer"))
+local GamesConfig = require(ReplicatedStorage.Configs.GameDev.Games)
 local FormatNumber = require(ReplicatedStorage.Libs:WaitForChild("FormatNumber").Simple)
 
 local Remotes = ReplicatedStorage.Remotes
@@ -40,9 +42,6 @@ local PhaseIntroHeaderContainer = PhaseIntroContainer.HeaderContainer
 local PhaseIntroHeaderText = PhaseIntroHeaderContainer.Header
 local PhaseIntroDescContainer = PhaseIntroContainer.DescContainer
 local PhaseIntroDescText = PhaseIntroDescContainer.Desc
----- countdown text
-local CountdownTextContainer = InDevGui.CountdownTextContainer
-local CountdownText = CountdownTextContainer.CountdownText
 ---- timer bar
 local TimerBarContainer = InDevGui.TimerBarContainer
 local TimerBarProg = TimerBarContainer.TimerBarProg
@@ -82,12 +81,11 @@ local GameInfoCollectBtn = GameInfoContainer.CollectCoinsBtn
 local GameInfoPanel = GameInfoContainer.GameInfo
 ---- game points
 local GameInfoGamePtsContainer = GameInfoPanel.GamePoints
-local GameInfoCodingPts = GameInfoGamePtsContainer.CodingPts
-local GameInfoSoundPts = GameInfoGamePtsContainer.SoundPts
-local GameInfoArtPts = GameInfoGamePtsContainer.ArtPts
+local GameInfoCodingPts = GameInfoGamePtsContainer.CodingPts.PtsAmt
+local GameInfoSoundPts = GameInfoGamePtsContainer.SoundPts.PtsAmt
+local GameInfoArtPts = GameInfoGamePtsContainer.ArtPts.PtsAmt
 local PtsDistributionInfoContainer = GameInfoGamePtsContainer.PointsDistributionInfo
 local PtsDistributionResult = PtsDistributionInfoContainer.Result
-local PtsDistributionBonus = PtsDistributionInfoContainer.BonusText
 ---- level bars
 local GameInfoLevelBarsContainer = GameInfoPanel.LevelBars
 local PlrLevelContainer = GameInfoLevelBarsContainer.PlrLevelContainer
@@ -96,27 +94,39 @@ local PlrLevelBarContainer = PlrLevelContainer.LevelBarContainer
 local PlrLevelText = PlrLevelBarContainer:FindFirstChild("LevelText", true)
 local PlrLevelXp = PlrLevelBarContainer.LevelXP
 local PlrLevelBarProg = PlrLevelBarContainer:FindFirstChild("LevelProg", true)
+
 local GenreLevelContainer = GameInfoLevelBarsContainer.GenreLevelContainer
 local GenreLevelInfoText = GenreLevelContainer.InfoText
 local GenreLevelTrendingInfoContainer = GenreLevelContainer.TrendingInfo
 local GenreLevelBarContainer = GenreLevelContainer.LevelBarContainer
+local GenreLevelBarProg = GenreLevelBarContainer:FindFirstChild("LevelProg", true)
 local GenreLevelText = GenreLevelBarContainer:FindFirstChild("LevelText", true)
 local GenreLevelXp = GenreLevelBarContainer.LevelXP
+local GenreTrendingIcon = GenreLevelBarContainer.TrendingIcon
+
 local TopicLevelContainer = GameInfoLevelBarsContainer.TopicLevelContainer
 local TopicLevelInfoText = TopicLevelContainer.InfoText
 local TopicLevelTrendingInfoContainer = TopicLevelContainer.TrendingInfo
 local TopicLevelBarContainer = TopicLevelContainer.LevelBarContainer
+local TopicLevelBarProg = TopicLevelBarContainer:FindFirstChild("LevelProg", true)
 local TopicLevelText = TopicLevelBarContainer:FindFirstChild("LevelText", true)
 local TopicLevelXp = TopicLevelBarContainer.LevelXP
+local TopicTrendingIcon = TopicLevelBarContainer.TrendingIcon
+
 local GenreTopicCompatibilityContainer = GameInfoLevelBarsContainer.GenreTopicCompatibilityContainer
 
-local GameInfoGraphPanel = GameResultsContainer.GameResultsInner.SalesGraphPanel
+---- game sales graph
+local GameSalesGraphPanel = GameResultsContainer.GameResultsInner.SalesGraphPanel
+------ y-axis
+local GameSalesAxisY = GameSalesGraphPanel.yAxis
+local GamesSalesYAxisDataPts = GameSalesAxisY.yDataPoints
+------ sales graph
+local GamesSalesGraphContainer = GameSalesGraphPanel.SalesGraph
+local GamesSalesGraphBars = GamesSalesGraphContainer.Bars
 
 -- STATIC VARIABLES --
 local RANDOM = Random.new()
 local PHASE_1_PC_KEYS = Remotes.GameDev.CreateGame.GetPcPhase1BtnValues:InvokeServer()
-local COUNTDOWN_TEXT = "Start in... TIME_LEFT"
-local PHASE_INDICATOR_TEXT = "PHASE - PHASE_NO"
 local BUG_DEFAULT_IMAGE_ID = "16169807796"
 local BUG_SQUASHED_IMAGE_ID = "16169809051"
 
@@ -161,25 +171,35 @@ local plrPlatform = nil
 local helpingStaffMembers = nil
 local studioPcSetup: Model = nil
 local pcSetupSeat: Seat = nil
+-- -- developed game info
+local developingGame: boolean = false
+local developedGameInfo = nil
+local levelUpInfo = {} -- holds genre, topic and player post-gamedev xp-adjustment info
 -- -- connections
 local userPcInputConnection: RBXScriptConnection | nil = nil
 local bugIconTweens = {} -- { [bugID: string] = { MovementTween: Tween | nil, RotationTween: Tween | nil } }
 
 GuiServices.StoreInCache(PhaseIntroHeaderContainer)
 GuiServices.StoreInCache(PhaseIntroDescContainer)
-GuiServices.StoreInCache(CountdownTextContainer)
 GuiServices.StoreInCache(TeamMembersContainer)
 GuiServices.StoreInCache(GamePtsContainer)
 GuiServices.StoreInCache(TimerBarContainer)
+GuiServices.StoreInCache(MarketGameContainer)
+GuiServices.StoreInCache(GameResultsContainer)
 
 GuiTemplates.PopText(CodePtsAmt, UDim2.fromScale(CodePtsAmt.Size.X.Scale, CodePtsAmt.Size.Y.Scale + 0.35))
 GuiTemplates.PopText(SoundPtsAmt, UDim2.fromScale(CodePtsAmt.Size.X.Scale, CodePtsAmt.Size.Y.Scale + 0.35))
 GuiTemplates.PopText(ArtPtsAmt, UDim2.fromScale(CodePtsAmt.Size.X.Scale, CodePtsAmt.Size.Y.Scale + 0.35))
 
-GuiServices.DefaultMainGuiStyling(CountdownTextContainer, { PosY = -CountdownTextContainer.Size.Y.Scale })
 local teamMembersContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(TeamMembersContainer, { PosX = -0.13, PosY = TeamMembersContainer.Position.Y.Scale})
 local gamePtsContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(GamePtsContainer, { PosY = -0.01 })
 local timerBarContainerHiddenPos: UDim2 = GuiServices.DefaultMainGuiStyling(TimerBarContainer, { PosY = -TimerBarContainer.Size.Y.Scale })
+GuiServices.DefaultMainGuiStyling(MarketGameContainer)
+GuiServices.DefaultMainGuiStyling(GameResultsContainer)
+
+GuiTemplates.CreateButton(MarketingOption1)
+GuiTemplates.CreateButton(MarketingOption2)
+GuiTemplates.CreateButton(MarketingOption3)
 
 local function setup()
     studioPcSetup = Workspace.TempAssets.Studios:FindFirstChild("Computer", true)
@@ -273,6 +293,8 @@ styleStaffMemberTemplate = function(template: Frame, staffMemberUUID: string, st
 end
 
 local function populateStaffMemberContainer()
+    if not developingGame then return end
+
     for staffMemberUUID: string, staffMemberData in helpingStaffMembers do
         local template = TeamMemberTemplate:Clone()
         template.Parent = TeamMembersContainer
@@ -293,7 +315,20 @@ local function resetAllConnections(allConnections: {})
     end
 end
 
+local function resetState()
+    resetAllConnections({ userPcInputConnection })
+    plrPlatform = nil
+    helpingStaffMembers = nil
+    studioPcSetup = nil
+    pcSetupSeat = nil
+    developedGameInfo = nil
+    bugIconTweens = {}
+    levelUpInfo = {}
+end
+
 local function setupPcUserInputConnection()
+    if not developingGame then return end
+
     userPcInputConnection = UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
         if not processed then
             for _i, allowedKey in PHASE_1_PC_KEYS do
@@ -306,6 +341,8 @@ local function setupPcUserInputConnection()
 end
 
 local function populateGameDevGui()
+    if not developingGame then return end
+
     -- populate staff member container
     clearStaffMemberContainer()
     populateStaffMemberContainer()
@@ -389,7 +426,18 @@ local function clearPhase1BtnContainer()
     end
 end
 
+local function clearBugPhaseContainer()
+    local instancesToIgnore = {BugTemplate}
+    for _i, instance in BugFixPhaseContainer:GetChildren() do
+        if table.find(instancesToIgnore, instance) then continue end
+
+        instance:Destroy()
+    end
+end
+
 local function setupGameDevGui()
+    if not developingGame then return end
+
     populateGameDevGui()
 end
 
@@ -416,15 +464,19 @@ local function styleTimerBar()
 end
 
 local function startTimerBar(time: number)
+    if not developingGame then return end
+
     local timeLeft = time
 
     task.spawn(function()
         while timeLeft > 0 do
+            if not developingGame then break end
             styleTimerBar()
             task.wait(1)
             timeLeft -= 1
         end
     end)
+    if not developingGame then return end
 
     -- reset timer bar
     styleTimerBar()
@@ -453,6 +505,8 @@ local function phase1StyleBtn(btn, btnType: "Code" | "Sound" | "Art" , isBomb: b
 end
 
 local function phase1DisplayBtn(isBomb: boolean, opts: {})
+    if not developingGame then return end
+
     local template
 
     if plrPlatform == "pc" then
@@ -487,7 +541,7 @@ local function phase1RemoveBtn(btnId: number, removeOnPlrInteraction: boolean, w
     local hideTween: Tween
     if removeOnPlrInteraction then
         hideTween = TweenService:Create(btnInstance, TweenInfo.new(0.3), { Size = UDim2.fromScale(0.1, 0.1) })
-        GuiServices.MakeInvisible(btnInstance, 0.3)
+        GuiServices.ChangeTransparency(btnInstance, 1, 0.3)
         GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.GuiOpen)
         task.delay(0.3, function() btnInstance:Destroy() end)
     else
@@ -614,6 +668,8 @@ local function calcBugMovementInfo(): {}
 end
 
 local function spawnBug(bugId: number)
+    if not developingGame then return end
+
     local template = BugTemplate:Clone()
     template.Parent = BugFixPhaseContainer
     template.Name = bugId
@@ -645,7 +701,6 @@ local function spawnBug(bugId: number)
     local offScreen = false
     template:GetPropertyChangedSignal("Position"):Connect(function()
         if not offScreen and timeAlive > 2 and ((template.Position.X.Scale < 0 or template.Position.X.Scale > 1) or (template.Position.Y.Scale < 0 or template.Position.Y.Scale > 1)) then
-            print(`{bugId} dealed dmg!`)
             offScreen = true
             GuiServices.TriggerBorderFlash(GlobalVariables.Gui.BorderFlashDmgTaken)
         end
@@ -671,11 +726,12 @@ end
 resetPhaseIntro()
 
 local function playPhaseIntro(phaseNumber: string)
+    if not developingGame then return end
+
     resetPhaseIntro()
     hideGameDevGui()
 
     PhaseIntroContainer.Visible = true
-    -- GrayscaleColourCorrection.Enabled = true
 
     -- cached data
     local headerCache = GuiServices.GetCachedData(PhaseIntroHeaderContainer)
@@ -707,12 +763,15 @@ local function playPhaseIntro(phaseNumber: string)
     bgGradientRotateTween:Play()
     containerInTween:Play()
     headerInTween:Play()
+    GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.SwooshFast)
     task.wait(1)
     descInTween:Play()
+    GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.SwooshFast)
     task.wait(3)
     containerOutTween:Play()
     headerOutTween:Play()
     descOutTween:Play()
+    GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.SwooshFast)
 
     headerOutTween.Completed:Connect(function()
         PhaseIntroContainer.Visible = false
@@ -746,12 +805,14 @@ local function displayStaffPtContribution(staffMemberUUID: string, ptsType: "Cod
 
     -- tween text
     local tween = TweenService:Create(contributionText, TweenInfo.new(2), { Position = UDim2.fromScale(0.5, 0.273) })
-    GuiServices.MakeInvisible(contributionText, 2)
+    GuiServices.ChangeTransparency(contributionText, 1, 2)
     tween:Play()
     tween.Completed:Connect(function() contributionText:Destroy() end)
 end
 
 local function adjustGamePts(phaseNo: string, ptsType: "Code" | "Sound" | "Art", newPtAmt: number, pointsLost: boolean, opts: {})
+    if not developingGame then return end
+
     if pointsLost then GuiServices.TriggerBorderFlash(GlobalVariables.Gui.BorderFlashDmgTaken) end
 
     if phaseNo == "1" then
@@ -766,15 +827,248 @@ local function adjustGamePts(phaseNo: string, ptsType: "Code" | "Sound" | "Art",
     end
 end
 
+local function clearReviews()
+    local instancesToIgnore = {"UIListLayout", "TemplateContainer"}
+    for _i, v in ReviewsContainer:GetChildren() do
+        if table.find(instancesToIgnore, v.Name) then continue end
+        v:Destroy()
+    end
+end
+
+local function styleReviewCard(templateNo: number, reviewTemplate: Frame, reviewData:  {})
+    local reviewCardUIStroke: UIStroke = reviewTemplate:FindFirstChild("UIStroke")
+    local reviewCardGradient: Frame = reviewTemplate:FindFirstChild("Gradient")
+    local criticPhoto: ImageLabel = reviewTemplate:FindFirstChild("CriticPhoto")
+    local criticReview: TextLabel = reviewTemplate:FindFirstChild("CriticReview")
+    local ratingContainer: Frame = reviewTemplate:FindFirstChild("RatingContainer")
+
+    criticPhoto.Image = GeneralUtils.GetDecalUrl(reviewData.AuthorImageID)
+    criticPhoto.Rotation = if templateNo % 2 == 1 then -8 else 8
+
+    criticReview.Text = `"{reviewData.Review}"`
+
+    for i=1, reviewData.Stars do
+        local star = ratingContainer:FindFirstChild(i)
+        if reviewData.Stars == 1 or reviewData.Stars == 2 then star:FindFirstChild("StarIconDropshadow").ImageColor3 = Color3.fromRGB(255, 137, 137) end
+        if reviewData.Stars == 3 then star:FindFirstChild("StarIconDropshadow").ImageColor3 = Color3.fromRGB(220, 167, 88) end
+        if reviewData.Stars == 4 or reviewData.Stars == 5 then star:FindFirstChild("StarIconDropshadow").ImageColor3 = Color3.fromRGB(136, 208, 125) end
+        
+        star.Visible = true
+    end
+
+    if reviewData.Stars == 1 or reviewData.Stars == 2 then
+        reviewCardUIStroke.Color = Color3.fromRGB(255, 137, 137)
+        reviewCardGradient.BackgroundColor3 = Color3.fromRGB(255, 137, 137)
+
+    elseif reviewData.Stars == 3 then
+        reviewCardUIStroke.Color = Color3.fromRGB(220, 167, 88)
+        reviewCardGradient.BackgroundColor3 = Color3.fromRGB(255, 196, 102)
+    
+    elseif reviewData.Stars == 4 or reviewData.Stars == 5 then
+        reviewCardUIStroke.Color = Color3.fromRGB(136, 208, 125)
+        reviewCardGradient.BackgroundColor3 = Color3.fromRGB(151, 231, 139)
+    
+    end
+end
+
+local function displayMarketingGui()
+    if not developingGame then return end
+
+    local reviews = developedGameInfo.GameResults.Reviews
+    clearReviews()
+
+    hideGameDevGui()
+    GuiServices.ShowGuiStandard(MarketGameContainer)
+
+    for i = 1, #reviews, 1 do
+        local reviewData = reviews[i]
+
+        local reviewTemplateContainer = ReviewTemplate:Clone()
+        reviewTemplateContainer.Parent = ReviewsContainer
+        reviewTemplateContainer.Name = i
+        local reviewTemplate = reviewTemplateContainer:FindFirstChild("Template")
+
+        local finalPos = reviewTemplate.Position
+        local startPos = UDim2.fromScale(-reviewTemplate.Size.X.Scale / 2, finalPos.Y.Scale)
+        reviewTemplate.Position = startPos
+        local movementTween = TweenService:Create(reviewTemplate, TweenInfo.new(0.3, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { Position = finalPos })
+
+        styleReviewCard(i, reviewTemplate, reviewData)
+
+        reviewTemplateContainer.Visible = true
+        movementTween:Play()
+        GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.SwooshSlow)
+        task.wait(0.5)
+    end
+end
+
+local function playGameSalesChartAnimation(): Tween
+    if not developingGame then return end
+
+    -- reset graph to its defaults
+    GameSalesGraphPanel.Position = UDim2.fromScale(0, 0)
+    GameSalesGraphPanel.Size = UDim2.fromScale(0.9, 0.9)
+    for _i, v: Frame in GamesSalesGraphBars:GetChildren() do
+        if v.Name == "UIListLayout" then continue end
+        v.Size = UDim2.fromScale(0.2, 0)
+    end
+
+    -- get sale increment values
+    -- e.g. ([1] = 500,000, [2] = 1,000,000, [3] = 1,500,000 , [4] = 2,000,000)
+    local saleIncrementValues = {
+        developedGameInfo.GameResults.GameSales.Total / 8,
+        developedGameInfo.GameResults.GameSales.Total / 4,
+        developedGameInfo.GameResults.GameSales.Total / 2.67,
+        developedGameInfo.GameResults.GameSales.Total / 2,
+    }
+    
+    for _i, dataPtNo: Frame in GamesSalesYAxisDataPts:GetChildren() do
+        local salesAmt: TextLabel = dataPtNo:FindFirstChild("SalesAmt")
+        if dataPtNo.Name == "1" then
+            salesAmt.Text = FormatNumber.FormatCompact(GeneralUtils.RoundToDp(saleIncrementValues[1], 1))
+        elseif dataPtNo.Name == "2" then
+            salesAmt.Text = FormatNumber.FormatCompact(GeneralUtils.RoundToDp(saleIncrementValues[2], 1))
+        elseif dataPtNo.Name == "3" then
+            salesAmt.Text = FormatNumber.FormatCompact(GeneralUtils.RoundToDp(saleIncrementValues[3], 1))
+        elseif dataPtNo.Name == "4" then
+            salesAmt.Text = FormatNumber.FormatCompact(GeneralUtils.RoundToDp(saleIncrementValues[4], 1))
+        end
+    end
+
+    -- play bar chart animations
+    local showChartTween = TweenService:Create(GameSalesGraphPanel, TweenInfo.new(0.3, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), { Position = UDim2.fromScale(0.5, 0.5) })
+    showChartTween:Play()
+    
+    local barTweenInfo: TweenInfo = TweenInfo.new(0.6, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+    local maxBarHeightInSales: number = developedGameInfo.GameResults.GameSales.Total / 2 -- the max sales a bar can display (half of the total game sales)
+    local tweenToReturn: Tween
+    for _i, v in GamesSalesGraphBars:GetChildren() do
+        if v.Name == "UIListLayout" then continue end
+
+        task.wait(0.4) -- wait before playing next bar tween
+
+        local tween = TweenService:Create(v, barTweenInfo, {
+            Size = UDim2.fromScale(0.2, developedGameInfo.GameResults.GameSales.Weekly[tonumber(v.Name)] / maxBarHeightInSales)
+        })
+        tween:Play()
+        GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.SwooshSlow)
+
+        if v.Name == "4" then tweenToReturn = tween end
+    end
+    
+    return tweenToReturn
+end
+
+local function populateGameInfoContainer()
+    if not developingGame then return end
+
+    GameInfoGameName.Text = developedGameInfo.Name
+    -- pts info
+    GameInfoCodingPts.Text = FormatNumber.FormatCompact(developedGameInfo.GamePoints.Code)
+    GameInfoSoundPts.Text = FormatNumber.FormatCompact(developedGameInfo.GamePoints.Sound)
+    GameInfoArtPts.Text = FormatNumber.FormatCompact(developedGameInfo.GamePoints.Art)
+    PtsDistributionInfoContainer.Visible = developedGameInfo.GameResults.PointsDistribution == "Uneven"
+    if developedGameInfo.GameResults.PointsDistribution == "Uneven" then
+        PtsDistributionResult.Text = "UNEVEN Point Distribution"
+        PtsDistributionResult.TextColor3 = GlobalVariables.Gui.InvalidRedColour
+    end
+
+    -- genre & topic info
+    GenreTopicCompatibilityContainer.Visible = developedGameInfo.GameResults.GenreTopicRelationship ~= "Neutral"
+
+    if developedGameInfo.GameResults.GenreTopicRelationship ~= "Neutral" then
+        local compatibilityInfoText: TextLabel = GenreTopicCompatibilityContainer:FindFirstChild("Result")
+        local compatibilityBonusText: TextLabel = GenreTopicCompatibilityContainer:FindFirstChild("BonusText")
+
+        if developedGameInfo.GameResults.GenreTopicRelationship == "Compatible" then
+            compatibilityInfoText.Text = "COMPATIBLE Genre & Topic"
+            compatibilityBonusText.Text = "+10%"
+        elseif developedGameInfo.GameResults.GenreTopicRelationship == "Incompatible" then
+            compatibilityInfoText.Text = "INCOMPATIBLE Genre & Topic"
+            compatibilityBonusText.Text = "-10%"
+        end
+    end
+
+    
+    GenreLevelTrendingInfoContainer.Visible = developedGameInfo.GameResults.GenreTrending
+    TopicLevelTrendingInfoContainer.Visible = developedGameInfo.GameResults.TopicTrending
+    GenreTrendingIcon.Visible = developedGameInfo.GameResults.GenreTrending
+    TopicTrendingIcon.Visible = developedGameInfo.GameResults.TopicTrending
+
+    GenreLevelInfoText.Text = `GENRE: {developedGameInfo.Genre} {levelUpInfo["Genre"].PreAdjustmentLevel ~= levelUpInfo["Genre"].PostAdjustmentLevel and "(LEVEL UP!)" or "" }`
+    TopicLevelInfoText.Text = `TOPIC: {developedGameInfo.Topic} {levelUpInfo["Topic"].PreAdjustmentLevel ~= levelUpInfo["Topic"].PostAdjustmentLevel and "(LEVEL UP!)" or "" }`
+
+    -- plr level bar info
+    PlrLevelInfoText.Text = `Player Level {levelUpInfo["Player"].PreAdjustmentLevel ~= levelUpInfo["Player"].PostAdjustmentLevel and "(LEVEL UP!)" or "" }`
+end
+
+local function displayGameInfoGui()
+    if not developingGame then return end
+
+    -- reset game info container position
+    GameInfoContainer.Position = UDim2.fromScale(1, 0)
+    GameInfoContainer.Visible = false
+    -- reset collect btn position
+    GameInfoCollectBtn.Position = UDim2.fromScale(GameInfoCollectBtn.Position.X.Scale, GameInfoCollectBtn.Position.Y.Scale + 0.2)
+
+    -- opening the game results gui will automatically hide the game marketing gui
+    GuiServices.ShowGuiStandard(GameResultsContainer)
+    
+    -- play game sales chart animation
+    local finalTween = playGameSalesChartAnimation()
+    
+    finalTween.Completed:Connect(function()
+        if not developingGame then return end
+
+        populateGameInfoContainer()
+        GuiServices.SetLevelBar(GenreLevelBarProg, GenreLevelText, GenreLevelXp, levelUpInfo["Genre"].PreAdjustmentLevel, levelUpInfo["Genre"].PreAdjustmentXP, levelUpInfo["Genre"].PreAdjustmentMaxXP)
+        GuiServices.SetLevelBar(TopicLevelBarProg, TopicLevelText, TopicLevelXp, levelUpInfo["Topic"].PreAdjustmentLevel, levelUpInfo["Topic"].PreAdjustmentXP, levelUpInfo["Topic"].PreAdjustmentMaxXP)
+        GuiServices.SetLevelBar(PlrLevelBarProg, PlrLevelText, PlrLevelXp, levelUpInfo["Player"].PreAdjustmentLevel, levelUpInfo["Player"].PreAdjustmentXP, levelUpInfo["Player"].PreAdjustmentMaxXP)
+        task.wait(1)
+        GameInfoContainer.Visible = true
+
+        local moveGraphTween = TweenService:Create(GameSalesGraphPanel, TweenInfo.new(0.5), { Position = UDim2.fromScale(0.164, 0.648), Size = UDim2.fromScale(0.6, 0.6) })
+        moveGraphTween:Play()
+
+        local showGameInfoTween = TweenService:Create(GameInfoContainer, TweenInfo.new(0.5), { Position = UDim2.fromScale(0, 0) })
+        showGameInfoTween:Play()
+        GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.SwooshSlow)
+
+        showGameInfoTween.Completed:Wait()
+
+        GuiServices.TweenProgBar(GenreLevelBarProg, GenreLevelText, GenreLevelXp, levelUpInfo["Genre"].PreAdjustmentLevel, levelUpInfo["Genre"].PostAdjustmentLevel, levelUpInfo["Genre"].PostAdjustmentXP, levelUpInfo["Genre"].PostAdjustmentMaxXP)
+        GuiServices.TweenProgBar(TopicLevelBarProg, TopicLevelText, TopicLevelXp, levelUpInfo["Topic"].PreAdjustmentLevel, levelUpInfo["Topic"].PostAdjustmentLevel, levelUpInfo["Topic"].PostAdjustmentXP, levelUpInfo["Topic"].PostAdjustmentMaxXP)
+        local plrBarTween = GuiServices.TweenProgBar(PlrLevelBarProg, PlrLevelText, PlrLevelXp, levelUpInfo["Player"].PreAdjustmentLevel, levelUpInfo["Player"].PostAdjustmentLevel, levelUpInfo["Player"].PostAdjustmentXP, levelUpInfo["Player"].PostAdjustmentMaxXP)
+        local collectBtnTween = TweenService:Create(GameInfoCollectBtn, TweenInfo.new(0.3), { Position = UDim2.fromScale(GameInfoCollectBtn.Position.X.Scale, GameInfoCollectBtn.Position.Y.Scale - 0.2) })
+        
+        GameInfoCollectBtn:FindFirstChild("CollectText").Text = `COLLECT {FormatNumber.FormatCompact(developedGameInfo.GameResults.Earnings)}`
+
+        plrBarTween.Completed:Connect(function() collectBtnTween:Play() end)
+    end)
+end
+
+-- BTN ACTIVATIONS --
+MarketGameDeclineBtn.Activated:Connect(function()
+    displayGameInfoGui()
+end)
+
+GameInfoCollectBtn.Activated:Connect(function()
+    Remotes.GameDev.CreateGame.EndGameDevelopment:FireServer()
+end)
+
 -- REMOTES --
 Remotes.GameDev.CreateGame.DevelopGame.OnClientEvent:Connect(function()
+    developingGame = true
+
     plrData = Remotes.Data.GetAllData:InvokeServer()
     plrPlatform = Remotes.Player.GetPlrPlatformData:InvokeServer().Platform
     helpingStaffMembers = StudioConfig.GetStaffInActiveStudio(plrData)
     setup()
 end)
 
-Remotes.GameDev.CreateGame.StartPhase.OnClientEvent:Connect(function(phase: number)
+Remotes.GameDev.CreateGame.StartPhase.OnClientEvent:Connect(function(phase: number, _gameStateInfo)
+    if not developingGame then return end
+
     if phase == 1 then
         setupGameDevGui()
         clearPhase1BtnContainer()
@@ -789,18 +1083,13 @@ Remotes.GameDev.CreateGame.StartPhase.OnClientEvent:Connect(function(phase: numb
 
     -- bug fix phase
     elseif phase == -1 then
+        clearBugPhaseContainer()
         showGameDevGui({ KeepHidden = {"StaffMember"} })
-    
-    -- end games development
-    elseif phase == -99 then
-        -- displayMarketingGui
     end
 
     Phase1BtnContainer.Visible = phase == 1
     BugFixPhaseContainer.Visible = phase == -1
 end)
-
-Remotes.GUI.GameDev.DisplayPhaseIntro.OnClientEvent:Connect(playPhaseIntro)
 
 Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: string, staffMemberData: {})
     if helpingStaffMembers and helpingStaffMembers[staffMemberUUID] then
@@ -817,6 +1106,8 @@ Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: strin
     end
 end)
 
+Remotes.GUI.GameDev.DisplayPhaseIntro.OnClientEvent:Connect(playPhaseIntro)
+
 Remotes.GameDev.CreateGame.AdjustGamePoints.OnClientEvent:Connect(adjustGamePts)
 
 -- phase 1 btn remotes
@@ -828,3 +1119,45 @@ Remotes.GameDev.CreateGame.BugFixPhase.SendBug.OnClientEvent:Connect(spawnBug)
 Remotes.GameDev.CreateGame.BugFixPhase.SquashBug.OnClientEvent:Connect(removeBug)
 
 Remotes.GUI.GameDev.StartTimerBar.OnClientEvent:Connect(startTimerBar)
+
+Remotes.GUI.GameDev.DisplayMarketingGui.OnClientEvent:Connect(function(gameStateInfo: {})
+    developedGameInfo = gameStateInfo
+    displayMarketingGui()
+end)
+
+Remotes.GameDev.GenreTopic.AdjustGenreXP.OnClientEvent:Connect(function(_genreData, _genreInstance, adjustmentInfo)
+    levelUpInfo["Genre"] = adjustmentInfo
+end)
+
+Remotes.GameDev.GenreTopic.AdjustTopicXP.OnClientEvent:Connect(function(_topicData, _topicInstance, adjustmentInfo)
+    levelUpInfo["Topic"] = adjustmentInfo
+end)
+
+Remotes.Character.AdjustPlrXP.OnClientEvent:Connect(function(_plrCharacterData, adjustmentInfo)
+    levelUpInfo["Player"] = adjustmentInfo
+end)
+
+-- forceEnded -> boolean: is true if player resets mid-game dev
+Remotes.GameDev.CreateGame.EndGameDevelopment.OnClientEvent:Connect(function(forceEnded: true)
+    developingGame = false
+    resetState()
+
+    -- if forceEnded, then plr reset
+    if forceEnded then
+        hideGameDevGui()
+        BugFixPhaseContainer.Visible = false
+        Phase1BtnContainer.Visible = false
+        PhaseIntroContainer.Visible = false
+    
+    else
+        GuiServices.HideGuiStandard(GameResultsContainer)
+        GuiServices.ShowHUD()
+
+        studioPcSetup = Workspace.TempAssets.Studios:FindFirstChild("Computer", true)
+        CameraControls.SetDefault(localPlr, camera, true)
+        GeneralUtils.ShowModel(studioPcSetup:FindFirstChild("Pc"), { Tween = true })
+        PlayerUtils.UnseatPlayer(localPlr)
+
+        Remotes.Studio.General.EnableInteractionBtns:Fire()
+    end
+end)

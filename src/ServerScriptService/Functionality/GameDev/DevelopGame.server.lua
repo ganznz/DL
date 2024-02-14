@@ -2,13 +2,13 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
+local GeneralUtils = require(ReplicatedStorage.Utils.GeneralUtils)
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local PlrPlatformManager = require(ServerScriptService.PlayerData.PlrPlatformManager)
-local GeneralUtils = require(ReplicatedStorage.Utils.GeneralUtils)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
-local StaffMemberConfigServer = require(ServerScriptService.Functionality.Staff.StaffMemberServer)
 local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff.StaffMember)
 local GenreTopicConfigServer = require(ServerScriptService.Functionality.GameDev.GenreTopicConfigServer)
+local GamesConfigServer = require(ServerScriptService.Functionality.GameDev.GamesServer)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -20,16 +20,24 @@ local plrsDeveloping = {}
 -- CONSTANT VARIABLES --
 local RANDOM = Random.new()
 local PHASE_INTRO_LENGTH = 5
+local PHASE_1_LENGTH = 7
+local BUGFIX_PHASE_LENGTH = 5
 local PHASE_1_PLR_CONTRIBUTION_PTS = 10 -- the game pts contributed when plr interacts w/ btn (w/o help of staff)
 local PC_PHASE1_BTNS = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q",
 "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
 local PHASE1_BTN_TYPES = {"Code", "Sound", "Art"}
 local PHASE1_BTN_LIFETIME = 4
-local PHASE_1_LENGTH = 20
 local BUG_ICON_DEFAULT = "16127668114"
 local BUG_ICON_SQUASHED = "16127669693"
 local BUG_MAX_ONSCREEN_TIME = 11
-local BUGFIX_PHASE_LENGTH = 15
+
+--[[
+    GAME PHASES (in order):
+    1: Development/button phase
+    2: Balancing phase
+
+    -1: Bug-fix phase
+]]
 
 -- calculates the energy usage of a staff member across the entire length of Phase 1
 local function calcStaffMemberPhase1EnergyUsage(staffMemberUUID: string, staffMemberData: {}, totalPtsAcrossStaff: number): number
@@ -42,7 +50,7 @@ local function calcStaffMemberPhase1EnergyUsage(staffMemberUUID: string, staffMe
     return energyUsedActual
 end
 
-local function initializeGameDevState(plr: Player, selectedGenre: string, selectedTopic: string)
+local function initializeGameDevState(plr: Player, gameName: string, selectedGenre: string, selectedTopic: string)
     local profile = PlrDataManager.Profiles[plr]
 
     if not profile.Data.GameDev.Genres[selectedGenre] then return end
@@ -70,56 +78,91 @@ local function initializeGameDevState(plr: Player, selectedGenre: string, select
     end
     helpingStaffMembers["TotalStaffPts"] = totalStaffPts
 
+    -- check if genre or topic has been used in the past 2 games developed
+    local pastTwoDevelopedGames = GamesConfigServer.GetDevelopedGames(profile.Data, { MostRecent = 2 })
+    local recentlyUsedGenre: boolean = false
+    local recentlyUsedTopic: boolean = false
+    for _i, gameData: GamesConfigServer.GameData in pastTwoDevelopedGames do
+        if gameData.Genre == selectedGenre then recentlyUsedGenre = true end
+        if gameData.Topic == selectedTopic then recentlyUsedTopic = true end
+    end
+
     plrsDeveloping[plr.UserId] = {
         PlrPlatform = PlrPlatformManager.GetProfile(plr).Platform , -- the platform the plr is on (pc, mobile or console)
         HighestUnlockedPhase = profile.Data.GameDev.HighestGameDevPhase,
         Phase = 0, -- phase 0 is the countdown before phase 1 begins
+        Name = gameName,
         Genre = selectedGenre,
         Topic = selectedTopic,
         StaffMembersInfo = helpingStaffMembers,
+        Marketing = false,
         GamePoints = { Code = 0, Sound = 0, Art = 0 },
         PhaseInfo = {},
-        Timer = 5 -- the amt of time the current phase should last for, resets to a number (seconds) at the start of each phase
+        Timer = 5, -- the amt of time the current phase should last for, resets to a number (seconds) at the start of each phase
+        GameResults = {
+            GenreTopicRelationship = GamesConfigServer.GetGenreTopicRelationship(profile.Data, selectedGenre, selectedTopic),
+            RecentlyUsedGenre = recentlyUsedGenre,
+            RecentlyUsedTopic = recentlyUsedTopic
+        }
     }
 end
 
-local function createReview(gameDataResults)
-    
-end
-
-local function calculateGameDataResults(plr: Player, gameStateInfo: {})
+-- is called after plr interacts with collect btn.
+-- function saves game data and rewards the coins the game earned
+local function endAndStoreGameData(plr: Player)
     local gameStateInfo = plrsDeveloping[plr.UserId]
     if not gameStateInfo then return end
 
-    -- calc points distribution
-    local totalGamePts = gameStateInfo.GamePoints.Code + gameStateInfo.GamePoints.Sound + gameStateInfo.GamePoints.Art
-    local evenPtDistribution = true -- ideal pt distributionion is 0.33% per point type, if this deviates by -+10% for any point type, pt distribution is not even
-    if not GeneralUtils.IsInRange(NumberRange.new(0.23, 0.43), gameStateInfo.GamePoints.Code / totalGamePts) then evenPtDistribution = false end
-    if not GeneralUtils.IsInRange(NumberRange.new(0.23, 0.43), gameStateInfo.GamePoints.Sound / totalGamePts) then evenPtDistribution = false end
-    if not GeneralUtils.IsInRange(NumberRange.new(0.23, 0.43), gameStateInfo.GamePoints.Art / totalGamePts) then evenPtDistribution = false end
+    -- save game state info to plr data
+    local savedGameData: GamesConfigServer.GameData | nil = GamesConfigServer.SaveDevelopedGameData(plr, gameStateInfo)
+    if not savedGameData then
+        plrsDeveloping[plr.UserId] = false
+        return
+    end
 
-    -- 25% chance of making genre/topic pair either compatible, or incompatible, if no relationship between them has been established yet
-    if math.random() < 0.25 then GenreTopicConfigServer.EstablishGenreTopicRelationship(plr, gameStateInfo.Genre, gameStateInfo.Topic) end
-end
+    -- give earnings to plr
+    PlrDataManager.AdjustPlrCoins(plr, gameStateInfo.GameResults.Earnings)
 
-local function getGameResults(plr: Player): {}
-    local gameStateInfo = plrsDeveloping[plr.UserId]
-    if not gameStateInfo then return end
+    -- remove gamestate info
+    plrsDeveloping[plr.UserId] = false
 
-    local gameDataResults: {} = calculateGameDataResults(plr)
+    Remotes.GameDev.CreateGame.EndGameDevelopment:FireClient(plr, false)
+
+    plr:SetAttribute("CurrentlyDevelopingGame", false)
 end
 
 local function endGameDevelopment(plr: Player)
+    local dataProfile = PlrDataManager.Profiles[plr]
+    if not dataProfile then return end
+
     local gameStateInfo = plrsDeveloping[plr.UserId]
     if not gameStateInfo then return end
 
-    local gameResults = getGameResults(plr)
-    if not gameResults then return end
+    -- determine pt distribution
+    local pointsDistribution: "Even" | "Uneven" = GamesConfigServer.CalculateGamePtDistribution(gameStateInfo)
+    
+    -- create game reviews
+    local gameReviews: {} = GamesConfigServer.CreateGameReviews(plr, gameStateInfo)
+
+    -- check if selected genre and/or topic are trending
+    local trendingGenre: string = GenreTopicConfigServer.TrendingGenre
+    local trendingTopic: string = GenreTopicConfigServer.TrendingTopic
+    
+    plrsDeveloping[plr.UserId].GameResults["PointsDistribution"] = pointsDistribution
+    plrsDeveloping[plr.UserId].GameResults["Reviews"] = gameReviews
+    gameStateInfo.GameResults["GenreTrending"] = gameStateInfo.Genre == trendingGenre
+    gameStateInfo.GameResults["TopicTrending"] = gameStateInfo.Topic == trendingTopic
+    gameStateInfo.GameResults["Earnings"] = GamesConfigServer.CalculateGameEarnings(plr, gameStateInfo)
+    gameStateInfo.GameResults["GameSales"] = GamesConfigServer.CalculateGameSales(plr, gameStateInfo)
+
+    -- 25% chance of making genre/topic pair either compatible, or incompatible, if no relationship between them has been established yet
+    -- if new relationship established, this does not affect the game that has just been developed
+    if math.random() <= 1 then GenreTopicConfigServer.EstablishGenreTopicRelationship(plr, gameStateInfo.Genre, gameStateInfo.Topic) end
 
     Remotes.GUI.GameDev.DisplayPhaseIntro:FireClient(plr, "-99")
     task.wait(PHASE_INTRO_LENGTH)
 
-    Remotes.GameDev.CreateGame.StartPhase:FireClient(plr, -99)
+    Remotes.GUI.GameDev.DisplayMarketingGui:FireClient(plr, gameStateInfo)
 end
 
 local function adjustGamePts(plr: Player, phase: string, pointsType: "Code" | "Sound" | "Art", opts: {}): number
@@ -416,11 +459,28 @@ local function initiatePhase1(plr: Player)
     if gameStateInfo.HighestUnlockedPhase >= 2 then initiatePhase2(plr) else initiateBugFixPhase(plr) end
 end
 
-Remotes.GameDev.CreateGame.DevelopGame.OnServerEvent:Connect(function(plr: Player, selectedGenre: string, selectedTopic: string)
+Remotes.GameDev.CreateGame.DevelopGame.OnServerEvent:Connect(function(plr: Player, gameName: string, selectedGenre: string, selectedTopic: string)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    -- check safety of game name
+    local filteredTextInfo = GeneralUtils.FilterText(plr, gameName, "3")
+
+    if filteredTextInfo.Censored then
+        Remotes.GameDev.CreateGame.GameNameCensored:FireClient(plr, filteredTextInfo.Text)
+        return
+    end
+
+    -- if game name wasn't specified, or is entirely whitespace, determine default/placeholder game name
+    if gameName:match("^%s*$") then
+        local numberOfGamesDeveloped: number = GeneralUtils.LengthOfDict(profile.Data.GameDev.DevelopedGames)
+        gameName = `Game #{numberOfGamesDeveloped + 1}`
+    end
+
     plr:SetAttribute("CurrentlyDevelopingGame", true)
     Remotes.GameDev.CreateGame.DevelopGame:FireClient(plr)
     
-    initializeGameDevState(plr, selectedGenre, selectedTopic)
+    initializeGameDevState(plr, gameName, selectedGenre, selectedTopic)
 
     -- start phase 1
     initiatePhase1(plr)
@@ -432,12 +492,29 @@ Remotes.GameDev.CreateGame.Phase1.ValidateInput.OnServerEvent:Connect(validatePh
 
 Remotes.GameDev.CreateGame.BugFixPhase.SquashBug.OnServerEvent:Connect(endBugLife)
 
+Remotes.GameDev.CreateGame.EndGameDevelopment.OnServerEvent:Connect(endAndStoreGameData)
+
+-- on plr spawn & death
+local function characterAdded(plr: Player, char: Model)
+    local humanoid = char:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        if plr:GetAttribute("CurrentlyDevelopingGame") then
+            plrsDeveloping[plr.UserId] = false
+            Remotes.GameDev.CreateGame.EndGameDevelopment:FireClient(plr, true)
+        end
+    end)
+end
+
+
 for _i, plr: Player in Players:GetPlayers() do
-    plrsDeveloping[plr.UserId] = false
+    if plr.Character then characterAdded(plr, plr.Character) end
 end
 
 Players.PlayerAdded:Connect(function(plr: Player)
-    plrsDeveloping[plr.UserId] = false
+    plr.CharacterAdded:Connect(function(newChar: Model)
+        plrsDeveloping[plr.UserId] = false
+        characterAdded(plr, newChar)
+    end)
 end)
 
 Players.PlayerRemoving:Connect(function(plr: Player)

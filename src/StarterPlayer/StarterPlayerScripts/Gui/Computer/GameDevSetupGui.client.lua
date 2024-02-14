@@ -1,3 +1,4 @@
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -33,7 +34,8 @@ local ComputerDevExitBtn = MainScreen.ExitBtn
 local ComputerDevHeader = ComputerDevContainer.Header
 -- game name
 local GameNameContainer = MainScreen.GameNameContainer
-local GameNameInput = GameNameContainer.TextBox
+local GameNameInput: TextBox = GameNameContainer.TextBox
+local GameNameInputUIStroke: UIStroke = GameNameInput.UIStroke
 -- genre & topic
 local GenreTopicContainer = MainScreen.GenreTopicContainer
 local GenreBtn = GenreTopicContainer.Btns.GenreBtn
@@ -71,6 +73,7 @@ local staffInStudio = nil
 local studioPcModel: Model = nil
 local selectedGenre: string = nil
 local selectedTopic: string = nil
+local previouslyCensoredGameName: string = nil -- will contain the game name after being censored (e.g. swear word). Variable prevents plr spamming "create game" btn after a word has been censored
 
 GuiServices.StoreInCache(ComputerDevContainer)
 
@@ -126,8 +129,8 @@ local function determineGenreTopicSection()
 
     if selectedGenre and selectedTopic then
         -- determine compatibility using plrdata here
-        local isCompatible
-        local isIncompatible
+        local isCompatible = plrData.GameDev.Genres[selectedGenre].CompatibleWith == selectedTopic
+        local isIncompatible = plrData.GameDev.Genres[selectedGenre].IncompatibleWith == selectedTopic
 
         if isCompatible then
             colour = Color3.fromRGB(96, 212, 90)
@@ -327,6 +330,7 @@ local function resetDevelopGameGui()
     selectedGenre = nil
     selectedTopic = nil
     staffInStudio = nil
+    previouslyCensoredGameName = nil
     GameNameInput.Text = ""
     GenreBtn.Image = ""
     TopicBtn.Image = ""
@@ -336,6 +340,9 @@ local function resetDevelopGameGui()
 end
 
 local function populateDevelopGameGui()
+    local numberOfGamesDeveloped: number = GeneralUtils.LengthOfDict(plrData.GameDev.DevelopedGames)
+    GameNameInput.PlaceholderText = `Game #{numberOfGamesDeveloped + 1}`
+
     determineGenreTopicSection()
     populateTeamSection()
     setRequirementsSection()
@@ -363,9 +370,28 @@ local function onHideComputerDevGui()
     PlayerServices.ShowPlayer(localPlr, true)
     CameraControls.SetDefault(localPlr, camera, true)
     GuiServices.ShowHUD()
-    Remotes.Player.StopInspecting:Fire()
+    Remotes.Studio.General.EnableInteractionBtns:Fire()
 end
 
+local censorTweenTextBox = TweenService:Create(GameNameInput, TweenInfo.new(0.5), { BackgroundColor3 = Color3.fromRGB(222, 222, 222), TextColor3 = Color3.fromRGB(100, 100, 100) })
+local censorTweenUIStroke = TweenService:Create(GameNameInputUIStroke, TweenInfo.new(0.5), { Color = Color3.fromRGB(173, 173, 173) })
+local function applyCensoredTextboxStyling(censoredText: string?)
+    censorTweenTextBox:Cancel()
+    censorTweenUIStroke:Cancel()
+    -- apply censored styling
+    GameNameInput.BackgroundColor3 = Color3.fromRGB(231, 126, 128)
+    GameNameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    if censoredText then GameNameInput.Text = censoredText end
+    GameNameInputUIStroke.Color = Color3.fromRGB(177, 75, 75)
+    -- tween back to original colours
+    censorTweenTextBox:Play()
+    censorTweenUIStroke:Play()
+end
+
+-- when game name input is clicked/tapped on, clear displayed game name if any
+GameNameInput.Focused:Connect(function()
+    GameNameInput.Text = ""
+end)
 -- BTN ACTIVATIONS --
 ComputerDevExitBtn.Activated:Connect(function()
     local hideTween = GuiServices.HideGuiStandard(ComputerDevContainer)
@@ -391,20 +417,31 @@ end)
 
 ConfirmBtn.Activated:Connect(function()
     if not requirementsMet() then return end
+    local gameName: string = GameNameInput.Text
+    if previouslyCensoredGameName == gameName then
+        applyCensoredTextboxStyling()
+        return
+    end
 
-    Remotes.GameDev.CreateGame.DevelopGame:FireServer(selectedGenre, selectedTopic)
+    Remotes.GameDev.CreateGame.DevelopGame:FireServer(gameName, selectedGenre, selectedTopic)
 end)
 
 -- REMOTES --
 Remotes.GUI.ChangeGuiStatusBindable.Event:Connect(function(guiName, showGui, _options)
-    plrData = Remotes.Data.GetAllData:InvokeServer()
-    plrCharacterData = plrData.Character
-
-    if showGui then
-        if guiName == "developGame" then
+    if guiName == "developGame" then
+        plrData = Remotes.Data.GetAllData:InvokeServer()
+        plrCharacterData = plrData.Character
+    
+        if showGui then
             prepareDevelopGameGui()
         end
     end
+end)
+
+-- after game name has been validated, if censored this remote connects
+Remotes.GameDev.CreateGame.GameNameCensored.OnClientEvent:Connect(function(censoredText: string)
+    previouslyCensoredGameName = censoredText
+    applyCensoredTextboxStyling(censoredText)
 end)
 
 -- close game setup gui
