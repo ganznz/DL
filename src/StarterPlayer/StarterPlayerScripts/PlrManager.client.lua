@@ -4,6 +4,7 @@ local Workspace = game:GetService("Workspace")
 
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local CameraControls = require(ReplicatedStorage.Utils.Camera:WaitForChild("CameraControls"))
+local StateManager = require(ReplicatedStorage.PlayerData.StateManager)
 
 local localPlr = Players.LocalPlayer
 local camera = Workspace:WaitForChild("Camera")
@@ -21,3 +22,10 @@ end
 if localPlr.Character then characterAdded(localPlr.Character) end
 
 localPlr.CharacterAdded:Connect(characterAdded)
+
+task.spawn(function()
+    while true do
+        print(StateManager.GetData())
+        task.wait(1)
+    end
+end)
