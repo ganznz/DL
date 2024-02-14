@@ -1,6 +1,7 @@
 local Workspace = game:GetService("Workspace")
 local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
+local TextService = game:GetService("TextService")
 
 -- // this file contains methods that can be used anywhere without dependancy on gameplay code // --
 
@@ -92,13 +93,14 @@ function GeneralUtils.ShowModel(model: Model, opts: {})
     end
 end
 
-function GeneralUtils.RoundToDp(num: number, dp: number): number
+function GeneralUtils.RoundToDp(num, dp)
     local increment = "0."
-    for i=1, dp, 1 do increment += "0" end
-    increment += "1"
-    increment = tostring(increment)
-    return math.round(num / increment) * increment
+    for i=1, dp do increment = increment .. "0" end
+    increment = increment .. "1"
+    increment = tonumber(increment)
+    return math.floor(num / increment + 0.5) * increment
 end
+
 
 -- function returns a NEW table with values in tb1 that are not in tb2
 function GeneralUtils.UniqueTable(tb1: {}, tb2: {})
@@ -127,9 +129,9 @@ function GeneralUtils.GetVectorBetweenUDim2s(UDim2A: UDim2, UDim2B: UDim2): Vect
     return Vector2.new(vectorX, vectorY)
 end
 
--- opts
--- LowerBound: "closed" | "open" (default: "closed")
--- UpperBound: "closed" | "open" (default: "closed")
+-- opts     
+-- LowerBound: "closed" | "open" (default: "closed")        
+-- UpperBound: "closed" | "open" (default: "closed")        
 function GeneralUtils.IsInRange(range: NumberRange, num: number, opts: {})
     opts = opts or { LowerBound = "closed", UpperBound = "closed" }
 
@@ -137,6 +139,45 @@ function GeneralUtils.IsInRange(range: NumberRange, num: number, opts: {})
     local upperClosed = opts.UpperBound == "closed"
 
     return (if lowerClosed then num >= range.Min else num > range.Min) and (if upperClosed then num <= range.Max else num < range.Max)
+end
+
+-- args     
+---- filterMethodToUse:     
+------ "1": GetChatForUserAsync(toUserId: number): string     
+------ "2": GetNonChatStringForBroadcastAsync(): string       
+------ "3": GetNonChatStringForUserAsync(toUserId: number): string      
+--
+-- -> { Text->String: The post-filtered text, Censored->Boolean: Indicates if text is censored }
+function GeneralUtils.FilterText(plr: Player, textToFilter: string, filterMethodToUse: "1" | "2" | "3"): { Text: string, Censored: boolean }
+    local textFilterResult = ""
+    local success, errorMessage = pcall(function()
+        textFilterResult = TextService:FilterStringAsync(textToFilter, plr.UserId, Enum.TextFilterContext.PublicChat)
+    end)
+    if not success then
+        warn(`Error filtering text: {textToFilter}, :, {errorMessage}`)
+        return { Text = "", Censored = false }
+    end
+
+    local stringToReturn = textToFilter
+
+    local filteredText = ""
+    local success2, errorMessage2 = pcall(function()
+        if filterMethodToUse == "1" then
+            filteredText = textFilterResult:GetChatForUserAsync(plr.UserId)
+        elseif filterMethodToUse == "2" then
+            filteredText = textFilterResult:GetNonChatStringForBroadcastAsync()
+        elseif filterMethodToUse == "3" then
+            filteredText = textFilterResult:GetNonChatStringForUserAsync(plr.UserId)
+        else
+            warn("Filter method not selected")
+        end
+    end)
+    if not success2 then return { Text = "", Censored = false } end
+
+    return {
+        Text = filteredText,
+        Censored = filteredText ~= textToFilter -- if original text and post-filtered text aren't the same, then the text was censored
+    }
 end
 
 
