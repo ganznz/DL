@@ -5,9 +5,9 @@ local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 
-local GuiTransparency = require(ReplicatedStorage.Libs:WaitForChild("GUITransparency"))
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
 local Stack = require(ReplicatedStorage.Utils.DataStructures:WaitForChild("Stack"))
+local FormatNumber = require(ReplicatedStorage.Libs.FormatNumber.Simple)
 
 local Remotes = ReplicatedStorage.Remotes
 local localPlr = Players.LocalPlayer
@@ -283,7 +283,11 @@ end
 
 -- IMPORTANT: Only recommended to use call this method on an instance who's transparency will not be adjusted back to normal later on unless the instance children by default have the same transparency values
 -- ^^ ADD LATER: to make the previous point obsolete, add cached transparency data for instances&children to easily revert transparency values
-function GuiServices.MakeInvisible(guiInstance, tweenTime)
+-- opts
+---- opts["IgnoreProperties"]: { [instanceType]: { string } } - The properties to ignore, e.g. { ["TextButton"] = { BackgroundTransparency } }
+function GuiServices.ChangeTransparency(guiInstance, transparencyValue, tweenTime, opts: {})
+    opts = opts or {}
+
     local tweenInfo: TweenInfo = TweenInfo.new(tweenTime or 0)
     local tween = nil
     local iterateOver = guiInstance:GetDescendants()
@@ -292,38 +296,113 @@ function GuiServices.MakeInvisible(guiInstance, tweenTime)
     for _i, v in iterateOver do
         local success, _ = pcall(function()
             local tweenGoal: {}
+
             if v:IsA("Frame") then
-                tweenGoal = { BackgroundTransparency = 1 }
+                if opts["IgnoreProperties"] and opts["IgnoreProperties"]["Frame"] then
+                    local propertiesToIgnore: {} = opts["IgnoreProperties"]["Frame"]
+                    tweenGoal = { BackgroundTransparency = table.find(propertiesToIgnore, "BackgroundTransparency") and v.BackgroundTransparency or transparencyValue }
+                else
+                    tweenGoal = { BackgroundTransparency = transparencyValue }
+                end
+
             elseif v:IsA("ScrollingFrame") then
-                tweenGoal = { BackgroundTransparency = 1, ScrollBarImageTransparency = 1 }
-            elseif v:IsA("ImageLabel") or v:IsA("ImageButton") then
-                tweenGoal = { BackgroundTransparency = 1, ImageTransparency = 1 }
+                if opts["IgnoreProperties"] and opts["IgnoreProperties"]["ScrollingFrame"] then
+                    local propertiesToIgnore: {} = opts["IgnoreProperties"]["ScrollingFrame"]
+                    tweenGoal = { BackgroundTransparency = table.find(propertiesToIgnore, "BackgroundTransparency") and v.BackgroundTransparency or transparencyValue }
+                else
+                    tweenGoal = { BackgroundTransparency = transparencyValue }
+                end
+
+            elseif v:IsA("ImageLabel") then
+                if opts["IgnoreProperties"] and opts["IgnoreProperties"]["ImageLabel"] then
+                    local propertiesToIgnore: {} = opts["IgnoreProperties"]["ImageLabel"]
+                    tweenGoal = {
+                        BackgroundTransparency = table.find(propertiesToIgnore, "BackgroundTransparency") and v.BackgroundTransparency or transparencyValue,
+                        ImageTransparency = table.find(propertiesToIgnore, "ImageTransparency") and v.ImageTransparency or transparencyValue
+                    }
+                else
+                    tweenGoal = { BackgroundTransparency = transparencyValue, ImageTransparency = transparencyValue }
+                end
+
+            elseif v:IsA("ImageButton") then
+                if opts["IgnoreProperties"] and opts["IgnoreProperties"]["ImageButton"] then
+                    local propertiesToIgnore: {} = opts["IgnoreProperties"]["ImageButton"]
+                    tweenGoal = {
+                        BackgroundTransparency = table.find(propertiesToIgnore, "BackgroundTransparency") and v.BackgroundTransparency or transparencyValue,
+                        ImageTransparency = table.find(propertiesToIgnore, "ImageTransparency") and v.ImageTransparency or transparencyValue
+                    }
+                else
+                    tweenGoal = { BackgroundTransparency = transparencyValue, ImageTransparency = transparencyValue }
+                end
+
             elseif v:IsA("TextLabel") then
-                tweenGoal = { BackgroundTransparency = 1, TextTransparency = 1 }
-            elseif v:IsA("TextButton") or v:IsA("TextBox") then
-                tweenGoal = { BackgroundTransparency = 1, TextTransparency = 1, TextStrokeTransparency = 1 }
+                if opts["IgnoreProperties"] and opts["IgnoreProperties"]["TextLabel"] then
+                    local propertiesToIgnore: {} = opts["IgnoreProperties"]["TextLabel"]
+                    table.find(propertiesToIgnore, "BackgroundTransparency")
+                    table.find(propertiesToIgnore, "TextTransparency")
+                    tweenGoal = {
+                        BackgroundTransparency = table.find(propertiesToIgnore, "BackgroundTransparency") and v.BackgroundTransparency or transparencyValue,
+                        TextTransparency = table.find(propertiesToIgnore, "TextTransparency") and v.TextTransparency or transparencyValue
+                    }
+                else
+                    tweenGoal = { BackgroundTransparency = transparencyValue, TextTransparency = transparencyValue }
+                end
+
+            elseif v:IsA("TextButton") then
+                if opts["IgnoreProperties"] and opts["IgnoreProperties"]["TextButton"] then
+                    local propertiesToIgnore: {} = opts["IgnoreProperties"]["TextButton"]
+                    tweenGoal = {
+                        BackgroundTransparency = table.find(propertiesToIgnore, "BackgroundTransparency") and v.BackgroundTransparency or transparencyValue,
+                        TextTransparency = table.find(propertiesToIgnore, "TextTransparency") and v.TextTransparency or transparencyValue,
+                        TextStrokeTransparency = table.find(propertiesToIgnore, "TextStrokeTransparency") and v.TextStrokeTransparency or transparencyValue
+                    }
+                else
+                    tweenGoal = { BackgroundTransparency = transparencyValue, TextTransparency = transparencyValue, TextStrokeTransparency = transparencyValue }
+                end
+            
+            elseif v:IsA("TextBox") then
+                if opts["IgnoreProperties"] and opts["IgnoreProperties"]["TextBox"] then
+                    local propertiesToIgnore: {} = opts["IgnoreProperties"]["TextBox"]
+                    tweenGoal = {
+                        BackgroundTransparency = table.find(propertiesToIgnore, "BackgroundTransparency") and v.BackgroundTransparency or transparencyValue,
+                        TextTransparency = table.find(propertiesToIgnore, "TextTransparency") and v.TextTransparency or transparencyValue,
+                        TextStrokeTransparency = table.find(propertiesToIgnore, "TextStrokeTransparency") and v.TextStrokeTransparency or transparencyValue
+                    }
+                else
+                    tweenGoal = { BackgroundTransparency = transparencyValue, TextTransparency = transparencyValue, TextStrokeTransparency = transparencyValue }
+                end
+
             elseif v:IsA("UIStroke") then
-                tweenGoal = { Transparency = 1 }
+                if opts["IgnoreProperties"] and opts["IgnoreProperties"]["UIStroke"] then
+                    local propertiesToIgnore: {} = opts["IgnoreProperties"]["UIStroke"]
+                    tweenGoal = { Transparency = table.find(propertiesToIgnore, "Transparency") and v.Transparency or transparencyValue }
+                else
+                    tweenGoal = { Transparency = transparencyValue }
+                end
             end
+
             tween = TweenService:Create(v, tweenInfo, tweenGoal)
             tween:Play()
         end)
     end
 end
 
-function GuiServices.AdjustTextTransparency(guiInstance, transparencyValue: number, transparencyTween: boolean)
-    local tweenInfo
-    if transparencyTween then
-        tweenInfo = TweenInfo.new(0.3)
-    else
-        tweenInfo = TweenInfo.new(0)
-    end
-
-    local tween = TweenService:Create(guiInstance, tweenInfo, { TextTransparency = transparencyValue })
-    tween:Play()
+-- function allows quickly setting a levelup bar
+function GuiServices.SetLevelBar(progBarInstance, progBarLvlTxt, progBarXpText, level, xp, maxXp)
+    progBarLvlTxt.Text = level
+    progBarXpText.Text = LEVEL_XP_TEXT_TEMPLATE:gsub("CURRENT", FormatNumber.FormatCompact(xp)):gsub("MAX", FormatNumber.FormatCompact(maxXp))
+    progBarInstance.Size = UDim2.fromScale(xp / maxXp, 1)
 end
 
-function GuiServices.TweenProgBar(progBarInstance, progBarLvlTxt, progBarXpText, preAdjustmentLevel, postAdjustmentLevel, postAdjustmentXp, postAdjustmentMaxXp)
+-- args     
+---- progBarInstance -> The progress bit of the bar.        
+---- progBarLvlText -> Displays the level of the respective instance.       
+---- progBarXpText -> Displays the XP of the respective instances level.        
+---- preAdjustmentLevel -> The level **before** XP adjustment of the respective instance being levelled.        
+---- postAdjustmentXp -> The level **after** XP adjustment of the respective instance being levelled.       
+---- postAdjustmentLevel -> The XP **after** XP adjustment of the respective instance being levelled.       
+---- postAdjustmentMaxXp -> The max XP **after** XP adjustment of the respective instance being levelled.       
+function GuiServices.TweenProgBar(progBarInstance, progBarLvlTxt, progBarXpText, preAdjustmentLevel, postAdjustmentLevel, postAdjustmentXp, postAdjustmentMaxXp): Tween
     local TWEEN_TIME = 1 -- seconds
 
     local tweenInfoSameLvl = TweenInfo.new((postAdjustmentXp/postAdjustmentMaxXp) * TWEEN_TIME, Enum.EasingStyle.Linear)
@@ -331,23 +410,30 @@ function GuiServices.TweenProgBar(progBarInstance, progBarLvlTxt, progBarXpText,
 
     progBarLvlTxt.Text = preAdjustmentLevel
 
+    -- while prog bar is tweening, hide xp text
+    local propertiesToIgnore = { ["TextLabel"] = {"BackgroundTransparency"} }
+    GuiServices.ChangeTransparency(progBarXpText, 1, 0.1, { IgnoreProperties = propertiesToIgnore })
+
+    local tween
     if preAdjustmentLevel ~= postAdjustmentLevel then
-        local tween = TweenService:Create(progBarInstance, tweenInfoNewLvl, { Size = UDim2.fromScale(1, 1) })
+        tween = TweenService:Create(progBarInstance, tweenInfoNewLvl, { Size = UDim2.fromScale(1, 1) })
         tween:Play()
         tween.Completed:Connect(function(_playbackState)
             progBarInstance.Size = UDim2.fromScale(0, 1)
             GuiServices.TweenProgBar(progBarInstance, progBarLvlTxt, progBarXpText, preAdjustmentLevel + 1, postAdjustmentLevel, postAdjustmentXp, postAdjustmentMaxXp)
         end)
     else
-        local tween = TweenService:Create(progBarInstance, tweenInfoSameLvl, { Size = UDim2.fromScale(postAdjustmentXp / postAdjustmentMaxXp, 1) })
+        tween = TweenService:Create(progBarInstance, tweenInfoSameLvl, { Size = UDim2.fromScale(postAdjustmentXp / postAdjustmentMaxXp, 1) })
         tween:Play()
 
         -- update xp text
         tween.Completed:Connect(function(_playbackState)
-            progBarXpText.Text = LEVEL_XP_TEXT_TEMPLATE:gsub("CURRENT", postAdjustmentXp):gsub("MAX", postAdjustmentMaxXp)
-            GuiServices.AdjustTextTransparency(progBarXpText, 0, true)
+            progBarXpText.Text = LEVEL_XP_TEXT_TEMPLATE:gsub("CURRENT", FormatNumber.FormatCompact(postAdjustmentXp)):gsub("MAX", FormatNumber.FormatCompact(postAdjustmentMaxXp))
+            GuiServices.ChangeTransparency(progBarXpText, 0, 0.2, { IgnoreProperties = propertiesToIgnore })
         end)
     end
+
+    return tween
 end
 
 function GuiServices.DisplayClickIcon(adornee)
