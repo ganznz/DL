@@ -54,6 +54,7 @@ GlobalVariables.Gui.NotificationStandard = Color3.fromRGB(130, 186, 255)
 GlobalVariables.Gui.NotificationGood = Color3.fromRGB(130, 229, 115)
 GlobalVariables.Gui.NotificationWarning = Color3.fromRGB(255, 106, 108)
 
+
 -- border flash colours
 GlobalVariables.Gui.BorderFlashDmgTaken = Color3.fromRGB(172, 48, 48)
 
@@ -73,6 +74,8 @@ GlobalVariables.Sound.Sfx.NotificationStandard = LocalSounds.Sfx:FindFirstChild(
 GlobalVariables.Sound.Sfx.LevelUp = LocalSounds.Sfx:FindFirstChild("LevelUp").SoundId
 GlobalVariables.Sound.Sfx.CountdownLoop = LocalSounds.Sfx:FindFirstChild("CountdownLoop").SoundId
 GlobalVariables.Sound.Sfx.CountdownEnd = LocalSounds.Sfx:FindFirstChild("CountdownEnd").SoundId
+GlobalVariables.Sound.Sfx.SwooshFast = LocalSounds.Sfx:FindFirstChild("SwooshFast").SoundId
+GlobalVariables.Sound.Sfx.SwooshSlow = LocalSounds.Sfx:FindFirstChild("SwooshSlow").SoundId
 
 -- gui sound effects
 GlobalVariables.Sound.Sfx.GuiOpen = LocalSounds.Sfx:FindFirstChild("GuiOpen").SoundId
