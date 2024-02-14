@@ -653,7 +653,7 @@ GenreTopicViewExitBtn.Activated:Connect(function()
     GuiServices.ShowHUD()
     PlayerServices.ShowPlayer(localPlr, true)
     CameraControls.SetDefault(localPlr, camera, true)
-    Remotes.Player.StopInspecting:Fire()
+    Remotes.Studio.General.EnableInteractionBtns:Fire()
 end)
 
 GenreTopicInfoBackBtn.Activated:Connect(function()

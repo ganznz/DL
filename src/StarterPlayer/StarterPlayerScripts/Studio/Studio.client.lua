@@ -487,7 +487,7 @@ Remotes.GameDev.GenreTopic.UnlockTopic.OnClientEvent:Connect(function(topicName)
 end)
 
 -- re-enables placed item interaction btns (e.g. stop viewing shelf, training staff member, etc)
-Remotes.Player.StopInspecting.Event:Connect(function()
+Remotes.Studio.General.EnableInteractionBtns.Event:Connect(function()
     registerInteractionBtns()
 end)
 
