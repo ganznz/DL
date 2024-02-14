@@ -49,13 +49,9 @@ local Template = {
         Computer = {
             Level = 1
         },
-        -- holds data of developed games (e.g. game name, ratings, topic & genre, was marketed or not, etc)
-        DevelopedGames = {
-
-        },
-        Sizes = {
-            Small = true;
-        },
+        -- table that holds data of developed games (e.g. game name, ratings, topic & genre, was marketed or not, etc)
+        -- e.g. { [1]={gameData}, [2]={gameData}, [3]={gameData}, ... }
+        DevelopedGames = {},
         Genres = {
             -- GenreName = { Level: number, XP: number, CompatibleWith: string, IncompatibleWith: string }
             Action = { Level = 1, XP = 0, CompatibleWith = "", IncompatibleWith = "" },

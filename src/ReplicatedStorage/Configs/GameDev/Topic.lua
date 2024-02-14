@@ -65,18 +65,5 @@ function Topic.new(topicName: string, topicData: {}): TopicInstance
 end
 
 -- INSTANCE METHODS
-function Topic:AddCompatibleGenre(genreObject)
-    -- if both genre and topic don't have compatibilities
-    if not self.compatibleWith and not genreObject.compatibleWith then
-        self.compatibleWith = genreObject.Name
-    end
-end
-
-function Topic:AddIncompatibleGenre(genreObject)
-    -- if both genre and topic don't have incompatibilities
-    if not self.incompatibleWith and not genreObject.incompatibleWith then
-        self.incompatibleWith = genreObject.Name
-    end
-end
 
 return Topic

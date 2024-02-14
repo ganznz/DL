@@ -61,7 +61,4 @@ function Genre.new(genreName: string, genreData: {}): GenreInstance
     return newGenre
 end
 
--- INSTANCE METHODS
-
-
 return Genre

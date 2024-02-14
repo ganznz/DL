@@ -17,6 +17,7 @@ local EnergyFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitFo
 local MoodFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("MoodFurniture"))
 local DecorFurnitureConfig = require(ReplicatedStorage.Configs.Furniture:WaitForChild("DecorFurniture"))
 local DateTimeUtils = require(ReplicatedStorage.Utils.DateTime:WaitForChild("DateTime"))
+local FormatNumber = require(ReplicatedStorage.Libs.FormatNumber.Simple)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -309,7 +310,7 @@ local function setStaffInfoPanelEnergyBar(itemInstance: {})
     local tween = TweenService:Create(StaffInfoEnergyBarProg, TweenInfo.new(0.3), { Size = UDim2.fromScale(itemInstance.CurrentEnergy / itemInstance:CalcMaxEnergy(), 1) })
     tween:Play()
 
-    StaffInfoEnergyBarText.Text = ENERGY_TEXT:gsub("CURRENT", GeneralUtils.RoundToDp(itemInstance.CurrentEnergy, 2)):gsub("MAX", itemInstance:CalcMaxEnergy())
+    StaffInfoEnergyBarText.Text = ENERGY_TEXT:gsub("CURRENT", FormatNumber.FormatCompact(itemInstance.CurrentEnergy)):gsub("MAX", FormatNumber.FormatCompact(itemInstance:CalcMaxEnergy()))
 end
 
 local function setStaffInfoPanelEnergyTime(secUntilFull: number)

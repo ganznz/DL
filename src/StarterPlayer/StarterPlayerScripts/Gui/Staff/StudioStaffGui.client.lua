@@ -164,7 +164,7 @@ local function populateStaffViewGui()
     StaffViewSpecialty.Text = SPECIALTY_TEXT:gsub("SPECIALTY", currentlyViewedStaffInstance.Specialisation)
     StaffViewEnergyBarProg.Size = UDim2.fromScale(currentlyViewedStaffInstance.CurrentEnergy / currentlyViewedStaffInstance:CalcMaxEnergy(), 1)
     if currentlyViewedStaffInstance.CurrentEnergy == currentlyViewedStaffInstance:CalcMaxEnergy() then StaffViewEnergyTimer.TextTransparency = 1 end
-    StaffViewEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", GeneralUtils.RoundToDp(currentlyViewedStaffInstance.CurrentEnergy, 2)):gsub("MAX", currentlyViewedStaffInstance:CalcMaxEnergy())
+    StaffViewEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", FormatNumber.FormatCompact(currentlyViewedStaffInstance.CurrentEnergy)):gsub("MAX", FormatNumber.FormatCompact(currentlyViewedStaffInstance:CalcMaxEnergy()))
     StaffViewEnergyTimer.Text = ENERGY_FULL_IN_TEXT:gsub("FORMATTED_TIME", DateTimeUtils.FormatTimeLeft(currentlyViewedStaffInstance:CalcTimeUntilFullEnergy()))
     StaffViewCodingPtsAmt.Text = tostring(currentlyViewedStaffInstance:GetSpecificSkillPoints("code"))
     StaffViewSoundPtsAmt.Text = tostring(currentlyViewedStaffInstance:GetSpecificSkillPoints("sound"))
@@ -361,7 +361,7 @@ local function populateStaffTrainGui()
     StaffTrainSpecialtyText.Text = SPECIALTY_TEXT:gsub("SPECIALTY", currentlyViewedStaffInstance.Specialisation)
     StaffTrainEnergyBarProg.Size = UDim2.fromScale(currentlyViewedStaffInstance.CurrentEnergy / currentlyViewedStaffInstance:CalcMaxEnergy(), 1)
 
-    StaffTrainEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", GeneralUtils.RoundToDp(currentlyViewedStaffInstance.CurrentEnergy, 2)):gsub("MAX", currentlyViewedStaffInstance:CalcMaxEnergy())
+    StaffTrainEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", FormatNumber.FormatCompact(currentlyViewedStaffInstance.CurrentEnergy)):gsub("MAX", FormatNumber.FormatCompact(currentlyViewedStaffInstance:CalcMaxEnergy()))
     if currentlyViewedStaffInstance.CurrentEnergy == currentlyViewedStaffInstance:CalcMaxEnergy() then StaffTrainEnergyTimer.TextTransparency = 1 end
     StaffTrainEnergyTimer.Text = ENERGY_FULL_IN_TEXT:gsub("FORMATTED_TIME", DateTimeUtils.FormatTimeLeft(currentlyViewedStaffInstance:CalcTimeUntilFullEnergy()))
 
@@ -389,14 +389,14 @@ local function hideStaffViewGui()
     GeneralUtils.ShowModel(currentlyViewedStaffPcModel, { Tween = true })
     CameraControls.SetDefault(localPlr, camera, true)
     GuiServices.ShowHUD()
-    Remotes.Player.StopInspecting:Fire()
+    Remotes.Studio.General.EnableInteractionBtns:Fire()
 end
 
 local function hideStaffTrainGui()
     PlayerServices.ShowPlayer(localPlr, true)
     CameraControls.SetDefault(localPlr, camera, true)
     GuiServices.ShowHUD()
-    Remotes.Player.StopInspecting:Fire()
+    Remotes.Studio.General.EnableInteractionBtns:Fire()
 end
 
 -- BTN ACTIVATIONS --
@@ -508,11 +508,11 @@ Remotes.Staff.AdjustEnergy.OnClientEvent:Connect(function(staffMemberUUID: strin
         local tween
         if StaffTrainContainer.Visible then
             tween = TweenService:Create(StaffTrainEnergyBarProg, TweenInfo.new(0.3), { Size = UDim2.fromScale(staffMemberData.CurrentEnergy / maxEnergy, 1) })
-            StaffTrainEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", GeneralUtils.RoundToDp(staffMemberData.CurrentEnergy, 2)):gsub("MAX", maxEnergy)
+            StaffTrainEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", FormatNumber.FormatCompact(staffMemberData.CurrentEnergy)):gsub("MAX", FormatNumber.FormatCompact(maxEnergy))
 
         elseif StaffViewContainer.Visible then
             tween = TweenService:Create(StaffViewEnergyBarProg, TweenInfo.new(0.3), { Size = UDim2.fromScale(staffMemberData.CurrentEnergy / maxEnergy, 1) })
-            StaffViewEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", GeneralUtils.RoundToDp(staffMemberData.CurrentEnergy, 2)):gsub("MAX", maxEnergy)
+            StaffViewEnergyText.Text = ENERGY_TEXT:gsub("CURRENT", FormatNumber.FormatCompact(staffMemberData.CurrentEnergy)):gsub("MAX", FormatNumber.FormatCompact(maxEnergy))
         end
         tween:Play()
 
