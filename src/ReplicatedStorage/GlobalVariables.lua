@@ -87,10 +87,39 @@ GlobalVariables.Images = {}
 GlobalVariables.Images.Icons = {}
 
 -- currency icons
-GlobalVariables.Images.Icons.CoinIcon = "15695993944"
-GlobalVariables.Images.Icons.GemIcon = "15762047580"
-GlobalVariables.Images.Icons.CoinIconDropshadow = "15903157010"
-GlobalVariables.Images.Icons.GemIconDropshadow = "15903158721"
+GlobalVariables.Images.Icons.Coin = "16372999263"
+GlobalVariables.Images.Icons.CoinStroke = "16373001596"
+GlobalVariables.Images.Icons.CoinDropshadow = "16372999994"
+GlobalVariables.Images.Icons.Gem = "16373002493"
+GlobalVariables.Images.Icons.GemStroke = "16373003659"
+GlobalVariables.Images.Icons.GemDropshadow = "16373004138"
+GlobalVariables.Images.Icons.CoinBundleSmall = "16373005101"
+GlobalVariables.Images.Icons.CoinBundleSmallStroke = "16373005562"
+GlobalVariables.Images.Icons.CoinBundleSmallDropshadow = "16373006490"
+GlobalVariables.Images.Icons.CoinBundleMedium = "16373007309"
+GlobalVariables.Images.Icons.CoinBundleMediumStroke = "16373008189"
+GlobalVariables.Images.Icons.CoinBundleMediumDropshadow = "16373009012"
+GlobalVariables.Images.Icons.CoinBundleLarge = "16373009919"
+GlobalVariables.Images.Icons.CoinBundleLargeStroke = "16373010420"
+GlobalVariables.Images.Icons.CoinBundleLargeDropshadow = "16373010778"
+GlobalVariables.Images.Icons.GemBundleSmall = "16373011745"
+GlobalVariables.Images.Icons.GemBundleSmallStroke = "16373012132"
+GlobalVariables.Images.Icons.GemBundleSmallDropshadow = "16373012628"
+GlobalVariables.Images.Icons.GemBundleMedium = "16373013351"
+GlobalVariables.Images.Icons.GemBundleMediumStroke = "16373013990"
+GlobalVariables.Images.Icons.GemBundleMediumDropshadow = "16373014368"
+GlobalVariables.Images.Icons.GemBundleLarge = "16373015338"
+GlobalVariables.Images.Icons.GemBundleLargeStroke = "16373016039"
+GlobalVariables.Images.Icons.GemBundleLargeDropshadow = "16373016600"
+GlobalVariables.Images.Icons.GemBundleExtraLarge = "16373017598"
+GlobalVariables.Images.Icons.GemBundleExtraLargeStroke = "16373018109"
+GlobalVariables.Images.Icons.GemBundleExtraLargeDropshadow = "16373018665"
+GlobalVariables.Images.Icons.GemBundleMassive = "16373019351"
+GlobalVariables.Images.Icons.GemBundleMassiveStroke = "16373019828"
+GlobalVariables.Images.Icons.GemBundleMassiveDropshadow = "16373020344"
+GlobalVariables.Images.Icons.CoinGemBundle = "16373021185"
+GlobalVariables.Images.Icons.CoinGemBundleStroke = "16373021613"
+GlobalVariables.Images.Icons.CoinGemBundleDropshadow = "16373022234"
 
 -- plr icons
 GlobalVariables.Images.Icons.PlrLevelIcon = "15998286348"
@@ -106,5 +135,7 @@ GlobalVariables.Images.Icons.PlrHungerDropshadowIcon = "15998277391"
 GlobalVariables.Images.Icons.PlrMoodIcon = "15998280893"
 GlobalVariables.Images.Icons.PlrMoodStrokeIcon = "15998283439"
 GlobalVariables.Images.Icons.PlrMoodDropshadowIcon = "15998284746"
+
+
 
 return GlobalVariables
