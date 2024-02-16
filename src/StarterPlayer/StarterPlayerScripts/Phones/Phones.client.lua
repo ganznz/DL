@@ -147,12 +147,14 @@ end
 
 local function preparePhoneForOpening(phoneName: string)
     local phoneFolder = Workspace.Map.Phones:FindFirstChild(phoneName)
-    local cameraPosition: BasePart = phoneFolder:FindFirstChild("CameraPosPart").Position
-    local cameraLookAtPosition: BasePart = phoneFolder:FindFirstChild("CameraLookAtPart").Position
+    local phoneModel: Model = phoneFolder:FindFirstChild("Phone")
 
     local bgTween = TweenService:Create(PhoneOpeningBg, TweenInfo.new(1), { BackgroundTransparency = PHONE_OPENING_BG_TRANSPARENCY })
     bgTween:Play()
-    local cameraTween = CameraControls.FocusOnObject(localPlr, camera, cameraPosition, cameraLookAtPosition, true, true)
+
+    local cameraPosCFrame: CFrame = phoneModel.PrimaryPart.CFrame + (phoneModel.PrimaryPart.CFrame.LookVector * 3) + (phoneModel.PrimaryPart.CFrame.UpVector * 18)
+    local cameraLookAtCFrame: CFrame = phoneModel.PrimaryPart.CFrame + (-phoneModel.PrimaryPart.CFrame.LookVector * 2) + (phoneModel.PrimaryPart.CFrame.UpVector * 40)
+    local cameraTween = CameraControls.FocusOnObject(localPlr, camera, cameraPosCFrame, cameraLookAtCFrame, true, true)
     cameraTween.Completed:Connect(function()
         preparePhoneIcon(phoneName)
     end)

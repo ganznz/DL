@@ -80,11 +80,11 @@ local function applyBuyBtnStyle()
     local canAfford = (plrCurrencyAmt - phonePrice) >= 0
 
     if phoneConfig.Currency == "Coins" then
-        BuyBtnCurrencyImage.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinIcon)
-        BuyBtnCurrencyImageDropshadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinIconDropshadow)
+        BuyBtnCurrencyImage.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinStroke)
+        BuyBtnCurrencyImageDropshadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinDropshadow)
     elseif phoneConfig.Currency == "Gems" then
-        BuyBtnCurrencyImage.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemIcon)
-        BuyBtnCurrencyImageDropshadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemIconDropshadow)
+        BuyBtnCurrencyImage.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemStroke)
+        BuyBtnCurrencyImageDropshadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemDropshadow)
     end
 
     BuyBtnCostText.Text = BUY_BTN_TEXT:gsub("AMT", phoneConfig.Price):gsub("CURRENCY", phoneConfig.Currency)

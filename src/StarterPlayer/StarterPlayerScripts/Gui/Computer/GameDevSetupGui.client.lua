@@ -353,14 +353,16 @@ local function prepareDevelopGameGui()
     resetDevelopGameGui()
 
     studioPcModel = Workspace.TempAssets.Studios:FindFirstChild("Computer", true)
-    local cameraPosPart = studioPcModel:FindFirstChild("CameraPositionPart")
-    local cameraLookAtPart = studioPcModel:FindFirstChild("CameraLookAt")
+    local studioPcModelComputer = studioPcModel:FindFirstChild("Pc")
+
+    local cameraPosCFrame: CFrame = studioPcModel.PrimaryPart.CFrame + (-studioPcModel.PrimaryPart.CFrame.RightVector * 2.5) +  (-studioPcModel.PrimaryPart.CFrame.LookVector * 2) + (studioPcModel.PrimaryPart.CFrame.UpVector * 2)
+    local cameraLookAtCFrame: CFrame = studioPcModelComputer.PrimaryPart.CFrame + (-studioPcModelComputer.PrimaryPart.CFrame.LookVector * 2)
+    CameraControls.FocusOnObject(localPlr, camera, cameraPosCFrame, cameraLookAtCFrame, true, true)
 
     GuiServices.HideHUD({ HideGuiFrames = true })
 
     populateDevelopGameGui()
     PlayerServices.HidePlayer(localPlr, true)
-    CameraControls.FocusOnObject(localPlr, camera, cameraPosPart.Position, cameraLookAtPart.Position, true, true)
 
     GuiServices.ShowGuiStandard(ComputerDevContainer)
     GuiServices.HideHUD()

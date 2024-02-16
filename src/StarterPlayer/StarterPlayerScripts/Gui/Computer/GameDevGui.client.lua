@@ -203,11 +203,13 @@ GuiTemplates.CreateButton(MarketingOption3)
 
 local function setup()
     studioPcSetup = Workspace.TempAssets.Studios:FindFirstChild("Computer", true)
+    local pcSetupChair = studioPcSetup:FindFirstChild("Chair")
     pcSetupSeat = studioPcSetup:FindFirstChild("Seat", true)
-    local cameraPosPart = studioPcSetup:FindFirstChild("CameraPosPartDev")
-    local cameraLookAtPart = studioPcSetup:FindFirstChild("CameraLookAtPartDev")
 
-    CameraControls.FocusOnObject(localPlr, camera, cameraPosPart.Position, cameraLookAtPart.Position, true, true)
+    local cameraPosCFrame: CFrame = studioPcSetup.PrimaryPart.CFrame + (studioPcSetup.PrimaryPart.CFrame.RightVector * 3) + (studioPcSetup.PrimaryPart.CFrame.UpVector * 2)
+    local cameraLookAtCFrame: CFrame = pcSetupChair.PrimaryPart.CFrame
+    CameraControls.FocusOnObject(localPlr, camera, cameraPosCFrame, cameraLookAtCFrame, true, true)
+
     GeneralUtils.HideModel(studioPcSetup:FindFirstChild("Pc"), { Tween = true })
     PlayerServices.ShowPlayer(localPlr, true)
     PlayerUtils.SeatPlayer(localPlr, pcSetupSeat)

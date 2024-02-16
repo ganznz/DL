@@ -459,13 +459,12 @@ local function pullBookModelOut(name: string)
         OriginalRot = { X = x, Y = y, Z = z }
     }
 
-    local lookAtPart = bookshelf:FindFirstChild("CameraPositionPart")
+    local lookAtCFrame = camera.CFrame
 
     local posTween = TweenService:Create(bookModel.PrimaryPart, TweenInfo.new(0.5), { CFrame = bookModel.PrimaryPart.CFrame + (-bookModel.PrimaryPart.CFrame.rightVector * 2.5) })
-    
     posTween:Play()
     posTween.Completed:Connect(function()
-        local lookAtTween = TweenService:Create(bookModel.PrimaryPart, TweenInfo.new(0.5), { CFrame = CFrame.lookAt(bookModel.PrimaryPart.CFrame.Position, lookAtPart.Position) * CFrame.Angles(0, math.pi, 0)})
+        local lookAtTween = TweenService:Create(bookModel.PrimaryPart, TweenInfo.new(0.5), { CFrame = CFrame.lookAt(bookModel.PrimaryPart.CFrame.Position, lookAtCFrame.Position) * CFrame.Angles(0, math.pi, 0)})
         lookAtTween:Play()
     end)
 end

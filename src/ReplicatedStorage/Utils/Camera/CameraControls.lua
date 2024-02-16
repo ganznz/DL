@@ -33,7 +33,7 @@ end
 -- cameraSubject: what the camera is looking at
 -- disableChar: disable plr character movement.
 -- transition: smooth camera movement
-function CameraControls.FocusOnObject(plr: Player, camera: Camera, cameraPos: Vector3, cameraLookAt: Vector3, disableChar: boolean, transition: boolean): Tween | nil
+function CameraControls.FocusOnObject(plr: Player, camera: Camera, cameraPos: CFrame, cameraLookAt: CFrame, disableChar: boolean, transition: boolean): Tween | nil
     if disableChar then
         local PlrControls = require(plr.PlayerScripts.PlayerModule):GetControls()
         PlrControls:Disable()
@@ -41,7 +41,7 @@ function CameraControls.FocusOnObject(plr: Player, camera: Camera, cameraPos: Ve
     camera.CameraType = Enum.CameraType.Scriptable
 
     if transition then
-        local tween = TweenService:Create(camera, TweenInfo.new(0.3), { CFrame =  CFrame.lookAt(cameraPos, cameraLookAt) })
+        local tween = TweenService:Create(camera, TweenInfo.new(0.3), { CFrame =  CFrame.lookAt(cameraPos.Position, cameraLookAt.Position) })
         tween:Play()
         return tween
     else

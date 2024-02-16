@@ -154,12 +154,12 @@ end
 local function registerShelfViewBtn(viewBtn)
     shelfViewBtnBtnConnection = viewBtn.Activated:Connect(function()
         GuiServices.HideHUD({ HideGuiFrames = true })
-
-        local cameraPos: Vector3 = shelfModel:FindFirstChild("CameraPositionPart").Position
-        local cameraLookAt: Vector3 = shelfModel:FindFirstChild("CameraLookAt").Position
-
+        
         PlayerServices.HidePlayer(localPlr, true)
-        CameraControls.FocusOnObject(localPlr, camera, cameraPos, cameraLookAt, true, true)
+
+        local cameraPosCFrame: CFrame = shelfModel.PrimaryPart.CFrame + (-shelfModel.PrimaryPart.CFrame.RightVector * 6.5) + (-shelfModel.PrimaryPart.CFrame.LookVector * 1.75)
+        local cameraLookAtCFrame: CFrame = shelfModel.PrimaryPart.CFrame + (-shelfModel.PrimaryPart.CFrame.RightVector * 4) + (-shelfModel.PrimaryPart.CFrame.LookVector * 1.75)
+        CameraControls.FocusOnObject(localPlr, camera, cameraPosCFrame, cameraLookAtCFrame, true, true)
 
         disableInteractionBtns()
         Remotes.GUI.Studio.ViewShelf:Fire()
@@ -191,7 +191,8 @@ local function registerComputerInteractionBtns()
     end)
 
     computerUpgradeBtnConnection = computerUpgradeBtn.Activated:Connect(function()
-        
+        disableInteractionBtns()
+        Remotes.GUI.ChangeGuiStatusBindable:Fire("upgradeComputer", true, nil)
     end)
 
     return computerInteractionBillboard

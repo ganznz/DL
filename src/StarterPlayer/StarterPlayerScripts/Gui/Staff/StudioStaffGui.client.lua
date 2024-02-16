@@ -174,17 +174,18 @@ end
 local function prepareStaffViewGui()
     studioPlacedItemsFolder = Workspace.TempAssets.Studios:FindFirstChild("PlacedObjects", true)
     placedStaffMember = studioPlacedItemsFolder:FindFirstChild(currentlyViewedStaffUUID)
+    local staffMemberHead: MeshPart = placedStaffMember:FindFirstChild("Head", true)
     currentlyViewedStaffPcModel = placedStaffMember:FindFirstChild("Pc")
 
-    local cameraPosPart = placedStaffMember:FindFirstChild("CameraPositionPart")
-    local cameraLookAtPart = placedStaffMember:FindFirstChild("CameraLookAt")
+    local cameraPosCFrame: CFrame = placedStaffMember.PrimaryPart.CFrame + (-placedStaffMember.PrimaryPart.CFrame.LookVector * 5) + (placedStaffMember.PrimaryPart.CFrame.RightVector * 3.5)
+    local cameraLookAtCFrame: CFrame = staffMemberHead.CFrame + (-staffMemberHead.CFrame.RightVector * 4.5)
+    CameraControls.FocusOnObject(localPlr, camera, cameraPosCFrame, cameraLookAtCFrame, true, true)
 
     GuiServices.HideHUD({ HideGuiFrames = true })
 
     populateStaffViewGui()
     PlayerServices.HidePlayer(localPlr, true)
     GeneralUtils.HideModel(currentlyViewedStaffPcModel, { Tween = true })
-    CameraControls.FocusOnObject(localPlr, camera, cameraPosPart.Position, cameraLookAtPart.Position, true, true)
 
     GuiServices.HideHUD()
     GuiServices.ShowGuiStandard(StaffViewContainer)
@@ -197,12 +198,12 @@ local function determineUpgradeBtnCurrency()
         local currencyImg: ImageLabel = btn:FindFirstChild("CurrencyImage")
         local currencyImgDropShadow: ImageLabel = btn.CurrencyImage:FindFirstChild("CurrencyImageDropshadow")
         if staffMemberConfig.UpgradeCurrency == "Coins" then
-            currencyImg.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinIcon)
-            currencyImgDropShadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinIconDropshadow)
+            currencyImg.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinStroke)
+            currencyImgDropShadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinDropshadow)
 
         elseif staffMemberConfig.UpgradeCurrency == "Gems" then
-            currencyImg.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemIcon)
-            currencyImgDropShadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemIconDropshadow)
+            currencyImg.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemStroke)
+            currencyImgDropShadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemDropshadow)
         end
     end
 end
@@ -369,16 +370,19 @@ local function populateStaffTrainGui()
 end
 
 local function prepareStaffTrainGui()
-    local cameraPosPart = placedStaffMember:FindFirstChild("CameraPositionPart")
-    local cameraLookAtPart = placedStaffMember:FindFirstChild("CameraLookAt")
-    
     determineUpgradeBtnCurrency()
     styleUpgradeAmtBtns()
     populateStaffTrainGui()
     styleUpgradeBuyBtns()
+    
+    placedStaffMember = studioPlacedItemsFolder:FindFirstChild(currentlyViewedStaffUUID)
+    local staffMemberHead: MeshPart = placedStaffMember:FindFirstChild("Head", true)
+
+    local cameraPosCFrame: CFrame = placedStaffMember.PrimaryPart.CFrame + (-placedStaffMember.PrimaryPart.CFrame.LookVector * 5) + (placedStaffMember.PrimaryPart.CFrame.RightVector * 3.5)
+    local cameraLookAtCFrame: CFrame = staffMemberHead.CFrame + (-staffMemberHead.CFrame.RightVector * 4.5)
+    CameraControls.FocusOnObject(localPlr, camera, cameraPosCFrame, cameraLookAtCFrame, true, true)
 
     PlayerServices.HidePlayer(localPlr, true)
-    CameraControls.FocusOnObject(localPlr, camera, cameraPosPart.Position, cameraLookAtPart.Position, true, true)
 
     GuiServices.HideHUD()
     GuiServices.ShowGuiStandard(StaffTrainContainer)
