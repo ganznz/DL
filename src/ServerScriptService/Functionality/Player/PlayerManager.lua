@@ -84,6 +84,7 @@ end)
 -- attributes that are commonly used globally in scripts are declared here
 local function characterAdded(char: Model, plr: Player)
     plr:SetAttribute("IsAlive", true)
+    plr:SetAttribute("CanSprint", true)
     plr:SetAttribute("InStudio", false)
     plr:SetAttribute("InBuildMode", false)
     plr:SetAttribute("InPlaceMode", false)
@@ -92,6 +93,7 @@ local function characterAdded(char: Model, plr: Player)
     local humanoid = char:WaitForChild("Humanoid")
     humanoid.Died:Connect(function()
         plr:SetAttribute("IsAlive", false)
+        plr:SetAttribute("CanSprint", false)
     end)
 end
 
@@ -110,5 +112,13 @@ for _i, plr: Player in Players:GetPlayers() do
         PlrManager.GiveAdminAccess(plr)
     end
 end
+
+-- toggling plr sprint remotes
+Remotes.Player.SprintDisable.OnServerEvent:Connect(function(plr: Player)
+    plr:SetAttribute("CanSprint", false)
+end)
+Remotes.Player.SprintEnable.OnServerEvent:Connect(function(plr: Player)
+    plr:SetAttribute("CanSprint", true)
+end)
 
 return PlrManager

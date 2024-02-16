@@ -156,6 +156,9 @@ end
 -- opts
 -- -- GuiToOpen -> Instance: This is enabled if the player has opened a GUI frame while another was already open.
 function GuiServices.HideGuiStandard(guiInstanceToClose, opts: {}): Tween
+    -- re-enable players sprint again, as they no longer have GUI open
+    Remotes.Player.SprintEnable:FireServer()
+
     -- if no args are passed, then hide whatever GUI screen is open, if any
     -- use cases include features in-game that when interacted with, require any visible GUI frame to no longer be visible (e.g. entering studio build mode)
     if not guiInstanceToClose then
@@ -194,6 +197,9 @@ function GuiServices.ShowGuiStandard(guiInstance, backdropColour: Color3)
         
         if previousInstance == guiInstance then return end
     end
+
+    -- disable plr sprint (mostly because of camera FOV effect) when GUI is open
+    Remotes.Player.SprintDisable:FireServer()
 
     -- arg is the guiInstance that is being opened
     Remotes.GUI.ToggleBottomHUD:Fire(guiInstance)

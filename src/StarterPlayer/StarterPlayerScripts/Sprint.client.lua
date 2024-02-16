@@ -3,8 +3,8 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 
-local plr = Players.LocalPlayer
-local char = plr.Character or plr.CharacterAdded:Wait()
+local localPlr: Player = Players.LocalPlayer
+local char = localPlr.Character or localPlr.CharacterAdded:Wait()
 local camera = Workspace:WaitForChild("Camera")
 
 local WALK_SPEED = 16
@@ -15,6 +15,9 @@ local RUNNING_FOV = 80
 local tweenInfo = TweenInfo.new(0.2)
 
 local function ChangeWalkspeed(newSpeed: number)
+    -- plr cannot sprint (might have a gui open, or in some other task that requires sprint disabled)
+    if not localPlr:GetAttribute("CanSprint") then return end
+
     local FOV = newSpeed == WALK_SPEED and WALK_FOV or RUNNING_FOV
     local tween = TweenService:Create(camera, tweenInfo, { FieldOfView = FOV })
     tween:Play()
@@ -35,6 +38,6 @@ UserInputService.InputEnded:Connect(function(input, _gameProcessed)
     end
 end)
 
-plr.CharacterAdded:Connect(function(newChar)
+localPlr.CharacterAdded:Connect(function(newChar)
     char = newChar
 end)
