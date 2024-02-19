@@ -487,9 +487,14 @@ Remotes.GameDev.GenreTopic.UnlockTopic.OnClientEvent:Connect(function(topicName)
     if localPlr:GetAttribute("InStudio") then addBookModelToShelf("topic", topicName) end
 end)
 
--- re-enables placed item interaction btns (e.g. stop viewing shelf, training staff member, etc)
+-- enables placed item interaction btns (e.g. stop viewing shelf, training staff member, etc)
 Remotes.Studio.General.EnableInteractionBtns.Event:Connect(function()
     registerInteractionBtns()
+end)
+
+-- disables placed item interaction btns (e.g. stop viewing shelf, training staff member, etc)
+Remotes.Studio.General.DisableInteractionBtns.Event:Connect(function()
+    disableInteractionBtns()
 end)
 
 Remotes.Studio.BuildMode.ExitBuildMode.OnClientEvent:Connect(function(_opts: {})
