@@ -84,6 +84,9 @@ GlobalVariables.Sound.Sfx.GuiMouseHover = LocalSounds.Sfx:FindFirstChild("GuiMou
 
 -- IMAGES --
 GlobalVariables.Images = {}
+
+GlobalVariables.Images.PlaceholderImage = "16384827963"
+
 GlobalVariables.Images.Icons = {}
 
 -- currency icons
