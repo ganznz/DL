@@ -127,6 +127,8 @@ local function canVisitStudio(plr: Player, plrToVisit: Player): boolean
 end
 
 local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends: boolean)
+    local kickMsg: string = `<font color="#b0edff"><stroke color="#418ea6" thickness="2">{plrWhosStudioToClear.Name}</stroke></font> has removed you from their studio`
+
     for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
 
         -- if studioInfo exists then it means the plr is in a studio
@@ -143,7 +145,7 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
                     plrToKick:SetAttribute("InStudio", false)
                     StudioConfigServer.PlrsInStudio[plrToKick.UserId] = false
                     Remotes.Studio.General.KickFromStudio:FireClient(plrToKick)
-                    Remotes.GUI.DisplayNotification:FireClient(plrToKick, "general", string.format("%s has removed you from their studio", plrWhosStudioToClear.Name))
+                    Remotes.GUI.DisplayNotification:FireClient(plrToKick, "general", kickMsg)
                 end
             end
         end

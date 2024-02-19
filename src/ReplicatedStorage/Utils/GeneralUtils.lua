@@ -1,7 +1,9 @@
-local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 local TextService = game:GetService("TextService")
+
+local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
 
 -- // this file contains methods that can be used anywhere without dependancy on gameplay code // --
 
@@ -45,7 +47,7 @@ function GeneralUtils.LengthOfDict(dict)
 end
 
 function GeneralUtils.GetDecalUrl(imageID: string)
-    if not imageID then imageID = "" end
+    if (imageID == "" or not imageID) then imageID = GlobalVariables.Images.PlaceholderImage end
 
     return string.format("http://www.roblox.com/asset/?id=%s", imageID)
 end

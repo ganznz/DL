@@ -6,6 +6,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
+local PlayerManagerConfig = require(ServerScriptService.Functionality.Player.PlayerManager)
 local StaffMember = require(ReplicatedStorage.Configs.Staff.StaffMember)
 
 local Remotes = ReplicatedStorage.Remotes
@@ -81,7 +82,7 @@ function StaffMember:LevelUpSkill(plr: Player, staffMemberUUID: string, skill: "
     end
     
     if staffMemberConfig.UpgradeCurrency == "Coins" then
-        PlrDataManager.AdjustPlrCoins(plr, -upgradeCost)
+        PlayerManagerConfig.AdjustPlrCoins(plr, -upgradeCost)
     end
 
     self:AdjustEnergy(plr, staffMemberUUID, -energyUsed)

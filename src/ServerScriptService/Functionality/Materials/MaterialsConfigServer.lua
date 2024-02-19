@@ -6,12 +6,14 @@ local MaterialsConfig = require(ReplicatedStorage.Configs.Materials.Materials)
 
 local MaterialsServer = {}
 
-function MaterialsServer.GiveMaterial(plr: Player, materialName: string)
+function MaterialsServer.GiveMaterial(plr: Player, materialName: string, amount: number)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
+    amount = amount or 1
+
     if profile.Data.Inventory.Materials[materialName] then
-        profile.Data.Inventory.Materials[materialName].Amount += 1
+        profile.Data.Inventory.Materials[materialName].Amount += amount
     end
 end
 

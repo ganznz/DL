@@ -43,9 +43,9 @@ local BottomHudBtns = BottomHudFolder:WaitForChild("BottomBtns")
 local GuiBlur = Lighting:WaitForChild("GuiBlur")
 
 local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
-local OFFSET_PER_NOTI = 0.27
+local OFFSET_PER_NOTI = NotificationPanelFrame.Template.Size.Y.Scale + 0.03
 local NOTI_VISIBLE_X_POS = 0.5 -- scale value
-local NOTI_HIDDEN_X_POS = 2 -- scale value
+local NOTI_HIDDEN_X_POS = 2.6 -- scale value
 
 -- this cache is used to store position/size information regarding GUI in-game
 local GuiCache = {}
@@ -504,8 +504,7 @@ function GuiServices.CreateNotification(msg: string, type: "standard" | "good" |
     setNotificiationDetails(template, msg, type)
     updateVisibleNotifications(template, "moveDown")
 
-    local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Elastic)
-    local tweenShow = TweenService:Create(template, tweenInfo, { Position = UDim2.fromScale(NOTI_VISIBLE_X_POS, 0) })
+    local tweenShow = TweenService:Create(template, TweenInfo.new(1, Enum.EasingStyle.Elastic), { Position = UDim2.fromScale(NOTI_VISIBLE_X_POS, 0) })
     local progBarTweenInfo = TweenInfo.new(5, Enum.EasingStyle.Linear)
     local progBarTween = TweenService:Create(progBar, progBarTweenInfo, { Size = UDim2.fromScale(1, 0.1) })
     
@@ -517,7 +516,7 @@ function GuiServices.CreateNotification(msg: string, type: "standard" | "good" |
     -- hide noti
     progBarTween.Completed:Connect(function(_playbackState)
         local currentYpos = template.Position.Y.Scale
-        local tweenHide = TweenService:Create(template, tweenInfo, { Position = UDim2.fromScale(NOTI_HIDDEN_X_POS, currentYpos) })
+        local tweenHide = TweenService:Create(template, TweenInfo.new(0.4), { Position = UDim2.fromScale(NOTI_HIDDEN_X_POS, currentYpos) })
         tweenHide:Play()
 
         -- destroy noti
@@ -607,6 +606,8 @@ function GuiServices.CreateBeamEffect(beamAmt: number, parent: Instance, effectL
     end
 end
 
+-- opts     
+-- Colour -> Color3: the colour of the flash frame
 function GuiServices.TriggerFlashFrame(opts: {})
     if not opts then opts = {} end
     if not opts then opts["Colour"] = Color3.fromRGB(255, 255, 255) end

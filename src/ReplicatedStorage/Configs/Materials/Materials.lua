@@ -9,7 +9,8 @@ Materials.CategoryImage = "15814491509"
 export type MaterialConfig = {
     Rarity: number,
     IconOriginal: string,
-    IconStroke: string
+    IconStroke: string,
+    IconFill: string,
 }
 
 local config: { [string]: MaterialConfig } = {
@@ -17,26 +18,31 @@ local config: { [string]: MaterialConfig } = {
         Rarity = 1,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
     ["Wire"] = {
         Rarity = 1,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
     ["Glass"] = {
         Rarity = 2,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
     ["Circuit Board"] = {
         Rarity = 2,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
     ["Fan"] = {
         Rarity = 3,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
 }
 

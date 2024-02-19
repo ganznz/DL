@@ -22,9 +22,11 @@ function GuiTemplates.CreateButton(btn: Instance, opts: {})
         if opts["Rotates"] then tweenMouseLeave:Play() end
     end)
 
-    btn.Activated:Connect(function()
-        GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.GuiOpen)
-    end)
+    if btn:IsA("TextButton") or btn:IsA("ImageButton") then
+        btn.Activated:Connect(function()
+            GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.GuiOpen)
+        end)
+    end
 end
 
 function GuiTemplates.HeaderText(header: Instance, opts: {})

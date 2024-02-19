@@ -2,8 +2,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
+local PlayerManagerConfig = require(ServerScriptService.Functionality.Player.PlayerManager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
-local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
+local DatastoreUtils = require(ReplicatedStorage.Utils.DS.DatastoreUtils)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -68,9 +69,9 @@ function Studio.PurchaseNextStudio(plr: Player): boolean
     if not canAfford then return false end
 
     -- can afford, purchase studio
-    PlrDataManager.AdjustPlrCoins(plr, -studioUpgradePrice)
+    PlayerManagerConfig.AdjustPlrCoins(plr, -studioUpgradePrice)
     profile.Data.Studio.ActiveStudio = newStudioIndex
-    PlrDataManager.UnlockArea(plr, 'Studio'..tostring(newStudioIndex))
+    PlayerManagerConfig.UnlockArea(plr, 'Studio'..tostring(newStudioIndex))
 
     -- insert new studio information into plr data
     Studio.InitializeStudioData(plr, "Standard", newStudioIndex)

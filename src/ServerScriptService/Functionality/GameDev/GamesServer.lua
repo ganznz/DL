@@ -178,7 +178,7 @@ function GamesConfig.CalculateGameSales(plr: Player, gameStateInfo: {}): {}
     local topicInstance: TopicConfigServer.TopicInstance = TopicConfigServer.new(gameStateInfo.Topic, profile.Data.GameDev.Topics[gameStateInfo.Topic])
     genreInstance:AdjustXp(plr, xpToAdjustBy)
     topicInstance:AdjustXp(plr, xpToAdjustBy)
-    PlayerManager.AdjustXP(plr, xpToAdjustBy)
+    PlayerManager.AdjustXP(plr, xpToAdjustBy, false)
 
     return sales
 end

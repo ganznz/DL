@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
+local PlayerManagerConfig = require(ServerScriptService.Functionality.Player.PlayerManager)
 local PhonesConfig = require(ReplicatedStorage.Configs.Phones.Phones)
 local PhonesServerConfig = require(ServerScriptService.Functionality.Phones.PhonesConfigServer)
 local StaffConfigServer = require(ServerScriptService.Functionality.Staff.StaffConfigServer)
@@ -49,7 +50,7 @@ local function purchasePhone(plr: Player, phoneName: string)
     if not canAfford then return end
 
     -- CAN BUY PHONE
-    PlrDataManager.AdjustPlrCoins(plr, -phoneConfig.Price)
+    PlayerManagerConfig.AdjustPlrCoins(plr, -phoneConfig.Price)
     plrHatchingInfo[plr.UserId] = { PhoneName = phoneName, ClicksPerformed = 0 }
 
     -- display phone for opening
