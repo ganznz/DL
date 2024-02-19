@@ -1,10 +1,9 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TeleportAreas = require(ReplicatedStorage.Configs:WaitForChild("TeleportAreas"))
-local GenreConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Genre"))
-local TopicConfig = require(ReplicatedStorage.Configs.GameDev:WaitForChild("Topic"))
-local StaffFoodConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffFood"))
-local MaterialsConfig = require(ReplicatedStorage.Configs.Materials:WaitForChild("Materials"))
+local TeleportAreas = require(ReplicatedStorage.Configs.TeleportAreas)
+local StaffFoodConfig = require(ReplicatedStorage.Configs.Staff.StaffFood)
+local MaterialsConfig = require(ReplicatedStorage.Configs.Materials.Materials)
+local ComputerConfig = require(ReplicatedStorage.Configs.GameDev.Computer)
 
 local DEFAULT_UNLOCKABLE_AREAS = {}
 for _i, area in TeleportAreas.UnlockableAreas do
@@ -19,6 +18,14 @@ end
 local ALL_MATERIALS = {}
 for materialName, _materialInfo in MaterialsConfig.Config do
     ALL_MATERIALS[materialName] = { Amount = 0 }
+end
+
+local ALL_COMPUTER_UPGRADES = {}
+for key: number, computerInfo: ComputerConfig.ComputerConfig in ComputerConfig.Config do
+    ALL_COMPUTER_UPGRADES[key] = {}
+    for upgradeName: string, upgradeInfo: ComputerConfig.ComputerUpgradeConfig in computerInfo.Upgrades do
+        ALL_COMPUTER_UPGRADES[key][upgradeName] = { Progress = 0, Goal = upgradeInfo.GoalValue }
+    end
 end
 
 -- Template is what empty profiles default to
@@ -47,7 +54,9 @@ local Template = {
     GameDev = {
         HighestGameDevPhase = 1,
         Computer = {
-            Level = 1
+            Level = 1,
+            ActiveUpgrade = "Coins I", -- by default, the Coins upgrade for Computer 1 is enabled
+            UpgradeProgress = ALL_COMPUTER_UPGRADES
         },
         -- table that holds data of developed games (e.g. game name, ratings, topic & genre, was marketed or not, etc)
         -- e.g. { [1]={gameData}, [2]={gameData}, [3]={gameData}, ... }
