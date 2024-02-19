@@ -532,10 +532,14 @@ local function populateScrollingFrame()
             local amt = foodData.Amount
             if amt == 0 then continue end
             if amt <= 10 then
-                createItemTemplate({ ItemName = foodName, ItemAmt = amt, TotalAmt = foodData.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
+                createItemTemplate({ ItemName = foodName, ItemAmt = amt, TotalAmt = foodName.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
             else
                 while amt > 0 do
-                    createItemTemplate({ ItemName = foodName, ItemAmt = amt, TotalAmt = foodData.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
+                    if amt > 10 then
+                        createItemTemplate({ ItemName = foodName, ItemAmt = 10, TotalAmt = foodName.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
+                    else
+                        createItemTemplate({ ItemName = foodName, ItemAmt = amt, TotalAmt = foodName.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
+                    end
                     amt -= 10
                     index += 1
                 end
@@ -551,7 +555,11 @@ local function populateScrollingFrame()
                 createItemTemplate({ ItemName = materialName, ItemAmt = amt, TotalAmt = materialData.Amount, ItemCategory = "Material", FakeUUID = `{materialName}{tostring(index)}` })
             else
                 while amt > 0 do
-                    createItemTemplate({ ItemName = materialName, ItemAmt = amt, TotalAmt = materialData.Amount, ItemCategory = "Material", FakeUUID = `{materialName}{tostring(index)}` })
+                    if amt > 10 then
+                        createItemTemplate({ ItemName = materialName, ItemAmt = 10, TotalAmt = materialData.Amount, ItemCategory = "Material", FakeUUID = `{materialName}{tostring(index)}` })
+                    else
+                        createItemTemplate({ ItemName = materialName, ItemAmt = amt, TotalAmt = materialData.Amount, ItemCategory = "Material", FakeUUID = `{materialName}{tostring(index)}` })
+                    end
                     amt -= 10
                     index += 1
                 end
