@@ -5,8 +5,10 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local GeneralUtils = require(ReplicatedStorage.Utils.GeneralUtils)
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local PlrPlatformManager = require(ServerScriptService.PlayerData.PlrPlatformManager)
+local PlayerManagerConfig = require(ServerScriptService.Functionality.Player.PlayerManager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
 local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff.StaffMember)
+local ComputerConfigServer = require(ServerScriptService.Functionality.GameDev.ComputerConfigServer)
 local GenreTopicConfigServer = require(ServerScriptService.Functionality.GameDev.GenreTopicConfigServer)
 local GamesConfigServer = require(ServerScriptService.Functionality.GameDev.GamesServer)
 
@@ -18,17 +20,15 @@ local Remotes = ReplicatedStorage.Remotes
 local plrsDeveloping = {}
 
 -- CONSTANT VARIABLES --
-local RANDOM = Random.new()
+local RNG = Random.new()
 local PHASE_INTRO_LENGTH = 5
-local PHASE_1_LENGTH = 7
-local BUGFIX_PHASE_LENGTH = 5
+local PHASE_1_LENGTH = 10
+local BUGFIX_PHASE_LENGTH = 10
 local PHASE_1_PLR_CONTRIBUTION_PTS = 10 -- the game pts contributed when plr interacts w/ btn (w/o help of staff)
 local PC_PHASE1_BTNS = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q",
 "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
 local PHASE1_BTN_TYPES = {"Code", "Sound", "Art"}
 local PHASE1_BTN_LIFETIME = 4
-local BUG_ICON_DEFAULT = "16127668114"
-local BUG_ICON_SQUASHED = "16127669693"
 local BUG_MAX_ONSCREEN_TIME = 11
 
 --[[
@@ -110,6 +110,9 @@ end
 -- is called after plr interacts with collect btn.
 -- function saves game data and rewards the coins the game earned
 local function endAndStoreGameData(plr: Player)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
     local gameStateInfo = plrsDeveloping[plr.UserId]
     if not gameStateInfo then return end
 
@@ -121,7 +124,27 @@ local function endAndStoreGameData(plr: Player)
     end
 
     -- give earnings to plr
-    PlrDataManager.AdjustPlrCoins(plr, gameStateInfo.GameResults.Earnings)
+    PlayerManagerConfig.AdjustPlrCoins(plr, gameStateInfo.GameResults.Earnings)
+
+    -- update current selected computer upgrade progress
+    local plrComputerLevel = profile.Data.GameDev.Computer.Level
+    local activeComputerUpgrade: string | false = profile.Data.GameDev.Computer.ActiveUpgrade
+    local pointsOfUpgradeToAdjust: number
+    local computerUpgradeConfig: ComputerConfigServer.ComputerUpgradeConfig = ComputerConfigServer.GetUpgradeConfig(plrComputerLevel, activeComputerUpgrade)
+    
+    if activeComputerUpgrade then
+        if computerUpgradeConfig.Stat == "coins" then
+            pointsOfUpgradeToAdjust = gameStateInfo.GameResults.Earnings
+        elseif computerUpgradeConfig.Stat == "code" then
+            pointsOfUpgradeToAdjust = gameStateInfo.GamePoints.Code
+        elseif computerUpgradeConfig.Stat == "sound" then
+            pointsOfUpgradeToAdjust = gameStateInfo.GamePoints.Sound
+        elseif computerUpgradeConfig.Stat == "art" then
+            pointsOfUpgradeToAdjust = gameStateInfo.GamePoints.Art
+        end
+
+        ComputerConfigServer.UpdateComputerUpgradeProgress(plr, activeComputerUpgrade, pointsOfUpgradeToAdjust)
+    end
 
     -- remove gamestate info
     plrsDeveloping[plr.UserId] = false
@@ -155,9 +178,9 @@ local function endGameDevelopment(plr: Player)
     gameStateInfo.GameResults["Earnings"] = GamesConfigServer.CalculateGameEarnings(plr, gameStateInfo)
     gameStateInfo.GameResults["GameSales"] = GamesConfigServer.CalculateGameSales(plr, gameStateInfo)
 
-    -- 25% chance of making genre/topic pair either compatible, or incompatible, if no relationship between them has been established yet
+    -- 20% chance of making genre/topic pair either compatible, or incompatible, if no relationship between them has been established yet
     -- if new relationship established, this does not affect the game that has just been developed
-    if math.random() <= 1 then GenreTopicConfigServer.EstablishGenreTopicRelationship(plr, gameStateInfo.Genre, gameStateInfo.Topic) end
+    if math.random() <= 0.2 then GenreTopicConfigServer.EstablishGenreTopicRelationship(plr, gameStateInfo.Genre, gameStateInfo.Topic) end
 
     Remotes.GUI.GameDev.DisplayPhaseIntro:FireClient(plr, "-99")
     task.wait(PHASE_INTRO_LENGTH)
@@ -166,6 +189,9 @@ local function endGameDevelopment(plr: Player)
 end
 
 local function adjustGamePts(plr: Player, phase: string, pointsType: "Code" | "Sound" | "Art", opts: {}): number
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
     local gameStateInfo = plrsDeveloping[plr.UserId]
     if not gameStateInfo then return end
 
@@ -182,7 +208,7 @@ local function adjustGamePts(plr: Player, phase: string, pointsType: "Code" | "S
     
     -- pts only get added upon clicking btn
     if phase == "1" then
-        local adjustment = RANDOM:NextNumber(0.8, 1.2) -- ensures variance each time game pts get adjusted
+        local adjustment = RNG:NextNumber(0.8, 1.2) -- ensures variance each time game pts get adjusted
 
         -- calc total contributed pts of the specific point type, and each staff members contribution
         optsToSend["StaffMemberContributions"] = {}
@@ -204,6 +230,16 @@ local function adjustGamePts(plr: Player, phase: string, pointsType: "Code" | "S
     
     elseif phase == "2" then
         
+    end
+
+    -- take computer buffs into account
+    local plrComputerBuffs = ComputerConfigServer.GetComputerBuffs(profile.Data)
+    if pointsType == "Code" then
+        ptsToAdjustBy += ptsToAdjustBy * plrComputerBuffs.CodePtsBuff
+    elseif pointsType == "Sound" then
+        ptsToAdjustBy += ptsToAdjustBy * plrComputerBuffs.SoundPtsBuff
+    elseif pointsType == "Art" then
+        ptsToAdjustBy += ptsToAdjustBy * plrComputerBuffs.ArtPtsBuff
     end
 
     local currentPtAmt = gameStateInfo.GamePoints[pointsType]
@@ -281,7 +317,7 @@ local function initiateBugFixPhase(plr: Player)
     task.spawn(function()
         while gameStateInfo and (gameStateInfo.Phase == -1) and (gameStateInfo.Timer > 3) do
             sendBug(plr)
-            task.wait(1)
+            task.wait(RNG:NextNumber(0.8, 1.5))
         end
     end)
 
@@ -445,7 +481,7 @@ local function initiatePhase1(plr: Player)
     task.spawn(function()
         while gameStateInfo and (gameStateInfo.Phase == 1) and (gameStateInfo.Timer > PHASE1_BTN_LIFETIME) do
             sendBtn(plr)
-            task.wait(RANDOM:NextNumber(0.5, 0.8))
+            task.wait(RNG:NextNumber(0.5, 0.8))
         end
     end)
 
