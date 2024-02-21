@@ -1,5 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local Players = game:GetService("Players")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local PlayerManagerConfig = require(ServerScriptService.Functionality.Player.PlayerManager)
@@ -11,11 +12,11 @@ local Remotes = ReplicatedStorage.Remotes
 local Studio = {}
 
 -- table keeps track of all players in the server and their respective studio information
--- { [plr.UserId] = { studioIndex: string, studioStatus: "open" | "closed" | "friends" } }
+-- { [plr.UserId] = { StudioIndex: string, StudioStatus: "open" | "closed" | "friends" } }
 Studio.PlrStudios = {}
 
 -- table keeps track of players who are in a studio
--- { [plr.UserId] = { PlrVisitingId: number, studioIndex: string } | false }
+-- { [plr.UserId] = { PlrVisitingId: number, StudioIndex: string } | false }
 Studio.PlrsInStudio = {}
 
 function Studio.InitializeStudioData(plr: Player, studioType: "Standard" | "Premium", studioIndex: string)
@@ -77,6 +78,24 @@ function Studio.PurchaseNextStudio(plr: Player): boolean
     Studio.InitializeStudioData(plr, "Standard", newStudioIndex)
 
     Remotes.Purchase.PurchaseStudio:FireClient(plr, newStudioIndex)
+
+    -- update studio list GUI for all plrs
+    Studio.PlrStudios[plr.UserId]["StudioIndex"] = profile.Data.Studio.ActiveStudio
+    Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "update", Studio.PlrStudios[plr.UserId])
+
+    -- teleport player into their new studio
+    Remotes.Studio.General.VisitOwnStudioBindable:Fire(plr)
+
+    -- teleport all visitors that were in the old studio, into the new purchased studio
+    local plrsInStudio = Studio.PlrsInStudio
+    for plrUserId: number, studioVisitingInfo: {} | false in plrsInStudio do
+        if plrUserId == plr.UserId then continue end
+        if not studioVisitingInfo then continue end
+
+        if studioVisitingInfo.PlrVisitingId == plr.UserId then
+            Remotes.Studio.General.VisitOtherStudioBindable:Fire(Players:GetPlayerByUserId(plrUserId), plr.UserId)
+        end
+    end
 
     return true
 end
