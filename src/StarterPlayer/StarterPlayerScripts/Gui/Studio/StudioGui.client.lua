@@ -89,15 +89,6 @@ local GenreTopicInfoPerkTemplate = GenreTopicInfoPerksContainer:WaitForChild("Te
 local GenreTopicInfoBackBtn = GenreTopicViewContainer:WaitForChild("BackBtn")
 
 -- GUI PROPERTY VARIABLES
-local leftSideContainerVisiblePos: UDim2 = LeftSideContainer.Position
-local leftSideContainerVisibleSize: UDim2 = LeftSideContainer.Size
-
-local rightSideContainerVisiblePos: UDim2 = RightSideContainer.Position
-local rightSideContainerVisibleSize: UDim2 = RightSideContainer.Size
-
-local plrInfoContainerVisiblePos: UDim2 = PlrInfoContainer.Position
-local plrInfoContainerVisibleSize: UDim2 = PlrInfoContainer.Size
-
 local studioBuildModeVisiblePos: UDim2 = StudioBuildModeContainer.Position
 local studioBuildModeHiddenPos: UDim2 = UDim2.fromScale(0.5, 1.25)
 
@@ -666,15 +657,24 @@ GenreTopicInfoBackBtn.Activated:Connect(function()
 end)
 
 -- REMOTE EVENTS
-Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function(_plr, _studioIndex, _interiorPlayerTpPart, _exteriorPlayerTpPart, _placedFurnitureData)
+Remotes.Studio.General.VisitOwnStudio.OnClientEvent:Connect(function()
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         switchStudioBtns(StudioTeleportBtnContainer, StudioBuildModeBtnContainer)
     end)
-    studioInteriorModel = Workspace.TempAssets.Studios:WaitForChild(localPlr.UserId):WaitForChild("Interior")
+    studioInteriorModel = Workspace.TempAssets.Studios:WaitForChild(localPlr.UserId).Interior
 end)
 
-Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(_studioIndex, _interiorPlrTpPart, _exteriorPlrTpPart)
-    GuiServices.HideGuiStandard(StudioListContainer)
+Remotes.Studio.General.VisitOtherStudio.OnClientEvent:Connect(function(plrToVisitID: number, _studioIndex: string, _interiorPlayerTpPart: Part, _exteriorPlayerTpPart: Part, _alreadyPlacedFurnitureData: {}, _opts: {})
+    -- assumes the studio list GUI is open, hides after visiting another studio from there
+    GuiServices.HideGuiStandard()
+
+    task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
+        if plrToVisitID == localPlr.UserId then
+            switchStudioBtns(StudioTeleportBtnContainer, StudioBuildModeBtnContainer)
+        else
+            switchStudioBtns(StudioBuildModeBtnContainer, StudioTeleportBtnContainer)
+        end
+    end)
 end)
 
 Remotes.Studio.General.LeaveStudio.OnClientEvent:Connect(function(opts: {})
