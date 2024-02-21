@@ -8,7 +8,7 @@ local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
 local StudioPlaceablesServer = require(ServerScriptService.Functionality.Studio.StudioPlaceablesServer)
 local FurnitureConfigServer = require(ServerScriptService.Functionality.Furniture.FurnitureConfigServer)
-local StudioConfigServer = require(script.Parent.StudioConfigServer)
+local StudioConfigServer = require(ServerScriptService.Functionality.Studio.StudioConfigServer)
 local StaffConfigServer = require(ServerScriptService.Functionality.Staff.StaffConfigServer)
 local Zone = require(ReplicatedStorage.Libs.Zone)
 
@@ -83,13 +83,13 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: string)
             StudioIndex = studioIndex
         }
 
-        Remotes.Studio.General.VisitOwnStudio:FireClient(plr, plr.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData, { switchingStudios = switchingStudios })
+        Remotes.Studio.General.VisitOwnStudio:FireClient(plr, plr.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData, { SwitchingStudios = switchingStudios })
     else
         StudioConfigServer.PlrsInStudio[plr.UserId] = {
             PlrVisitingId = plrToVisit.UserId,
             StudioIndex = studioIndex
         }
-        Remotes.Studio.General.VisitOtherStudio:FireClient(plr, plrToVisit.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData, { switchingStudios = switchingStudios })
+        Remotes.Studio.General.VisitOtherStudio:FireClient(plr, plrToVisit.UserId, studioIndex, interiorPlayerTpPart, exteriorPlayerTpPart, alreadyPlacedFurnitureData, { SwitchingStudios = switchingStudios })
     end
 end
 
@@ -177,16 +177,19 @@ end
 -- function for replicating placed item to all plrs currently in studio
 -- plr, additionalParams.Action, "furniture", itemInfo
 local function replicatePlaceItem(studioOwner: Player, action: "newItem" | "move", itemType: string, itemInfo: {})
-    for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
+    local plrStudioInfo = StudioConfigServer.PlrStudios
+    local ownerStudioInfo = plrStudioInfo[studioOwner.UserId]
+
+    for plrUserId, visitingPlrStudioInfo in StudioConfigServer.PlrsInStudio do
         if plrUserId == studioOwner.UserId then continue end
 
-        if studioInfo then
-            if studioInfo.PlrVisitingId == studioOwner.UserId then
+        if visitingPlrStudioInfo then
+            if visitingPlrStudioInfo.PlrVisitingId == studioOwner.UserId and visitingPlrStudioInfo.StudioIndex == ownerStudioInfo.StudioIndex then
                 local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
 
                 Remotes.Studio.BuildMode.ReplicatePlaceItem:FireClient(plrToUpdate, itemType, itemInfo)
 
-                -- if the item got moved, delete the 'old' model
+                -- if the item got moved, delete the *old* model
                 if action == "move" then Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, itemType, itemInfo) end
             end
         end
@@ -260,26 +263,26 @@ local function storeStudioItem(plr: Player, itemType: string, itemInfo: {})
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
-    local plrStudioInfo = StudioConfigServer.PlrStudios[plr.UserId]
-    if not plrStudioInfo then return end
+    local ownerStudioInfo = StudioConfigServer.PlrStudios[plr.UserId]
+    if not ownerStudioInfo then return end
 
     if itemType == "furniture" then
-        local hasItem = FurnitureConfigServer.HasFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex, true)
+        local hasItem = FurnitureConfigServer.HasFurnitureItem(plr, itemInfo, ownerStudioInfo.StudioIndex, true)
         if not hasItem then return end
 
-        FurnitureConfigServer.StoreFurnitureItem(plr, itemInfo, plrStudioInfo.StudioIndex)
+        FurnitureConfigServer.StoreFurnitureItem(plr, itemInfo, ownerStudioInfo.StudioIndex)
     
     elseif itemType == "staff" then
         local hasItem = StaffConfigServer.OwnsStaffMember(plr, itemInfo.ItemUUID)
         if not hasItem then return end
 
-        StaffConfigServer.StoreStaffMember(plr, itemInfo, plrStudioInfo.StudioIndex)
+        StaffConfigServer.StoreStaffMember(plr, itemInfo, ownerStudioInfo.StudioIndex)
     end
 
     -- remove item for all plrs in studio
-    for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
-        if studioInfo then
-            if studioInfo.PlrVisitingId == plr.UserId then
+    for plrUserId, visitingPlrStudioInfo in StudioConfigServer.PlrsInStudio do
+        if visitingPlrStudioInfo then
+            if visitingPlrStudioInfo.PlrVisitingId == plr.UserId and visitingPlrStudioInfo.StudioIndex == ownerStudioInfo.StudioIndex then
                 local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
                 Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, itemType, itemInfo)
             end
@@ -295,7 +298,32 @@ Remotes.Studio.General.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player
     visitStudio(plr, plr, studioIndex)
 end)
 
+Remotes.Studio.General.VisitOwnStudioBindable.Event:Connect(function(plr: Player)
+    print(plr)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local studioIndex = profile.Data.Studio.ActiveStudio
+    visitStudio(plr, plr, studioIndex)
+end)
+
 Remotes.Studio.General.VisitOtherStudio.OnServerEvent:Connect(function(plr: Player, userIdOfPlrToVisit: number)
+    if not StudioConfigServer.PlrStudios[plr.UserId] then return end
+
+    local plrToVisit: Player = Players:GetPlayerByUserId(userIdOfPlrToVisit)
+    if not plrToVisit then return end
+
+    local profile = PlrDataManager.Profiles[plrToVisit]
+    if not profile then return end
+
+    if canVisitStudio(plr, plrToVisit) then
+        local studioIndex = profile.Data.Studio.ActiveStudio
+        visitStudio(plr, plrToVisit, studioIndex)
+    end
+end)
+
+Remotes.Studio.General.VisitOtherStudioBindable.Event:Connect(function(plr: Player, userIdOfPlrToVisit: number)
+    print(plr)
     if not StudioConfigServer.PlrStudios[plr.UserId] then return end
 
     local plrToVisit: Player = Players:GetPlayerByUserId(userIdOfPlrToVisit)
@@ -332,11 +360,7 @@ Remotes.Studio.General.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Pl
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
-    local purchased = StudioConfigServer.PurchaseNextStudio(plr)
-    if purchased then
-        StudioConfigServer.PlrStudios[plr.UserId]["StudioIndex"] = profile.Data.Studio.ActiveStudio
-        Remotes.GUI.Studio.UpdateStudioList:FireAllClients(plr.UserId, "update", StudioConfigServer.PlrStudios[plr.UserId])
-    end
+    StudioConfigServer.PurchaseNextStudio(plr)
 end)
 
 Remotes.Studio.General.UpdateWhitelist.OnServerEvent:Connect(function(plr: Player)

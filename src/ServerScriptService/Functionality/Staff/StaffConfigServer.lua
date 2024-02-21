@@ -86,9 +86,12 @@ function StaffServer.DeleteStaffMember(plr: Player, itemInfo: {})
     profile.Data.Inventory.StaffMembers[itemInfo.ItemUUID] = nil
 
     -- remove item visually for all plrs in studio
-    for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
-        if studioInfo then
-            if studioInfo.PlrVisitingId == plr.UserId then
+    local ownerStudioInfo = StudioConfigServer.PlrStudios[plr.UserId]
+    if not ownerStudioInfo then return end
+
+    for plrUserId, visitingPlrStudioInfo in StudioConfigServer.PlrsInStudio do
+        if visitingPlrStudioInfo then
+            if visitingPlrStudioInfo.PlrVisitingId == plr.UserId  and visitingPlrStudioInfo.StudioIndex == ownerStudioInfo.StudioIndex then
                 local plrToUpdate: Player = Players:GetPlayerByUserId(plrUserId)
                 Remotes.Studio.BuildMode.RemoveItem:FireClient(plrToUpdate, "staff", itemInfo)
             end

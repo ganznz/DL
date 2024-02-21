@@ -83,11 +83,14 @@ function GenreTopicConfig.UnlockTopic(plr: Player)
     Remotes.GameDev.GenreTopic.UnlockTopic:FireClient(plr, newTopic)
 
     -- update bookshelf for others also in this players studio
-    for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
-        if studioInfo then
+    local ownerStudioInfo = StudioConfigServer.PlrStudios[plr.UserId]
+    if not ownerStudioInfo then return end
+
+    for plrUserId, visitingPlrStudioInfo in StudioConfigServer.PlrsInStudio do
+        if visitingPlrStudioInfo then
             if plrUserId == plr.UserId then continue end
 
-            if studioInfo.PlrVisitingId == plr.UserId then
+            if visitingPlrStudioInfo.PlrVisitingId == plr.UserId and visitingPlrStudioInfo.StudioIndex == ownerStudioInfo.StudioIndex then
                 local plrToFireRemote = Players:GetPlayerByUserId(plrUserId)
                 Remotes.GameDev.GenreTopic.UnlockTopic:FireClient(plrToFireRemote, newTopic)
             end
