@@ -1,9 +1,10 @@
 local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
+local GeneralUtils = require(ReplicatedStorage.Utils.GeneralUtils)
 local ComputerConfigServer = require(ServerScriptService.Functionality.GameDev.ComputerConfigServer)
-local StudioConfigServer = require(ServerScriptService.Functionality.Studio.StudioConfigServer)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -32,8 +33,8 @@ Remotes.GameDev.Computer.ChangeActiveComputerUpgrade.OnServerEvent:Connect(funct
 end)
 
 Remotes.GameDev.Computer.LevelUpComputer.OnServerEvent:Connect(function(plr: Player)
-    ComputerConfigServer.LevelUpComputer(plr)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
 
-    -- replicate changes to others players who are in this players studio
-    local plrsInStudio = StudioConfigServer.PlrsInStudio
+    ComputerConfigServer.LevelUpComputer(plr)
 end)

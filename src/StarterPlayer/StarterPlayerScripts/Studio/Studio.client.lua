@@ -4,13 +4,15 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GlobalVariables = require(ReplicatedStorage:WaitForChild("GlobalVariables"))
+local GeneralUtils = require(ReplicatedStorage.Utils.GeneralUtils)
+local CameraControls = require(ReplicatedStorage.Utils.Camera:WaitForChild("CameraControls"))
+local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
+local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
 local GuiServices = require(ReplicatedStorage.Utils.Gui:WaitForChild("GuiServices"))
 local Zone = require(ReplicatedStorage.Libs:WaitForChild("Zone"))
 local StudioConfig = require(ReplicatedStorage.Configs.Studio:WaitForChild("Studio"))
 local StaffMemberConfig = require(ReplicatedStorage.Configs.Staff:WaitForChild("StaffMember"))
-local CameraControls = require(ReplicatedStorage.Utils.Camera:WaitForChild("CameraControls"))
-local PlayerServices = require(ReplicatedStorage.Utils.Player:WaitForChild("Player"))
-local DatastoreUtils = require(ReplicatedStorage.Utils.DS:WaitForChild("DatastoreUtils"))
+local ComputerConfig = require(ReplicatedStorage.Configs.GameDev.Computer)
 
 local Remotes = ReplicatedStorage.Remotes
 local localPlr = Players.LocalPlayer
@@ -350,11 +352,12 @@ local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
     Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = interiorPlrTpPart })
 
     local studioExteriorFolder = StudioExteriorsFolder:FindFirstChild(currentStudioIndex)
+    studioExteriorFolder = StudioExteriorsFolder:FindFirstChild(tostring(currentStudioIndex))
     local interiorTpPart = studioExteriorFolder:FindFirstChild("InteriorTeleportPart")
     studioInteriorModel = studioInteriorFolder:FindFirstChild("Interior")
     studioInteriorPlacedItems = studioInteriorModel:FindFirstChild("PlacedObjects")
     studioInteriorPlot = studioInteriorModel:FindFirstChild("Plot")
-    
+
     local yOffset = calculateYOffset(studioInteriorModel)
 
     local studioType: "Standard" | "Premium" = StudioConfig.GetConfig(currentStudioIndex).StudioType
@@ -414,8 +417,12 @@ local visitOwnStudioRemote = Remotes.Studio.General.VisitOwnStudio
 local visitOtherStudioRemote = Remotes.Studio.General.VisitOtherStudio
 for _i, remote in { visitOwnStudioRemote, visitOtherStudioRemote } do
     remote.OnClientEvent:Connect(function(studioOwnerId, studioIndex, interiorPlrTpPart, exteriorPlrTpPart, placedFurnitureData, opts: {})
+        opts = opts or {}
+        
+        local switchingStudio: boolean = opts["SwitchingStudios"] and true or false
+
         -- if plr was already in a studio (their own or someone elses)
-        if opts and opts["SwitchingStudios"] then
+        if switchingStudio then
             studioInteriorCleanup()
         end
     
@@ -499,6 +506,31 @@ end)
 
 Remotes.Studio.BuildMode.ExitBuildMode.OnClientEvent:Connect(function(_opts: {})
     registerInteractionBtns()
+end)
+
+Remotes.GameDev.Computer.ReplicateLevelUpComputer.OnClientEvent:Connect(function(computerLevel: number)
+    local oldComputerSetupModel: Model = studioInteriorModel:FindFirstChild("Computer")
+    if not oldComputerSetupModel then return end
+
+    local newComputerModel: Model = ComputerConfig.GetComputerModel(computerLevel)
+    if not newComputerModel then return end
+
+    newComputerModel.Name = "Computer"
+
+    local oldComputerModelCFrame: CFrame = oldComputerSetupModel.PrimaryPart.CFrame
+
+    newComputerModel:PivotTo(oldComputerModelCFrame)
+    task.wait(0.5)
+
+    task.spawn(function()
+        GeneralUtils.TweenModelSize(oldComputerSetupModel, 0.7, 0)
+        oldComputerSetupModel:Destroy()
+    
+        newComputerModel.Parent = studioInteriorModel
+        GeneralUtils.ResizeModel(newComputerModel, 0.01)
+        local originalSizeFactor = 100 -- has to be 100, because original Scale factor is 1, but after resizing the model to 0.01, this now has to be 100 (0.01 * 100 = 1)
+        GeneralUtils.TweenModelSize(newComputerModel, 1, originalSizeFactor, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out)
+    end)
 end)
 
 -- on plr spawn & death
