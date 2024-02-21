@@ -182,5 +182,33 @@ function GeneralUtils.FilterText(plr: Player, textToFilter: string, filterMethod
     }
 end
 
+-- opts     
+-- Tween: boolean -> if true, tweens the models size
+function GeneralUtils.ResizeModel(model: Model, factor: number)
+	local base = model.PrimaryPart
+	for _, part in pairs(model:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.Position = base.Position:Lerp(part.Position, factor)
+			part.Size *= factor
+		end
+	end
+end
+
+function GeneralUtils.TweenModelSize(model, duration: number, factor: number, easingStyle: Enum.EasingStyle, easingDirection: Enum.EasingDirection)
+    factor = factor or 1
+    easingStyle = easingStyle or Enum.EasingStyle.Linear
+    easingDirection = easingDirection or Enum.EasingDirection.InOut
+
+    local s = factor - 1
+    local i = 0
+    local oldAlpha = 0
+    while i < 1 do
+        local dt = task.wait()
+        i = math.min(i + dt/duration, 1)
+        local alpha = TweenService:GetValue(i, easingStyle, easingDirection)
+        GeneralUtils.ResizeModel(model, (alpha*s + 1)/(oldAlpha*s + 1))
+        oldAlpha = alpha
+    end
+end
 
 return GeneralUtils
