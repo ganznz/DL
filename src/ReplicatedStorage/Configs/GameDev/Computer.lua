@@ -166,7 +166,6 @@ function Computer.GetItemPrice(itemIndex: number): number
 end
 
 function Computer.HasLastComputer(plrData): boolean
-    print(plrData.GameDev.Computer.Level == GeneralUtils.LengthOfDict(Computer.Config))
     return plrData.GameDev.Computer.Level == GeneralUtils.LengthOfDict(Computer.Config)
 end
 
@@ -205,6 +204,16 @@ function Computer.GetComputerBuffs(plrData): {}
             elseif upgradeConfig.Stat == "art" then
                 artPtsBuff += upgradeConfig.StatIncrease
             end
+        end
+    end
+
+    -- for each computer level from level 2 onwards, each buff has an additional x1.5 multiplier
+    if plrComputerLevel >= 2 then
+        for i = 2, plrComputerLevel, 1 do
+            coinsBuff += 1.5
+            codePtsBuff += 1.5
+            soundPtsBuff += 1.5
+            artPtsBuff += 1.5
         end
     end
 
