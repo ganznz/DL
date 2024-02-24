@@ -42,7 +42,7 @@ local topicIterationIndex = 1
 local presentInteractionBillboards = {} -- holds all existing interaction billboards
 
 -- connections
-local shelfViewBtnBtnConnection = nil
+local shelfViewBtnConnection = nil
 local computerMakeGameBtnConnection = nil
 local computerUpgradeBtnConnection
 local studioEssentialsProximityConnection = nil -- connection for detecting what item interactions should show
@@ -73,8 +73,8 @@ local function resetStudioVariables()
 end
 
 local function resetStudioConnections()
-    if shelfViewBtnBtnConnection then shelfViewBtnBtnConnection:Disconnect() end
-    shelfViewBtnBtnConnection = nil
+    if shelfViewBtnConnection then shelfViewBtnConnection:Disconnect() end
+    shelfViewBtnConnection = nil
 
     if computerMakeGameBtnConnection then computerMakeGameBtnConnection:Disconnect() end
     computerMakeGameBtnConnection = nil
@@ -143,6 +143,10 @@ local function deleteStaffInteractionBillboards()
 end
 
 local function disableInteractionBtns()
+    local plrsInStudioInfo = Remotes.Studio.General.GetPlrsInStudioInfo:InvokeServer()
+    if not plrsInStudioInfo[tostring(localPlr.UserId)] then return end
+    if localPlr.UserId ~= plrsInStudioInfo[tostring(localPlr.UserId)].PlrVisitingId then return end
+
     resetStudioConnections()
     deleteStaffInteractionBillboards()
     
@@ -154,7 +158,7 @@ local function disableInteractionBtns()
 end
 
 local function registerShelfViewBtn(viewBtn)
-    shelfViewBtnBtnConnection = viewBtn.Activated:Connect(function()
+    shelfViewBtnConnection = viewBtn.Activated:Connect(function()
         GuiServices.HideHUD({ HideGuiFrames = true })
         
         PlayerServices.HidePlayer(localPlr, true)
@@ -235,6 +239,11 @@ end
 
 
 local function registerInteractionBtns()
+    -- check if plr is in their own studio first
+    local plrsInStudioInfo = Remotes.Studio.General.GetPlrsInStudioInfo:InvokeServer()
+    if not plrsInStudioInfo[tostring(localPlr.UserId)] then return end
+    if localPlr.UserId ~= plrsInStudioInfo[tostring(localPlr.UserId)].PlrVisitingId then return end
+
     computerModel = studioInteriorModel:FindFirstChild("Computer")
     shelfModel = studioInteriorModel:FindFirstChild("Shelf")
 
