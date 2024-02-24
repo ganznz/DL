@@ -23,41 +23,57 @@ local camera = Workspace:WaitForChild("Camera")
 
 -- GUI REFERENCE VARIABLES --
 local AllGuiScreenGui = PlayerGui:WaitForChild("AllGui")
--- general
-local ComputerUpgradeContainer = AllGuiScreenGui.Computer:WaitForChild("ComputerUpgradeContainer")
-local ContainerInner = ComputerUpgradeContainer.ComputerUpgradeContainerInner
-local HeaderText = ComputerUpgradeContainer.Header
-local ExitBtn: TextButton = ComputerUpgradeContainer.ExitBtn
-local LevelUpComputerBtn: TextButton = ContainerInner.UpgradeBtn
--- stats container
-local StatsContainer = ContainerInner.StatsContainer
-local CoinsBuffText = StatsContainer:FindFirstChild("Coins", true)
-local CodePtsBuffText = StatsContainer:FindFirstChild("CodePts", true)
-local SoundPtsBuffText = StatsContainer:FindFirstChild("SoundPts", true)
-local ArtPtsBuffText = StatsContainer:FindFirstChild("ArtPts", true)
--- scrolling frame
-local ScrollingFrame = ContainerInner.ScrollingFrame
-local CompletedTemplate = ScrollingFrame.CompletedTemplate
-local LockedTemplate = ScrollingFrame.LockedTemplate
--- -- inprogress template
-local InprogressTemplate = ScrollingFrame.InProgressTemplate
--- -- -- requirements view
-local RequirementsView = InprogressTemplate.Info.RequirementsView
-local InProgComputerIcon = RequirementsView.ComputerIcon
-local InProgComputerIconDropshadow = InProgComputerIcon.ComputerIconDropshadow
-local InProgComputerName = RequirementsView.ComputerName
-local MaterialsContainer = RequirementsView.MaterialsContainer
-local MaterialsContainerTemplate = MaterialsContainer.Template
-local UpgradesContainer = RequirementsView.UpgradesContainer
-local UpgradesTemplateContainer = UpgradesContainer.TemplateContainer
--- -- -- upgrade view
-local UpgradeView = InprogressTemplate.Info.UpgradeView
-local UpgradeName = UpgradeView.UpgradeName
-local UpgradeDesc = UpgradeView.UpgradeDesc
-local UpgradeViewSelectBtn = UpgradeView.SelectBtn
-local UpgradeViewBackBtn = UpgradeView.BackBtn
-local UpgradeViewProgBar = UpgradeView.ProgressContainer.ProgressBar.ProgressBarProg
-local UpgradeViewProgText = UpgradeView.ProgressContainer.Progress
+-- COMPUTER UPGRADE GUI
+-- -- general
+local ComputerUpgradeContainer: Frame = AllGuiScreenGui.Computer:WaitForChild("ComputerUpgradeContainer")
+local ComputerUpgradeContainerInner: Frame = ComputerUpgradeContainer.ComputerUpgradeContainerInner
+local ComputerUpgradeHeaderText: TextLabel = ComputerUpgradeContainer.Header
+local ComputerUpgradeExitBtn: TextButton = ComputerUpgradeContainer.ExitBtn
+local ComputerUpgradeLevelUpComputerBtn: TextButton = ComputerUpgradeContainerInner.UpgradeBtn
+-- -- stats container
+local StatsContainer: Frame = ComputerUpgradeContainerInner.StatsContainer
+local ComputerUpgradeCoinsBuffText: TextLabel = StatsContainer:FindFirstChild("Coins", true)
+local ComputerUpgradeCodePtsBuffText: TextLabel = StatsContainer:FindFirstChild("CodePts", true)
+local ComputerUpgradeSoundPtsBuffText: TextLabel = StatsContainer:FindFirstChild("SoundPts", true)
+local ComputerUpgradeArtPtsBuffText: TextLabel = StatsContainer:FindFirstChild("ArtPts", true)
+-- -- scrolling frame
+local ScrollingFrame: ScrollingFrame = ComputerUpgradeContainerInner.ScrollingFrame
+local CompletedTemplate: Frame = ScrollingFrame.CompletedTemplate
+local LockedTemplate: Frame = ScrollingFrame.LockedTemplate
+-- -- -- inprogress template
+local InprogressTemplate: Frame = ScrollingFrame.InProgressTemplate
+-- -- -- -- requirements view
+local RequirementsView: Frame = InprogressTemplate.Info.RequirementsView
+local InProgComputerIcon: ImageLabel = RequirementsView.ComputerIcon
+local InProgComputerIconDropshadow: ImageLabel = InProgComputerIcon.ComputerIconDropshadow
+local InProgComputerName: TextLabel = RequirementsView.ComputerName
+local MaterialsContainer: Frame = RequirementsView.MaterialsContainer
+local MaterialsContainerTemplate: Frame = MaterialsContainer.Template
+local UpgradesContainer: Frame = RequirementsView.UpgradesContainer
+local UpgradesTemplateContainer: Frame = UpgradesContainer.TemplateContainer
+-- -- -- -- upgrade view
+local UpgradeView: Frame = InprogressTemplate.Info.UpgradeView
+local UpgradeName: TextLabel = UpgradeView.UpgradeName
+local UpgradeDesc: TextLabel = UpgradeView.UpgradeDesc
+local UpgradeViewSelectBtn: TextButton = UpgradeView.SelectBtn
+local UpgradeViewBackBtn: TextButton = UpgradeView.BackBtn
+local UpgradeViewProgBar: Frame = UpgradeView.ProgressContainer.ProgressBar.ProgressBarProg
+local UpgradeViewProgText: TextLabel = UpgradeView.ProgressContainer.Progress
+
+-- COMPUTER LEVEL UP GUI
+-- -- general
+local ComputerLevelUpContainer: Frame = AllGuiScreenGui.Computer:WaitForChild("ComputerLevelUpContainer")
+local ComputerLevelUpContainerInner: Frame = ComputerLevelUpContainer.ComputerLevelUpContainerInner
+local ComputerLevelUpConfirmBtn: TextButton = ComputerLevelUpContainer.ConfirmBtn
+local ComputerLevelUpComputerName: TextLabel = ComputerLevelUpContainerInner.ComputerName
+local ComputerLevelUpComputerIcon: ImageLabel = ComputerLevelUpContainerInner.ComputerIcon
+local ComputerLevelUpComputerIconDropshadow: ImageLabel = ComputerLevelUpComputerIcon.ComputerIconDropshadow
+-- -- computer buffs
+local ComputerLevelUpBuffsContainer: Frame = ComputerLevelUpContainerInner.ComputerBuffsContainer
+local ComputerLevelUpCoinsBuffText: TextLabel = ComputerLevelUpBuffsContainer.Coins.Buff
+local ComputerLevelUpCodePtsBuffText: TextLabel = ComputerLevelUpBuffsContainer.CodePts.Buff
+local ComputerLevelUpSoundPtsBuffText: TextLabel = ComputerLevelUpBuffsContainer.SoundPts.Buff
+local ComputerLevelUpArtPtsBuffText: TextLabel = ComputerLevelUpBuffsContainer.ArtPts.Buff
 
 
 -- STATIC VARIABLES --
@@ -65,21 +81,24 @@ local materialRequirementText = "CURR/REQUIRED"
 local upgradeGoalProgressText = "CURR/REQUIRED"
 
 -- STATE VARIABLES --
-local plrData = nil
+local plrData = Remotes.Data.GetAllData:InvokeServer()
 local studioPcModel: Model = nil
 local currentlyViewedComputerUpgrade: string = nil -- this variable stores the name of the upgrade being currently viewed
 local backBtnConnection: RBXScriptConnection = nil
 local selectBtnConnection: RBXScriptConnection = nil
 
 GuiServices.StoreInCache(ComputerUpgradeContainer)
+GuiServices.StoreInCache(ComputerLevelUpContainer)
 
 GuiServices.DefaultMainGuiStyling(ComputerUpgradeContainer)
+GuiServices.DefaultMainGuiStyling(ComputerLevelUpContainer)
 
-GuiTemplates.HeaderText(HeaderText)
-GuiTemplates.CreateButton(ExitBtn, { Rotates = true })
-GuiTemplates.CreateButton(LevelUpComputerBtn, { Rotates = true })
+GuiTemplates.HeaderText(ComputerUpgradeHeaderText)
+GuiTemplates.CreateButton(ComputerUpgradeExitBtn, { Rotates = true })
+GuiTemplates.CreateButton(ComputerUpgradeLevelUpComputerBtn, { Rotates = true })
 GuiTemplates.CreateButton(UpgradeViewSelectBtn)
 GuiTemplates.CreateButton(UpgradeViewBackBtn)
+GuiTemplates.CreateButton(ComputerLevelUpConfirmBtn)
 
 -- set some GUI instances to invisible by default
 CompletedTemplate.Visible = false
@@ -92,7 +111,7 @@ MaterialsContainerTemplate.Visible = false
 
 local function resetVariablesAndConnections()
     -- variables
-    plrData = nil
+    plrData = Remotes.Data.GetAllData:InvokeServer()
     studioPcModel = nil
     currentlyViewedComputerUpgrade = nil
 
@@ -249,10 +268,6 @@ local function clearMaterialRequirementsDisplay()
 end
 
 local function setupComputerTemplate(computerTemplate: Frame, status: "completed" | "inprogress", computerConfigInformation: ComputerConfig.ComputerConfig)
-    -- clear upgrade btns & required material displays from previous viewing of this GUI, if any
-    clearUpgradeBtns()
-    clearMaterialRequirementsDisplay()
-
     if status == "completed" then
         local computerIcon: ImageLabel = computerTemplate.ComputerIcon
         local computerIconDropshadow: ImageLabel = computerIcon.ComputerIconDropshadow
@@ -260,6 +275,9 @@ local function setupComputerTemplate(computerTemplate: Frame, status: "completed
         computerIconDropshadow.Image = GeneralUtils.GetDecalUrl(computerConfigInformation.IconFill)
     
     elseif status == "inprogress" then
+        -- clear upgrade btns & required material displays from previous viewing of this GUI, if any
+        clearUpgradeBtns()
+        clearMaterialRequirementsDisplay()
         currentlyViewedComputerUpgrade = nil
         RequirementsView.Visible = true
         UpgradeView.Visible = false
@@ -362,17 +380,17 @@ end
 local function populateComputerUpgradeGui()
     -- computer buff section
     local computerBuffs = ComputerConfig.GetComputerBuffs(plrData)
-    CoinsBuffText.Text = `Coins: <font color="#fff352"><stroke color="#d9a414" thickness="2">+{computerBuffs.CoinsBuff * 100}%</stroke></font>`
-    CodePtsBuffText.Text = `Code Points: <font color="#fff352"><stroke color="#d9a414" thickness="2">+{computerBuffs.CodePtsBuff * 100}%</stroke></font>`
-    SoundPtsBuffText.Text = `Sound Points: <font color="#fff352"><stroke color="#d9a414" thickness="2">+{computerBuffs.SoundPtsBuff * 100}%</stroke></font>`
-    ArtPtsBuffText.Text = `Art Points: <font color="#fff352"><stroke color="#d9a414" thickness="2">+{computerBuffs.ArtPtsBuff * 100}%</stroke></font>`
+    ComputerUpgradeCoinsBuffText.Text = `Coins: <font color="#fff352"><stroke color="#d9a414" thickness="2">x{1 + computerBuffs.CoinsBuff}</stroke></font>`
+    ComputerUpgradeCodePtsBuffText.Text = `Code Points: <font color="#fff352"><stroke color="#d9a414" thickness="2">x{1 + computerBuffs.CodePtsBuff}</stroke></font>`
+    ComputerUpgradeSoundPtsBuffText.Text = `Sound Points: <font color="#fff352"><stroke color="#d9a414" thickness="2">x{1 + computerBuffs.SoundPtsBuff}</stroke></font>`
+    ComputerUpgradeArtPtsBuffText.Text = `Art Points: <font color="#fff352"><stroke color="#d9a414" thickness="2">x{1 + computerBuffs.ArtPtsBuff}</stroke></font>`
 
     -- scrolling frame
     populateScrollingFrame()
 
     -- computer upgrade btn
     local canLevelUpComputer: boolean = ComputerConfig.AllAvailableComputerUpgradesCompleted(plrData)
-    LevelUpComputerBtn.Visible = canLevelUpComputer
+    ComputerUpgradeLevelUpComputerBtn.Visible = (not ComputerConfig.HasLastComputer(plrData)) and canLevelUpComputer
 end
 
 local function prepareComputerUpgradeGui()
@@ -401,15 +419,36 @@ local function displayNewComputer(newComputerLevel: number, oldComputerSetupMode
     local oldComputerModelCFrame: CFrame = oldComputerSetupModel.PrimaryPart.CFrame
 
     GuiServices.TriggerFlashFrame()
+    GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.LevelUp)
     newComputerModel:PivotTo(oldComputerModelCFrame)
-    oldComputerSetupModel:Destroy()
+    task.wait(0.5)
 
-    newComputerModel.Parent = Workspace.TempAssets.Studios:FindFirstChild("Interior", true)
-    studioPcModel = newComputerModel
+    task.spawn(function()
+        GeneralUtils.ResizeModel(oldComputerSetupModel, 0)
+        oldComputerSetupModel:Destroy()
+    
+        newComputerModel.Parent = Workspace.TempAssets.Studios:FindFirstChild("Interior", true)
+        GeneralUtils.ResizeModel(newComputerModel, 0.01)
+        local originalSizeFactor = 100 -- has to be 100, because original Scale factor is 1, but after resizing the model to 0.01, this now has to be 100 (0.01 * 100 = 1)
+        GeneralUtils.TweenModelSize(newComputerModel, 1, originalSizeFactor, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out)
+    
+        studioPcModel = newComputerModel
+    end)
 end
 
-local function populateUpgradedComputerGui()
+local function populateUpgradedComputerGui(newComputerLevel: number)
+    local newComputerConfig: ComputerConfig.ComputerConfig = ComputerConfig.GetConfig(newComputerLevel)
 
+    ComputerLevelUpComputerName.Text = newComputerConfig.Name
+    ComputerLevelUpComputerIcon.Image = GeneralUtils.GetDecalUrl(newComputerConfig.IconStroke)
+    ComputerLevelUpComputerIconDropshadow.Image = GeneralUtils.GetDecalUrl(newComputerConfig.IconFill)
+
+    -- populate computer buffs section
+    local computerBuffs = ComputerConfig.GetComputerBuffs(plrData)
+    ComputerLevelUpCoinsBuffText.Text = `<font color="#fff352"><stroke color="#d9a414" thickness="2">x{1 + computerBuffs.CoinsBuff}</stroke></font>`
+    ComputerLevelUpCodePtsBuffText.Text = `<font color="#fff352"><stroke color="#d9a414" thickness="2">x{1 + computerBuffs.CodePtsBuff}</stroke></font>`
+    ComputerLevelUpSoundPtsBuffText.Text = `<font color="#fff352"><stroke color="#d9a414" thickness="2">x{1 + computerBuffs.SoundPtsBuff}</stroke></font>`
+    ComputerLevelUpArtPtsBuffText.Text = `<font color="#fff352"><stroke color="#d9a414" thickness="2">x{1 + computerBuffs.ArtPtsBuff}</stroke></font>`
 end
 
 -- this function is called upon the computer being levelled up
@@ -428,16 +467,16 @@ local function prepareComputerLevelupGui(newComputerLevel: number)
     -- disable studio interaction btns
     Remotes.Studio.General.DisableInteractionBtns:Fire()
 
-    populateUpgradedComputerGui()
+    populateUpgradedComputerGui(newComputerLevel)
 
-    GuiServices.ShowGuiStandard(ComputerUpgradeContainer)
+    task.wait(1) -- wait until camera is zoomed in on computer before displaying GUI & new computer skin
 
-    task.wait(1)
     displayNewComputer(newComputerLevel, studioPcModel)
+    GuiServices.ShowGuiStandard(ComputerLevelUpContainer)
 end
 
 -- BTN ACTIVATIONS --
-ExitBtn.Activated:Connect(function()
+ComputerUpgradeExitBtn.Activated:Connect(function()
     resetVariablesAndConnections()
     
     GuiServices.HideGuiStandard(ComputerUpgradeContainer)
@@ -447,8 +486,16 @@ ExitBtn.Activated:Connect(function()
     Remotes.Studio.General.EnableInteractionBtns:Fire()
 end)
 
-LevelUpComputerBtn.Activated:Connect(function()
+ComputerUpgradeLevelUpComputerBtn.Activated:Connect(function()
     Remotes.GameDev.Computer.LevelUpComputer:FireServer()
+end)
+
+ComputerLevelUpConfirmBtn.Activated:Connect(function()
+    GuiServices.HideGuiStandard(ComputerLevelUpContainer)
+    PlayerServices.ShowPlayer(localPlr, true)
+    CameraControls.SetDefault(localPlr, camera, true)
+    GuiServices.ShowHUD()
+    Remotes.Studio.General.EnableInteractionBtns:Fire()
 end)
 
 -- REMOTES --
@@ -473,4 +520,8 @@ Remotes.GameDev.Computer.ChangeActiveComputerUpgrade.OnClientEvent:Connect(funct
     end
 end)
 
-Remotes.GameDev.Computer.LevelUpComputer.OnClientEvent:Connect(prepareComputerLevelupGui)
+Remotes.GameDev.Computer.LevelUpComputer.OnClientEvent:Connect(function(newComputerLevel: number)
+    plrData = Remotes.Data.GetAllData:InvokeServer() -- refresh plr data
+
+    prepareComputerLevelupGui(newComputerLevel)
+end)
