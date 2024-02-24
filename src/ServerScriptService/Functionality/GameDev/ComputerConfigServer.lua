@@ -72,6 +72,7 @@ function ComputerConfig.LevelUpComputer(plr: Player, bypassChecks: boolean): boo
     end
 
     profile.Data.GameDev.Computer.Level += 1
+    profile.Data.GameDev.Computer.ActiveUpgrade = false
 
     Remotes.GameDev.Computer.LevelUpComputer:FireClient(plr, profile.Data.GameDev.Computer.Level)
 

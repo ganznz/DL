@@ -79,7 +79,7 @@ local SPECIALTY_TEXT = "Specialty: SPECIALTY"
 local ENERGY_FULL_IN_TEXT = "Full in: FORMATTED_TIME"
 
 -- STATE VARIABLES --
-local plrData = nil
+local plrData = Remotes.Data.GetAllData:InvokeServer()
 local currentlyViewedStaffUUID: string | nil = nil -- uuid of the staff member currently being viewed (or trained)
 local currentlyViewedStaffInstance: {} | nil = nil -- instance object of the staff member currently being viewed (or trained)
 local currentlyViewedStaffPcModel: Model | nil = nil -- the PC model of the placed staff member model being viewed
@@ -160,7 +160,7 @@ end
 local function populateStaffViewGui()
     StaffViewHeader.Text = currentlyViewedStaffInstance.Name
     StaffViewRarity.Text = StaffMemberConfig.GetRarityName(currentlyViewedStaffInstance.Model)
-    StaffViewRarity.TextColor3 = GeneralConfig.GetRarityColour(currentlyViewedStaffInstance.Rarity)
+    StaffViewRarity.TextColor3 = GeneralConfig.GetRarityColour(currentlyViewedStaffInstance.Rarity, "Primary")
     StaffViewSpecialty.Text = SPECIALTY_TEXT:gsub("SPECIALTY", currentlyViewedStaffInstance.Specialisation)
     StaffViewEnergyBarProg.Size = UDim2.fromScale(currentlyViewedStaffInstance.CurrentEnergy / currentlyViewedStaffInstance:CalcMaxEnergy(), 1)
     if currentlyViewedStaffInstance.CurrentEnergy == currentlyViewedStaffInstance:CalcMaxEnergy() then StaffViewEnergyTimer.TextTransparency = 1 end

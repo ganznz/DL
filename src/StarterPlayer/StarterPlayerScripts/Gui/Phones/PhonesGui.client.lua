@@ -48,7 +48,7 @@ local BUY_BTN_TEXT = "AMT CURRENCY"
 local REWARD_APPEARANCE_LENGTH = 3
 
 -- STATE VARIABLES --
-local plrData = nil
+local plrData = Remotes.Data.GetAllData:InvokeServer()
 local phoneName = nil -- currently viewed phones name
 local phoneConfig = nil -- currently viewed phones config
 local buyBtnConnection = nil
@@ -176,7 +176,7 @@ local function populateRewardContainer()
             local icon = template:FindFirstChild("Icon")
             icon.Image = GeneralUtils.GetDecalUrl(itemConfig.IconStroke)
 
-            local templateColour = GeneralConfig.GetRarityColour(itemConfig.Rarity)
+            local templateColour = GeneralConfig.GetRarityColour(itemConfig.Rarity, "Primary")
             if templateColour then template.BackgroundColor3 = templateColour end
 
             templateContainer.Name = unlockableItemName
@@ -245,7 +245,7 @@ local function showReward(reward: string)
     end
 
     itemConfig = config.GetConfig(rewardName)
-    local rarityColour = GeneralConfig.GetRarityColour(itemConfig.Rarity)
+    local rarityColour = GeneralConfig.GetRarityColour(itemConfig.Rarity, "Primary")
 
     RewardIconItemImage.Image = GeneralUtils.GetDecalUrl(itemConfig.IconStroke)
     RewardIcon.BackgroundColor3 = rarityColour

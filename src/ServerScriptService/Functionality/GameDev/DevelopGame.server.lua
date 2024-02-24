@@ -131,7 +131,7 @@ local function endAndStoreGameData(plr: Player)
     local activeComputerUpgrade: string | false = profile.Data.GameDev.Computer.ActiveUpgrade
     local pointsOfUpgradeToAdjust: number
     local computerUpgradeConfig: ComputerConfigServer.ComputerUpgradeConfig = ComputerConfigServer.GetUpgradeConfig(plrComputerLevel, activeComputerUpgrade)
-    
+
     if activeComputerUpgrade then
         if computerUpgradeConfig.Stat == "coins" then
             pointsOfUpgradeToAdjust = gameStateInfo.GameResults.Earnings

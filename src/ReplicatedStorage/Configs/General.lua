@@ -15,21 +15,21 @@ for materialName, _materialInfo in MaterialsConfig.Config do allItems[materialNa
 
 GeneralConfig.AllItems = allItems
 
-function GeneralConfig.GetRarityColour(itemRarity: number): Color3 | nil
+function GeneralConfig.GetRarityColour(itemRarity: number, colourType: "Primary" | "Secondary"): Color3 | nil
     if itemRarity == 1 then
-        return GlobalVariables.Gui.Rarity1Colour
+        return colourType == "Primary" and GlobalVariables.Gui.Rarity1PrimaryColour or GlobalVariables.Gui.Rarity1SecondaryColour
     elseif itemRarity == 2 then
-        return GlobalVariables.Gui.Rarity2Colour
+        return colourType == "Primary" and GlobalVariables.Gui.Rarity2PrimaryColour or GlobalVariables.Gui.Rarity2SecondaryColour
     elseif itemRarity == 3 then
-        return GlobalVariables.Gui.Rarity3Colour
+        return colourType == "Primary" and GlobalVariables.Gui.Rarity3PrimaryColour or GlobalVariables.Gu7.Rarity3SecondaryColour
     elseif itemRarity == 4 then
-        return GlobalVariables.Gui.Rarity4Colour
+        return colourType == "Primary" and GlobalVariables.Gui.Rarity4PrimaryColour or GlobalVariables.Gui.Rarity4SecondaryColour
     elseif itemRarity == 5 then
-        return GlobalVariables.Gui.Rarity5Colour
+        return colourType == "Primary" and GlobalVariables.Gui.Rarity5PrimaryColour or GlobalVariables.Gui.Rarity5SecondaryColour
     elseif itemRarity == 6 then
-        return GlobalVariables.Gui.Rarity6Colour
+        return colourType == "Primary" and GlobalVariables.Gui.Rarity6PrimaryColour or GlobalVariables.Gui.Rarity6SecondaryColour
     elseif itemRarity == 7 then
-        return GlobalVariables.Gui.Rarity7Colour
+        return colourType == "Primary" and GlobalVariables.Gui.Rarity7PrimaryColour or GlobalVariables.Gui.Rarity7SecondaryColour
     end
 end
 

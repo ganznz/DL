@@ -84,7 +84,7 @@ local ItemInfoItemName = ItemInfoPanel:FindFirstChild("ItemName")
 local ItemInfoTotalOwnedText = ItemInfoPanel:FindFirstChild("TotalOwned")
 
 -- STATE VARIABLES --
-local plrData = nil
+local plrData = Remotes.Data.GetAllData:InvokeServer()
 local studioAllPlrsInfo = nil
 local inventoryCategory = "staff" -- category that is currently being viewed, defaults to Staff when UI opens ("staff" | "furniture" | "items")
 local inLockMode = false
@@ -414,7 +414,7 @@ local function createItemTemplate(itemInfo: {})
         local itemLockedIcon = templateBtn:FindFirstChild("LockIcon")
         template.Name = itemInstance.UUID
 
-        templateBtn.BackgroundColor3 = GeneralConfig.GetRarityColour(itemInstance.Rarity)
+        templateBtn.BackgroundColor3 = GeneralConfig.GetRarityColour(itemInstance.Rarity, "Primary")
 
         local isLocked = plrData.Inventory.StaffMembers[itemInstance.UUID].Locked
         itemLockedIcon.Visible = isLocked
@@ -465,7 +465,7 @@ local function createItemTemplate(itemInfo: {})
         local itemAmtText = templateBtn:FindFirstChild("Amt")
         local itemTypeIcon = templateBtn:FindFirstChild("TypeIcon")
 
-        templateBtn.BackgroundColor3 = GeneralConfig.GetRarityColour(itemConfig.Rarity)
+        templateBtn.BackgroundColor3 = GeneralConfig.GetRarityColour(itemConfig.Rarity, "Primary")
         itemTypeIcon.Image = GeneralUtils.GetDecalUrl(categoryConfig.CategoryImage)
 
         nameText.Text = itemInfo.ItemName
@@ -532,13 +532,13 @@ local function populateScrollingFrame()
             local amt = foodData.Amount
             if amt == 0 then continue end
             if amt <= 10 then
-                createItemTemplate({ ItemName = foodName, ItemAmt = amt, TotalAmt = foodName.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
+                createItemTemplate({ ItemName = foodName, ItemAmt = amt, TotalAmt = foodData.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
             else
                 while amt > 0 do
                     if amt > 10 then
-                        createItemTemplate({ ItemName = foodName, ItemAmt = 10, TotalAmt = foodName.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
-                    else
-                        createItemTemplate({ ItemName = foodName, ItemAmt = amt, TotalAmt = foodName.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
+                        createItemTemplate({ ItemName = foodName, ItemAmt = 10, TotalAmt = foodData.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
+
+                        createItemTemplate({ ItemName = foodName, ItemAmt = amt, TotalAmt = foodData.Amount, ItemCategory = "Staff Food", FakeUUID = `{foodName}{tostring(index)}` })
                     end
                     amt -= 10
                     index += 1

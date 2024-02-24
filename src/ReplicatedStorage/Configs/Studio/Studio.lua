@@ -28,7 +28,7 @@ local Config: { [string]: StudioConfig } = {
         Price = 50000,
         Currency = "Coins",
         FurnishingCapacity = 10,
-        Previous = "Studio 1"
+        Previous = "1"
     },
     ["3"]  = {
         StudioType = "Standard",
@@ -36,7 +36,7 @@ local Config: { [string]: StudioConfig } = {
         Price = 250000,
         Currency = "Coins",
         FurnishingCapacity = 15,
-        Previous = "Studio 2"
+        Previous = "2"
     },
     ["4"]  = {
         StudioType = "Standard",
@@ -44,7 +44,7 @@ local Config: { [string]: StudioConfig } = {
         Price = 1000000,
         Currency = "Coins",
         FurnishingCapacity = 20,
-        Previous = "Studio 3"
+        Previous = "3"
     },
 
     -- gamepass studios

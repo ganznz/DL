@@ -166,7 +166,7 @@ local BTN_STYLE_INFO = {
 }
 
 -- STATE VARIABLES --
-local plrData = nil
+local plrData = Remotes.Data.GetAllData:InvokeServer()
 local plrPlatform = nil
 local helpingStaffMembers = nil
 local studioPcSetup: Model = nil
@@ -282,7 +282,7 @@ styleStaffMemberTemplate = function(template: Frame, staffMemberUUID: string, st
     local noEnergyColour: Color3 = ENERGY_COLOURS.NoEnergy.Main
 
     local staffMemberConfig: StaffMemberConfig.StaffMemberConfig = StaffMemberConfig.GetConfig(staffMemberData.Model)
-    local rarityColour: Color3 = GeneralConfig.GetRarityColour(staffMemberData.Rarity)
+    local rarityColour: Color3 = GeneralConfig.GetRarityColour(staffMemberData.Rarity, "Primary")
     
     staffIcon.Image = if currentEnergy <= 0 then GeneralUtils.GetDecalUrl(staffMemberConfig.IconGrayscale) else GeneralUtils.GetDecalUrl(staffMemberConfig.IconStroke)
     staffIconDropshadow.Image = GeneralUtils.GetDecalUrl(staffMemberConfig.IconFill)
@@ -1056,6 +1056,7 @@ end)
 
 GameInfoCollectBtn.Activated:Connect(function()
     Remotes.GameDev.CreateGame.EndGameDevelopment:FireServer()
+    Remotes.Character.PlayerLevelUp:FireServer()
 end)
 
 -- REMOTES --

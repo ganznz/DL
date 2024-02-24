@@ -9,7 +9,8 @@ StaffFood.CategoryImage = "15814511118"
 export type StaffFoodConfig = {
     Rarity: number,
     IconOriginal: string,
-    IconStroke: string
+    IconStroke: string,
+    IconFill: string,
 }
 
 local config: { [string]: StaffFoodConfig } = {
@@ -17,31 +18,37 @@ local config: { [string]: StaffFoodConfig } = {
         Rarity = 1,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
     ["Pizza"] = {
         Rarity = 1,
         IconOriginal = "",
-        IconStroke = "",
+        IconStroke = "15998279544",
+        IconFill = "15998277391",
     },
     ["Energy Drink"] = {
         Rarity = 2,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
     ["Porridge"] = {
         Rarity = 2,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
     ["Uranium"] = {
         Rarity = 5,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
     ["Holy White Powder"] = {
         Rarity = 5,
         IconOriginal = "",
         IconStroke = "",
+        IconFill = "",
     },
 }
 

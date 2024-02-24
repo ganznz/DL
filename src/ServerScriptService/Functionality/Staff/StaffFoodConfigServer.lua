@@ -6,12 +6,14 @@ local StaffFoodConfig = require(ReplicatedStorage.Configs.Staff.StaffFood)
 
 local StaffFoodServer = {}
 
-function StaffFoodServer.GiveFood(plr: Player, foodName: string)
+function StaffFoodServer.GiveFood(plr: Player, foodName: string, amt: number)
+    amt = amt or 1
+
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
     if profile.Data.Inventory.StaffFood[foodName] then
-        profile.Data.Inventory.StaffFood[foodName].Amount += 1
+        profile.Data.Inventory.StaffFood[foodName].Amount += amt
     end
 end
 

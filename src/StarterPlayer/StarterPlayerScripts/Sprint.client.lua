@@ -41,3 +41,12 @@ end)
 localPlr.CharacterAdded:Connect(function(newChar)
     char = newChar
 end)
+
+localPlr:GetAttributeChangedSignal("CanSprint"):Connect(function()
+    local humanoid: Humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
+    if not localPlr:GetAttribute("CanSprint") then
+        humanoid.WalkSpeed = WALK_SPEED
+    end
+end)

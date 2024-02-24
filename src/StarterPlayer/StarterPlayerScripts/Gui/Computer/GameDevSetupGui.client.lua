@@ -67,7 +67,7 @@ local TEAM_HEADER = "Current Team (CURR/MAX)"
 local NEED_TEXT = "CURR/REQUIRED"
 
 -- STATE VARIABLES --
-local plrData = nil
+local plrData = Remotes.Data.GetAllData:InvokeServer()
 local plrCharacterData = nil
 local staffInStudio = nil
 local studioPcModel: Model = nil
@@ -196,7 +196,7 @@ local function createStaffMemberTemplate(staffMemberUUID: string, staffMemberDat
     local energyBarProg = energyBar:FindFirstChild("EnergyBarProg")
    
     staffMemberIcon.Image = GeneralUtils.GetDecalUrl(staffMemberConfig.IconStroke)
-    staffMemberIcon.BackgroundColor3 = GeneralConfig.GetRarityColour(staffMemberConfig.Rarity)
+    staffMemberIcon.BackgroundColor3 = GeneralConfig.GetRarityColour(staffMemberConfig.Rarity, "Primary")
     staffMemberPts.Text = FormatNumber.FormatCompact(staffInstance:GetTotalSkillPts())
 
     local currentEnergy = staffMemberData.CurrentEnergy

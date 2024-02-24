@@ -32,7 +32,7 @@ local DeleteItemsYesBtn = DeleteItemsPopup:FindFirstChild("YesBtn")
 local DeleteItemsNoBtn = DeleteItemsPopup:FindFirstChild("NoBtn")
 
 -- STATE VARIABLES --
-local plrData = nil
+local plrData = Remotes.Data.GetAllData:InvokeServer()
 local currentItemsToDelete = nil
 local itemTypeToDelete = nil
 
@@ -57,7 +57,7 @@ local function createStaffItemCard(itemInfo: {})
     local staffMemberConfig = StaffMemberConfig.GetConfig(staffInstance.Model)
 
     itemNameText.Text = `{staffInstance.Name} - {StaffMemberConfig.GetRarityName(staffInstance.Model)}`
-    rarityBg.BackgroundColor3 = GeneralConfig.GetRarityColour(staffInstance.Rarity)
+    rarityBg.BackgroundColor3 = GeneralConfig.GetRarityColour(staffInstance.Rarity, "Primary")
     totalPtsText.Text = tostring(staffInstance:GetTotalSkillPts())
     itemImage.Image = GeneralUtils.GetDecalUrl(staffMemberConfig.IconStroke)
 
@@ -123,7 +123,7 @@ local function createItemCard(amtOfItem: number, itemInfo: {})
     local rarityBg = template:FindFirstChild("RarityColour")
 
     local itemConfig = itemInfo.CategoryConfig.GetConfig(itemInfo.ItemName)
-    rarityBg.BackgroundColor3 = GeneralConfig.GetRarityColour(itemConfig.Rarity)
+    rarityBg.BackgroundColor3 = GeneralConfig.GetRarityColour(itemConfig.Rarity, "Primary")
 
     local numOfItemInstances = amtOfItem
     itemNameText.Text = `{itemInfo.ItemName} - {itemInfo.ItemCategory}`
