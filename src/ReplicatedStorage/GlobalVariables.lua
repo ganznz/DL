@@ -27,6 +27,9 @@ GlobalVariables.Gui.MainGuiCloseTime = 0.1
 GlobalVariables.Gui.LoadingBgTweenTime = 0.5
 GlobalVariables.Gui.FlashShowTime = 0.2 -- time it takes for the flash
 
+-- gui RewardsContainer variables
+GlobalVariables.Gui.IntervalBetweenRewardDisplay = 0.3 -- if using a loop to display individual rewards, this is the cooldown between each iteration
+
 -- general gui colours
 GlobalVariables.Gui.StandardBlue = Color3.fromRGB(130, 186, 255)
 GlobalVariables.Gui.ValidGreenColour = Color3.fromRGB(93, 217, 91)
@@ -37,17 +40,29 @@ GlobalVariables.Gui.GuiBackdropColourDefault = Color3.fromRGB(0, 0, 0)
 GlobalVariables.Gui.GuiBackdropColourGreen = Color3.fromRGB(18, 111, 11)
 
 -- rarity colours
-GlobalVariables.Gui.Rarity1Colour = Color3.fromRGB(168, 168, 168)
-GlobalVariables.Gui.Rarity2Colour = Color3.fromRGB(79, 214, 70)
-GlobalVariables.Gui.Rarity3Colour = Color3.fromRGB(70, 156, 214)
-GlobalVariables.Gui.Rarity4Colour = Color3.fromRGB(255, 177, 94)
-GlobalVariables.Gui.Rarity5Colour = Color3.fromRGB(255, 80, 80)
-GlobalVariables.Gui.Rarity6Colour = Color3.fromRGB(158, 88, 255)
-GlobalVariables.Gui.Rarity7Colour = Color3.fromRGB(255, 88, 216)
+GlobalVariables.Gui.Rarity1PrimaryColour = Color3.fromRGB(168, 168, 168)
+GlobalVariables.Gui.Rarity1SecondaryColour = Color3.fromRGB(137, 137, 137)
+GlobalVariables.Gui.Rarity2PrimaryColour = Color3.fromRGB(79, 214, 70)
+GlobalVariables.Gui.Rarity2SecondaryColour = Color3.fromRGB(87, 174, 81)
+GlobalVariables.Gui.Rarity3PrimaryColour = Color3.fromRGB(70, 156, 214)
+GlobalVariables.Gui.Rarity3SecondaryColour = Color3.fromRGB(75, 128, 163)
+GlobalVariables.Gui.Rarity4PrimaryColour = Color3.fromRGB(255, 177, 94)
+GlobalVariables.Gui.Rarity4SecondaryColour = Color3.fromRGB(205, 137, 92)
+GlobalVariables.Gui.Rarity5PrimaryColour = Color3.fromRGB(255, 80, 80)
+GlobalVariables.Gui.Rarity5SecondaryColour = Color3.fromRGB(193, 89, 89)
+GlobalVariables.Gui.Rarity6PrimaryColour = Color3.fromRGB(158, 88, 255)
+GlobalVariables.Gui.Rarity6SecondaryColour = Color3.fromRGB(112, 76, 163)
+GlobalVariables.Gui.Rarity7PrimaryColour = Color3.fromRGB(255, 88, 216)
+GlobalVariables.Gui.Rarity7SecondaryColour = Color3.fromRGB(205, 91, 179)
 
 -- text colours
 GlobalVariables.Gui.GuiHeaderTextColour = Color3.fromRGB(66, 66, 66)
 GlobalVariables.Gui.GuiSecondaryTextColour = Color3.fromRGB(126, 126, 126)
+-- -- currency text colours
+GlobalVariables.Gui.CoinsPrimaryColour = Color3.fromRGB(255, 227, 67)
+GlobalVariables.Gui.CoinsSecondaryColour = Color3.fromRGB(211, 146, 60)
+GlobalVariables.Gui.GemsPrimaryColour = Color3.fromRGB(122, 191, 255)
+GlobalVariables.Gui.GemsSecondaryColour = Color3.fromRGB(91, 132, 198)
 
 -- notification colours
 GlobalVariables.Gui.NotificationStandard = Color3.fromRGB(130, 186, 255)
