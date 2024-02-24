@@ -4,6 +4,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
 local PlayerConfig = require(ReplicatedStorage.Configs.Player)
+local StaffFoodConfigServer = require(ServerScriptService.Functionality.Staff.StaffFoodConfigServer)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -12,6 +13,21 @@ local GROUP_ADMIN_RANK_IDS = {255, 254} -- 255: Owner, 254: Devs
 local EXTRA_ADMINS = {} -- any player you want to give admin access to that isn't a dev, put their user ID in here
 
 local PlrManager = {}
+
+-- when players level up, level up information is stored here to display, whether that's at the time of level up or not (depending on level-up context)
+-- PreAdjustmentLevel -> number: The level of a plr before they xp-adjustment in one context (e.g. after developing a game)
+-- PostAdjustmentLevel -> number: The level a player after they levelled up in one context (usually just 1 level increase, but can be more)
+PlrManager.PlrLevelUps = {
+    --[[ [Player.UserId] = {
+        PreAdjustmentLevel: number,
+        PostAdjustmentLevel: number,
+        PreAdjustmentXP: number,
+        PostAdjustmentXP: number,
+        PreAdjustmentMaxXP: number
+        PostAdjustmentMaxXP: number
+    } | false
+    ]]
+}
 
 function PlrManager.AdjustPlrCoins(plr: Player, adjustBy: number)
     local profile = PlrDataManager.Profiles[plr]
@@ -29,6 +45,24 @@ function PlrManager.AdjustPlrCoins(plr: Player, adjustBy: number)
     Remotes.Character.AdjustPlrCoins:FireClient(plr, profile.Data.Coins)
 
     return "Adjusted the players coins by " .. tostring(adjustBy) .. "."
+end
+
+function PlrManager.AdjustPlrGems(plr: Player, adjustBy: number)
+    local profile = PlrDataManager.Profiles[plr]
+    if not profile then return end
+
+    local leaderstats = plr:WaitForChild("leaderstats")
+    
+    if profile.Data.Gems + adjustBy < 0 then
+        profile.Data.Gems = 0
+    else
+        profile.Data.Gems += adjustBy
+    end
+    leaderstats.Gems.Value = profile.Data.Gems
+
+    Remotes.Character.AdjustPlrGems:FireClient(plr, profile.Data.Gems)
+
+    return "Adjusted the players gems by " .. tostring(adjustBy) .. "."
 end
 
 -- opts     
@@ -146,6 +180,27 @@ function PlrManager.IsAdminEligible(plr: Player): boolean
     return false
 end
 
+local function givePlrLevelUpRewards(plr: Player, level: number)
+    local levelInfo: PlayerConfig.LevelUpInformation = PlayerConfig.LevelUpInformation[tostring(level)]
+    if not levelInfo then return end
+    if not levelInfo["Rewards"] then return end
+
+    if levelInfo.Rewards["Currencies"] then
+        for currencyName: string, amt: number in levelInfo.Rewards["Currencies"] do
+            if currencyName == "Coins" then PlrManager.AdjustPlrCoins(plr, amt) end
+            if currencyName == "Gems" then PlrManager.AdjustPlrGems(plr, amt) end
+        end
+    end
+
+    if levelInfo.Rewards["OtherRewards"] then
+        for itemName: string, itemInfo: {} in levelInfo.Rewards["OtherRewards"] do
+            if itemInfo.Type == "Staff Food" then
+                StaffFoodConfigServer.GiveFood(plr, itemName, itemInfo.Amount)
+            end
+        end
+    end
+end
+
 -- args     
 -- instrusiveLevelUp -> boolean: Indicates whether level up GUI should appear right after PlayerLevelUp remote is fired or not
 function PlrManager.AdjustXP(plr: Player, adjustBy: number, intrusiveLevelUp: boolean)
@@ -153,7 +208,7 @@ function PlrManager.AdjustXP(plr: Player, adjustBy: number, intrusiveLevelUp: bo
     if not profile then return end
 
     -- if argument is not passed, make levelup GUI instrusive by default
-    intrusiveLevelUp = intrusiveLevelUp or true
+    intrusiveLevelUp = if intrusiveLevelUp == nil then true else intrusiveLevelUp
 
     -- holds the plr character data
     local plrCharData = profile.Data.Character
@@ -163,8 +218,12 @@ function PlrManager.AdjustXP(plr: Player, adjustBy: number, intrusiveLevelUp: bo
     local xpLvlRequirement: number = PlayerConfig.CalcLevelUpXpRequirement(profile.Data)
     local preAdjustmentMaxXp = xpLvlRequirement
 
-    -- adjust xp and/or level
+    -- plr has earned enough XP to level up at least once
     if preAdjustmentXp + adjustBy >= xpLvlRequirement then
+        PlrManager.PlrLevelUps[plr.UserId] = {}
+        PlrManager.PlrLevelUps[plr.UserId]["PreAdjustmentLevel"] = preAdjustmentLevel
+        PlrManager.PlrLevelUps[plr.UserId]["PreAdjustmentXP"] = preAdjustmentXp
+        PlrManager.PlrLevelUps[plr.UserId]["PreAdjustmentMaxXP"] = preAdjustmentMaxXp
 
         local leftOverXp = preAdjustmentXp + adjustBy - xpLvlRequirement
         -- while plr can continue to level up more than once
@@ -175,14 +234,25 @@ function PlrManager.AdjustXP(plr: Player, adjustBy: number, intrusiveLevelUp: bo
             leftOverXp -= xpLvlRequirement
 
             local newPlrLevel = profile.Data.Character.Level
-            Remotes.Character.PlayerLevelUp:FireClient(plr, newPlrLevel, intrusiveLevelUp)
+            PlrManager.PlrLevelUps[plr.UserId]["PostAdjustmentLevel"] = newPlrLevel
+            PlrManager.PlrLevelUps[plr.UserId]["PostAdjustmentXP"] = profile.Data.Character.Exp
+            PlrManager.PlrLevelUps[plr.UserId]["PostAdjustmentMaxXP"] = xpLvlRequirement
             
             -- refresh plr mood, hunger & energy levels so they're full again after level up
             PlrManager.AdjustPlrMood(plr, 0, { MaxNeed = true })
             PlrManager.AdjustPlrHunger(plr, 0, { MaxNeed = true })
             PlrManager.AdjustPlrEnergy(plr, 0, { MaxNeed = true })
         end
-    else -- no level up, only xp adjustment
+
+        -- give rewards to plr
+        for i = PlrManager.PlrLevelUps[plr.UserId].PreAdjustmentLevel + 1, PlrManager.PlrLevelUps[plr.UserId].PostAdjustmentLevel, 1 do
+            givePlrLevelUpRewards(plr, i)
+        end
+
+        if intrusiveLevelUp then Remotes.Character.PlayerLevelUp:FireClient(plr, PlrManager.PlrLevelUps[plr.UserId]) end
+    
+    -- no level up, only xp adjustment
+    else
         profile.Data.Character.Exp += adjustBy
     end
 
@@ -197,9 +267,15 @@ function PlrManager.AdjustXP(plr: Player, adjustBy: number, intrusiveLevelUp: bo
 end
 
 Players.PlayerAdded:Connect(function(plr: Player)
+    PlrManager.PlrLevelUps[plr.UserId] = false
+
     if PlrManager.IsAdminEligible(plr) then
         PlrManager.GiveAdminAccess(plr)
     end
+end)
+
+Players.PlayerRemoving:Connect(function(plr: Player)
+    PlrManager.PlrLevelUps[plr.UserId] = nil
 end)
 
 
@@ -245,6 +321,18 @@ Remotes.Player.SprintDisable.OnServerEvent:Connect(function(plr: Player)
 end)
 Remotes.Player.SprintEnable.OnServerEvent:Connect(function(plr: Player)
     plr:SetAttribute("CanSprint", true)
+end)
+
+-- remote connection from client only occurs when a player levelling up is non-intrusive
+-- meaning their level up information gets displayed soon after actual time of level-up, not AT time of level up
+Remotes.Character.PlayerLevelUp.OnServerEvent:Connect(function(plr: Player)
+    if not PlrManager.PlrLevelUps[plr.UserId] then return end
+
+    -- display plr level up GUI
+    Remotes.Character.PlayerLevelUp:FireClient(plr, PlrManager.PlrLevelUps[plr.UserId])
+
+    PlrManager.PlrLevelUps[plr.UserId] = false
+
 end)
 
 return PlrManager
