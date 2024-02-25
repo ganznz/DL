@@ -6,8 +6,11 @@ local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 
 local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
-local Stack = require(ReplicatedStorage.Utils.DataStructures:WaitForChild("Stack"))
+local GeneralUtils = require(ReplicatedStorage.Utils.GeneralUtils)
+local GeneralConfig = require(ReplicatedStorage.Configs.General)
+local Stack = require(ReplicatedStorage.Utils.DataStructures.Stack)
 local FormatNumber = require(ReplicatedStorage.Libs.FormatNumber.Simple)
+local StaffFoodConfig = require(ReplicatedStorage.Configs.Staff.StaffFood)
 
 local Remotes = ReplicatedStorage.Remotes
 local localPlr = Players.LocalPlayer
@@ -30,15 +33,18 @@ local ConfettiParticle: Frame = AllGuiScreenGui.Particles.ConfettiParticle
 
 local HudFolder = AllGuiScreenGui.Hud
 -- left HUD containers
-local LeftHudFolder = HudFolder:WaitForChild("Left")
-local LeftHudBtnContainer = LeftHudFolder:WaitForChild("LeftBtnContainer")
-local LeftHudPlrInfoContainer = LeftHudFolder:WaitForChild("PlrInfoContainer")
+local LeftHudFolder = HudFolder.Left
+local LeftHudBtnContainer = LeftHudFolder.LeftBtnContainer
+local LeftHudPlrInfoContainer = LeftHudFolder.PlrInfoContainer
 -- right HUD containers
-local RightHudFolder = HudFolder:WaitForChild("Right")
-local RightHudBtnContainer = RightHudFolder:WaitForChild("RightBtnContainer")
+local RightHudFolder = HudFolder.Right
+local RightHudBtnContainer = RightHudFolder.RightBtnContainer
 -- bottom HUD containers
-local BottomHudFolder = HudFolder:WaitForChild("Bottom")
-local BottomHudBtns = BottomHudFolder:WaitForChild("BottomBtns")
+local BottomHudFolder = HudFolder.Bottom
+local BottomHudBtns = BottomHudFolder.BottomBtns
+-- rewards container
+local RewardsContainer = AllGuiScreenGui.Player.RewardsContainer
+local RewardsTemplateContainer = RewardsContainer.TemplateContainer
 
 local GuiBlur = Lighting:WaitForChild("GuiBlur")
 
@@ -46,6 +52,7 @@ local LEVEL_XP_TEXT_TEMPLATE = "CURRENT / MAX XP"
 local OFFSET_PER_NOTI = NotificationPanelFrame.Template.Size.Y.Scale + 0.03
 local NOTI_VISIBLE_X_POS = 0.5 -- scale value
 local NOTI_HIDDEN_X_POS = 2.6 -- scale value
+local REWARD_VISIBLE_TIME = 3.5
 
 -- this cache is used to store position/size information regarding GUI in-game
 local GuiCache = {}
@@ -56,7 +63,9 @@ local GuiStack = Stack.new()
 
 local GuiServices = {}
 
-function GuiServices.StoreInCache(guiInstance)
+-- args     
+-- guiInstance -> Instance: Caches the GUI instances Position & Size properties. This method is required when you are using most GuiService methods on the gui instance     
+function GuiServices.StoreInCache(guiInstance: Instance)
     GuiCache[guiInstance] = {
         Position = guiInstance.Position,
         Size = guiInstance.Size
@@ -100,55 +109,61 @@ function GuiServices.DefaultMainGuiStyling(guiInstance: Frame, opts: {}): UDim2
 end
 
 local function showBackdrop(colour: Color3)
-    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiOpenTime)
+    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiOpenTime / 2)
 
-    GuiBackdropFrame.BackgroundColor3 = colour
     GuiBackdropFrame.Visible = true
     
-    local guiBackdropTween = TweenService:Create(GuiBackdropFrame, tweenInfo, { BackgroundTransparency = 0.6 })
+    local guiBackdropTween = TweenService:Create(GuiBackdropFrame, tweenInfo, { BackgroundTransparency = 0.6, BackgroundColor3 = colour })
     guiBackdropTween:Play()
 
     local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 20 })
     guiBlurTween:Play()
 end
 
+local hideGuiBackdropTween = TweenService:Create(GuiBackdropFrame, TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime), { BackgroundTransparency = 1 })
 local function hideBackdrop()
-    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime)
+    hideGuiBackdropTween:Play()
 
-    local guiBackdropTween = TweenService:Create(GuiBackdropFrame, tweenInfo, { BackgroundTransparency = 1 })
-    guiBackdropTween:Play()
-
-    guiBackdropTween.Completed:Connect(function(_playbackState) GuiBackdropFrame.Visible = false end)
+    hideGuiBackdropTween.Completed:Connect(function(playbackState)
+        if playbackState == Enum.PlaybackState.Cancelled then return end
+        GuiBackdropFrame.Visible = false
+    end)
 end
 
+local resetCameraTween: Tween = TweenService:Create(camera, TweenInfo.new(GlobalVariables.Gui.GuiInvisibleCameraTime), { FieldOfView = GlobalVariables.Gui.GuiInvisibleCameraFOV })
+local hideGuiBlurTween: Tween = TweenService:Create(GuiBlur, TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime, Enum.EasingStyle.Linear), { Size = 0 })
 -- opts
 -- -- SwitchingGui -> boolean: This is enabled if the player has opened a GUI frame while another was already open.
 local function hideGuiTweens(guiInstanceToClose, opts: {})
+    opts = opts or {}
+
     GuiStack:Pop()
 
-    local tweenInfo = TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime, Enum.EasingStyle.Linear)
     local guiPosition = GuiCache[guiInstanceToClose].Position
     local guiSize = GuiCache[guiInstanceToClose].Size
 
-    local guiTween = TweenService:Create(guiInstanceToClose, tweenInfo, {
+    local guiTween = TweenService:Create(guiInstanceToClose, TweenInfo.new(GlobalVariables.Gui.MainGuiCloseTime, Enum.EasingStyle.Linear), {
         Position = UDim2.fromScale(guiPosition.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXOffset, guiPosition.Y.Scale + GlobalVariables.Gui.MainGuiInvisibleYOffset),
         Size = UDim2.fromScale(guiSize.X.Scale + GlobalVariables.Gui.MainGuiInvisibleXSize, guiSize.Y.Scale - GlobalVariables.Gui.MainGuiInvisibleYSize)
     })
     guiTween:Play()
-    guiTween.Completed:Connect(function(_playbackState)
+    guiTween.Completed:Connect(function(playbackState)
+        if playbackState == Enum.PlaybackState.Cancelled then return end
         guiInstanceToClose.Visible = false
     end)
 
     -- only hide backdrop & revert camera settings if closing gui, not if switching between gui instances
     if opts and opts["SwitchingGui"] then return guiTween end
 
-    local cameraTween = TweenService:Create(camera, TweenInfo.new(GlobalVariables.Gui.GuiInvisibleCameraTime), { FieldOfView = GlobalVariables.Gui.GuiInvisibleCameraFOV })
-    cameraTween:Play()
-
+    resetCameraTween:Play()
     hideBackdrop()
+    hideGuiBlurTween:Play()
 
-    local guiBlurTween = TweenService:Create(GuiBlur, tweenInfo, { Size = 0 })
-    guiBlurTween:Play()
+    -- ensures gui blur actually hides because when calling ShowGuiStandard() very quickly after HideGuiStandard sometimes blur doesn't get set to 0, even though the tween plays??!!?!
+    hideGuiBlurTween.Completed:Connect(function(playbackState)
+        if playbackState == Enum.PlaybackState.Cancelled then return end
+        GuiBlur.Size = 0
+    end)
 
     return guiTween
 end
@@ -223,6 +238,9 @@ function GuiServices.ShowGuiStandard(guiInstance, backdropColour: Color3)
     local cameraTween = TweenService:Create(camera, TweenInfo.new(GlobalVariables.Gui.GuiVisibleCameraTime), { FieldOfView = GlobalVariables.Gui.GuiVisibleCameraFOV })
     cameraTween:Play()
     
+    hideGuiBackdropTween:Cancel()
+    hideGuiBlurTween:Cancel()
+    resetCameraTween:Cancel()
     -- backdrop should be present
     if backdropColour then showBackdrop(backdropColour) end
 
@@ -638,6 +656,74 @@ function GuiServices.TriggerBorderFlash(colour: Color3)
         if flashTweenCompletedConnection then flashTweenCompletedConnection:Disconnect() end
         flashTweenCompletedConnection = nil
         BorderFlashContainer.Visible = false
+    end)
+end
+
+local rewardDisplayRewardTypes = { "Currency", "Staff Food" }
+function GuiServices.CreateRewardDisplay(rewardType: string, rewardName: string, amount: number)
+    if not table.find(rewardDisplayRewardTypes, rewardType) then return end
+
+    local templateContainer: Frame = RewardsTemplateContainer:Clone()
+    local template: Frame = templateContainer.Template
+    local templateUIStroke: UIStroke = template.UIStroke
+    local gradient: Frame = template.Gradient
+    local amtText: TextLabel = template.Amount
+    local amtTextUIStroke: UIStroke = amtText.UIStroke
+    local icon: ImageLabel = template.Icon
+    local iconDropshadow: ImageLabel = icon.IconDropshadow
+
+    amtText.Text = `x{FormatNumber.FormatCompact(amount)}`
+
+    if rewardType == "Currency" then
+        if rewardName == "Coins" then
+            templateUIStroke.Color = GlobalVariables.Gui.CoinsPrimaryColour
+            gradient.BackgroundColor3 = GlobalVariables.Gui.CoinsPrimaryColour
+            amtTextUIStroke.Color = GlobalVariables.Gui.CoinsSecondaryColour
+            iconDropshadow.ImageColor3 = GlobalVariables.Gui.CoinsSecondaryColour
+            icon.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinBundleMediumStroke)
+            iconDropshadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.CoinBundleMediumDropshadow)
+
+        elseif rewardName == "Gems" then
+            templateUIStroke.Color = GlobalVariables.Gui.GemsPrimaryColour
+            gradient.BackgroundColor3 = GlobalVariables.Gui.GemsPrimaryColour
+            amtTextUIStroke.Color = GlobalVariables.Gui.GemsSecondaryColour
+            iconDropshadow.ImageColor3 = GlobalVariables.Gui.GemsSecondaryColour
+            icon.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemBundleMediumStroke)
+            iconDropshadow.Image = GeneralUtils.GetDecalUrl(GlobalVariables.Images.Icons.GemBundleMediumDropshadow)
+        end
+    
+    elseif rewardType == "Staff Food" then
+        local foodConfig: StaffFoodConfig.StaffFoodConfig = StaffFoodConfig.GetConfig(rewardName)
+        if not foodConfig then return end
+
+        local rarityColourPrimary = GeneralConfig.GetRarityColour(foodConfig.Rarity, "Primary")
+        local rarityColourSecondary = GeneralConfig.GetRarityColour(foodConfig.Rarity, "Secondary")
+
+        templateUIStroke.Color = rarityColourPrimary
+        gradient.BackgroundColor3 = rarityColourPrimary
+        amtTextUIStroke.Color = rarityColourSecondary
+        iconDropshadow.ImageColor3 = rarityColourSecondary
+        icon.Image = GeneralUtils.GetDecalUrl(foodConfig.IconStroke)
+        iconDropshadow.Image = GeneralUtils.GetDecalUrl(foodConfig.IconFill)
+    end
+
+    -- starting properties of template
+    templateContainer.Parent = RewardsContainer
+    templateContainer.Visible = true
+    template.Position = UDim2.fromScale(0.5, 0.8)
+    template.Size = UDim2.fromScale(0, 0)
+    template.Rotation = -45
+
+    local showTween = TweenService:Create(template, TweenInfo.new(0.4, Enum.EasingStyle.Bounce), { Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1, 1), Rotation = 0 })
+    local hideTween = TweenService:Create(template, TweenInfo.new(0.2), { Size = UDim2.fromScale(1.2, 1.2) })
+
+    showTween:Play()
+    GeneralUtils.PlaySfx(GlobalVariables.Sound.Sfx.SwooshFast)
+
+    task.delay(REWARD_VISIBLE_TIME, function()
+        hideTween:Play()
+        GuiServices.ChangeTransparency(templateContainer, 1, 0.2)
+        hideTween.Completed:Connect(function() templateContainer:Destroy() end)
     end)
 end
 
