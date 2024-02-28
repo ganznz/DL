@@ -4,7 +4,9 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
 
+local GlobalVariables = require(ReplicatedStorage.GlobalVariables)
 local PlrDataManager = require(ServerScriptService.PlayerData.Manager)
+local PlayerCharacterManager = require(ServerScriptService.Functionality.PlayerCharacterManager.PlayerCharacterManager)
 local StudioConfig = require(ReplicatedStorage.Configs.Studio.Studio)
 local StudioPlaceablesServer = require(ServerScriptService.Functionality.Studio.StudioPlaceablesServer)
 local FurnitureConfigServer = require(ServerScriptService.Functionality.Furniture.FurnitureConfigServer)
@@ -74,6 +76,12 @@ local function visitStudio(plr: Player, plrToVisit: Player, studioIndex: string)
 
     plr:SetAttribute("InStudio", true)
 
+    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash")
+    -- tp plr to studio. if plr is visiting someone elses studio, bypass checks that determine whether the plr owns the area (studio) they are teleporting to
+    task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
+        PlayerCharacterManager.TeleportPlr(plr, `Studio{studioIndex}`, "Interior", plr ~= plrToVisit)
+    end)
+
     if plr == plrToVisit then
         profile.Data.Studio.ActiveStudio = studioIndex
         StudioConfigServer.PlrStudios[plrToVisit.UserId].StudioIndex = profile.Data.Studio.ActiveStudio
@@ -128,9 +136,9 @@ end
 
 local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends: boolean)
     local kickMsg: string = `<font color="#b0edff"><stroke color="#418ea6" thickness="2">{plrWhosStudioToClear.Name}</stroke></font> has removed you from their studio`
+    local indexOfStudioToKickPlrsFrom: string = StudioConfigServer.PlrsInStudio[plrWhosStudioToClear.UserId].StudioIndex
 
     for plrUserId, studioInfo in StudioConfigServer.PlrsInStudio do
-
         -- if studioInfo exists then it means the plr is in a studio
         if studioInfo then
             -- ignore studio owner
@@ -146,6 +154,11 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
                     StudioConfigServer.PlrsInStudio[plrToKick.UserId] = false
                     Remotes.Studio.General.KickFromStudio:FireClient(plrToKick)
                     Remotes.GUI.DisplayNotification:FireClient(plrToKick, "general", kickMsg)
+
+                    -- tp plr out of studio
+                    task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
+                        PlayerCharacterManager.TeleportPlr(plrToKick, `Studio{indexOfStudioToKickPlrsFrom}`, "Exterior")
+                    end)
                 end
             end
         end
@@ -299,7 +312,6 @@ Remotes.Studio.General.VisitOwnStudio.OnServerEvent:Connect(function(plr: Player
 end)
 
 Remotes.Studio.General.VisitOwnStudioBindable.Event:Connect(function(plr: Player)
-    print(plr)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -323,7 +335,6 @@ Remotes.Studio.General.VisitOtherStudio.OnServerEvent:Connect(function(plr: Play
 end)
 
 Remotes.Studio.General.VisitOtherStudioBindable.Event:Connect(function(plr: Player, userIdOfPlrToVisit: number)
-    print(plr)
     if not StudioConfigServer.PlrStudios[plr.UserId] then return end
 
     local plrToVisit: Player = Players:GetPlayerByUserId(userIdOfPlrToVisit)
@@ -339,7 +350,9 @@ Remotes.Studio.General.VisitOtherStudioBindable.Event:Connect(function(plr: Play
 end)
 
 Remotes.Studio.General.LeaveStudio.OnServerEvent:Connect(function(plr: Player)
+    local indexOfStudioBeingLeft: string = StudioConfigServer.PlrsInStudio[plr.UserId].StudioIndex
     StudioConfigServer.PlrsInStudio[plr.UserId] = false
+
     local previouslyInStudio = plr:GetAttribute("InStudio")
     local previouslyInBuildMode = plr:GetAttribute("InBuildMode")
     local previouslyInPlaceMode = plr:GetAttribute("InPlaceMode")
@@ -354,6 +367,11 @@ Remotes.Studio.General.LeaveStudio.OnServerEvent:Connect(function(plr: Player)
         InBuildMode = previouslyInBuildMode,
         InPlaceMode = previouslyInPlaceMode,
     })
+
+    -- tp plr
+    task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
+        PlayerCharacterManager.TeleportPlr(plr, `Studio{indexOfStudioBeingLeft}`, "Exterior")
+    end)
 end)
 
 Remotes.Studio.General.PurchaseNextStudio.OnServerEvent:Connect(function(plr: Player)
