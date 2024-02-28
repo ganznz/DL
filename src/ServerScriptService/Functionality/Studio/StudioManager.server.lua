@@ -156,6 +156,7 @@ local function kickAllPlrsFromStudio(plrWhosStudioToClear: Player, ignoreFriends
                     Remotes.GUI.DisplayNotification:FireClient(plrToKick, "general", kickMsg)
 
                     -- tp plr out of studio
+                    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plrToKick, "loadingBgSplash")
                     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
                         PlayerCharacterManager.TeleportPlr(plrToKick, `Studio{indexOfStudioToKickPlrsFrom}`, "Exterior")
                     end)
@@ -369,6 +370,7 @@ Remotes.Studio.General.LeaveStudio.OnServerEvent:Connect(function(plr: Player)
     })
 
     -- tp plr
+    Remotes.GUI.ChangeGuiStatusRemote:FireClient(plr, "loadingBgSplash")
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         PlayerCharacterManager.TeleportPlr(plr, `Studio{indexOfStudioBeingLeft}`, "Exterior")
     end)

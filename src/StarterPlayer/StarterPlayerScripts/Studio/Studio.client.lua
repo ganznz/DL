@@ -354,11 +354,8 @@ local function replaceComputerModel(plrData, studioType: "Standard" | "Premium")
     return newComputerModel
 end
 
-local function enterStudio(interiorPlrTpPart, plrToVisit: Player)
+local function enterStudio(plrToVisit: Player)
     local plrToVisitData = Remotes.Data.GetAllData:InvokeServer(plrToVisit)
-
-    -- tp plr into studio interior
-    Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = interiorPlrTpPart })
 
     local studioExteriorFolder = StudioExteriorsFolder:FindFirstChild(currentStudioIndex)
     studioExteriorFolder = StudioExteriorsFolder:FindFirstChild(tostring(currentStudioIndex))
@@ -413,7 +410,6 @@ local function studioInteriorExitListener()
 
     studioInteriorExitZone = Zone.new(studioInteriorExitHitbox)
     studioInteriorExitZone.localPlayerEntered:Connect(function(_plr: Player)
-        Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
         Remotes.Studio.General.LeaveStudio:FireServer()
 
         task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
@@ -443,7 +439,7 @@ for _i, remote in { visitOwnStudioRemote, visitOtherStudioRemote } do
         interiorFurnitureData = placedFurnitureData
     
         local plrToVisit = Players:GetPlayerByUserId(studioOwnerId)
-        enterStudio(interiorPlrTpPart, plrToVisit)
+        enterStudio(plrToVisit)
     
         -- listener for when player exits studio
         studioInteriorExitListener()
@@ -461,7 +457,6 @@ Remotes.Studio.BuildMode.EnterBuildMode.OnClientEvent:Connect(function(_studioIn
 end)
 
 Remotes.Studio.General.KickFromStudio.OnClientEvent:Connect(function()
-    Remotes.GUI.ChangeGuiStatusBindable:Fire("loadingBgSplash", true, { TeleportPart = studioExteriorTpPart })
     task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
         studioInteriorCleanup()
     end)
