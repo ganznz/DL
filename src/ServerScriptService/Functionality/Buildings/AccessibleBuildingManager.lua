@@ -19,7 +19,11 @@ local Remotes = ReplicatedStorage.Remotes
 -- { [plr.UserId] = { InBuilding = "buildingName" | false }
 local plrsInBuildings = {}
 
-local function exitBuilding(plr: Player)
+local AccessibleBuildingManager = {}
+
+AccessibleBuildingManager.PlrsInBuildings = plrsInBuildings
+
+function AccessibleBuildingManager.ExitBuilding(plr: Player)
     -- check if plr is in a building
     local buildingPlrIsIn: string | false = plrsInBuildings[plr.UserId].InBuilding
 
@@ -34,7 +38,7 @@ local function exitBuilding(plr: Player)
     plrsInBuildings[plr.UserId].InBuilding = false
 end
 
-local function canAccessBuilding(plr: Player, buildingName: string): boolean
+function AccessibleBuildingManager.CanAccessBuilding(plr: Player, buildingName: string): boolean
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return false end
 
@@ -52,7 +56,7 @@ local function canAccessBuilding(plr: Player, buildingName: string): boolean
     return canAccess
 end
 
-local function enterBuilding(plr: Player, buildingName: string)
+function AccessibleBuildingManager.EnterBuilding(plr: Player, buildingName: string)
     local profile = PlrDataManager.Profiles[plr]
     if not profile then return end
 
@@ -76,8 +80,8 @@ for _i, buildingExteriorFolder in accessibleBuildingExteriorFolders do
         local plrData = profile.Data
 
         -- check if plr can access this building
-        if canAccessBuilding(plr, buildingName) then
-            enterBuilding(plr, buildingName)
+        if AccessibleBuildingManager.CanAccessBuilding(plr, buildingName) then
+            AccessibleBuildingManager.EnterBuilding(plr, buildingName)
 
             -- tp plr
             task.delay(GlobalVariables.Gui.LoadingBgTweenTime, function()
@@ -90,7 +94,7 @@ for _i, buildingExteriorFolder in accessibleBuildingExteriorFolders do
 end
 
 -- REMOTES --
-Remotes.General.ExitBuilding.OnServerEvent:Connect(exitBuilding)
+Remotes.General.ExitBuilding.OnServerEvent:Connect(AccessibleBuildingManager.ExitBuilding)
 
 Players.PlayerAdded:Connect(function(plr: Player)
     repeat task.wait() until PlrDataManager.Profiles[plr]
@@ -104,3 +108,5 @@ end)
 Players.PlayerRemoving:Connect(function(plr)
     plrsInBuildings[plr.UserId] = nil
 end)
+
+return AccessibleBuildingManager
